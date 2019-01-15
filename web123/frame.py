@@ -11,4 +11,14 @@ def test_mkfr():
 
 
 
-# 现在主要就是设计这里的 Frame 结构。
+
+if __name__ == '__main__':
+    import tkinter
+    top = tkinter.Tk()
+
+    # test
+    fr = test_mkfr()
+    fr.master = top
+    fr.pack()
+    top.mainloop()
+    
