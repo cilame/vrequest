@@ -3,6 +3,8 @@ root = tkinter.Tk()
 
 # 配置文件名字
 DEFAULTS_NAME = '.web123'
+DEFAULTS_HEADERS = None 
+# TODO, 一般新建请求页的时候需要的默认值，方便使用。
 
 # 用来配置一些需要持久化的配置
 def get_config_from_homepath():
