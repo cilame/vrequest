@@ -15,7 +15,3 @@ def bind_menu(func, name=None):
 
 
 
-def test_command_1():
-    print('test command 1.')
-def test_command_2():
-    print('test command 2.')

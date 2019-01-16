@@ -14,14 +14,9 @@ def bind_frame(frame, name=None):
 
 
 def clear_curr_tab():
-    nb.forget(nb.select())
+    _select = nb.select()
+    if _select is not '':
+        nb.forget(_select)
 
 
 
-test_frame_1 = tkinter.Frame()
-tblb1 = tkinter.Label(test_frame_1, text='简单的 Label 用以测试框架')
-tblb1.pack() # 在frame 内部的组件要进行展示处理
-
-test_frame_2 = tkinter.Frame()
-tblb2 = tkinter.Label(test_frame_2, text='简单的 Label2 用以测试框架')
-tblb2.pack()
