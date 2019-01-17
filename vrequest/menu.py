@@ -12,6 +12,3 @@ def bind_menu(func, name=None):
     labelname = name if name is not None else func.__name__
     menu.add_command(label=labelname, command=func)
     root.bind("<Button-3>",lambda e:menu.post(e.x_root,e.y_root))
-
-
-
