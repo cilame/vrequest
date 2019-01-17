@@ -7,7 +7,12 @@ root = tkinter.Tk()
 
 # 配置文件名字
 DEFAULTS_NAME = '.vrequest'
-DEFAULTS_HEADERS = None 
+DEFAULTS_HEADERS = '''
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
+accept-encoding: gzip, deflate
+accept-language: zh-CN,zh;q=0.9
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36
+'''
 # TODO, 一般新建请求页的时候需要的默认值，方便使用。
 
 '''
@@ -49,6 +54,7 @@ config = {
     'set':{
 
     },
+    'focus':None,
 }
 
 
@@ -92,8 +98,9 @@ def set_config_from_homepath():
 # 装饰函数在执行时候进行持久化当前配置的操作（通常在请求 url 时候进行保存）
 def save(func):
     def _save(*a,**kw):
+        v = func(*a,**kw)
         set_config_from_homepath()
-        return func(*a,**kw)
+        return v
     return _save
 
 

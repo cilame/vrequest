@@ -45,7 +45,7 @@ def bind_frame(frame, name=None):
     tab_id = (set(nb.tabs())^v).pop() # 由于没有接口，只能用这种方式来获取新增的 tab_id
     nb_names[tab_id] = {}
     nb_names[tab_id]['name'] = name
-    nb_names[tab_id]['setting'] = frame_setting.pop(frame)
+    nb_names[tab_id]['setting'] = frame_setting.pop(frame) if frame in frame_setting else {}
     return tab_id
 
 
@@ -61,23 +61,32 @@ def delete_curr_tab():
         else:
             nb.forget(_select)
         nb_names.pop(_select)
+        if cname in config['set']:
+            config['set'].pop(cname)
 
 
 def change_tab_name():
     name = askstring('修改标签','新的标签名字') # 简单弹窗请求字符串数据
     if name is not None:
         _select = nb.select()
-        nb_names[_select]['name'] = name
-        nb.tab(_select, text=name)
+        oname = nb_names[_select]['name']
+        cname = name
+        allname = [val['name'] for val in nb_names.values()]
+        idx = 0
+        while True:
+            if cname in allname:
+                idx += 1
+                cname = '{}_{}'.format(name,idx)
+            else:
+                break
+        # name不能重复，因为需要作为字典的key持久化
+        nb_names[_select]['name'] = cname
+        if oname in config['set']:
+            config['set'][cname] = config['set'].pop(oname)
+        nb.tab(_select, text=cname)
 
 
 def create_new_tab(setting=None):
-    # TODO
-    # 后面想了想，感觉在创建新标签的时候配置名字会有点麻烦
-    # 如果有需要的话最好还是通过自己主动修改名字会更好
-    # 因为如果自己觉得有必要保留的配置，一般自己也会主动配置
-    # 不需要的临时的请求就没有必要写一些名字，那样比较麻烦。
-    # 所以决定，这里的处理将使用 '标签' + 数字id 的临时名字就可以。
     nums = []
     for val in nb_names.values():
         v = re.findall('标签\d+', val['name'])
@@ -99,11 +108,32 @@ def create_helper():
     nb.select(bind_frame(helper_window(),'帮助'))
 
 
+@save
 def send_request():
+    global config
     _select = nb.select()
+    name = nb_names[_select]['name']
     setting = nb_names[_select]['setting']
+    foc_toggle = True
     if setting.get('type') == 'request':
+        method = setting.get('fr_method').get()
         url = setting.get('fr_url').get(0.,tkinter.END).strip()
         headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
-        print('url:',url)
-        print('headers:',headers)
+        body = setting.get('fr_body').get(0.,tkinter.END).strip()
+        config['set'][name] = {}
+        config['set'][name]['type'] = 'request'
+        config['set'][name]['method'] = method
+        config['set'][name]['url'] = url
+        config['set'][name]['headers'] = headers
+        config['set'][name]['body'] = body
+
+        print('[ method ]:',method)
+        print('[ url ]:',url)
+        print('[ headers ]:',headers)
+        print('[ body ]:',body)
+        print('================')
+        print(config)
+    else:
+        foc_toggle = False
+    if foc_toggle:
+        config['focus'] = name

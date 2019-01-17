@@ -3,7 +3,6 @@ import types
 
 from root import root
 
-
 menu = tkinter.Menu(root,tearoff=0)
 
 def bind_menu(func, name=None):
