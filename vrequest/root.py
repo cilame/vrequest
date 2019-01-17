@@ -27,13 +27,25 @@ DEFAULTS_HEADERS = None
             id3:{setting}
         }
     }
+    关于 setting的数据结构
+    {
+        type:request # 这里要有多种类型的配置，为了方便处理保存和恢复选择用的函数
+        set:{
+            # 不同类型的配置结构不一样
+            # 以 request为例，
+            url: url
+            headers: headers
+            body: body
+            # 也有帮助标签
+        }
+    }
 '''
 
 
 # 默认的数据结构
 config = {
     'idx':0,
-    'siz':'500x300',
+    'siz':'600x600',
     'set':{
 
     },
