@@ -1,5 +1,6 @@
 import re
 import tkinter
+import tkinter.messagebox
 from tkinter import ttk
 from tkinter.simpledialog import askstring
 
@@ -13,6 +14,12 @@ from frame import (
     helper_window,
     frame_setting,
 )
+from util import (
+    format_headers_str,
+    format_url,
+    format_url_show,
+    format_url_code,
+)
 
 nb = ttk.Notebook(root)
 nb.place(relx=0, rely=0, relwidth=1, relheight=1)
@@ -22,12 +29,12 @@ nb_names 的数据结构：
 {
     tab_id1: 
         {
-            'name':tab_name,
+            'name':tab_name1,
             'setting':setting1,
         }, 
     tab_id2:
         {
-            'name':tab_name,
+            'name':tab_name2,
             'setting':setting2,
         }, 
 }
@@ -37,7 +44,6 @@ setting 是一个字典，里面至少有一个 type字段描述什么类型。
 
 def bind_frame(frame, name=None):
     global config, nb_names
-    #print(config)
     frame.master = nb
     name = name if name is not None else frame._name
     v = set(nb.tabs())
@@ -48,6 +54,9 @@ def bind_frame(frame, name=None):
     nb_names[tab_id]['setting'] = frame_setting.pop(frame) if frame in frame_setting else {}
     return tab_id
 
+
+cancel_limit = 30
+cancel_list = []
 
 def delete_curr_tab():
     _select = nb.select()
@@ -62,7 +71,18 @@ def delete_curr_tab():
             nb.forget(_select)
         nb_names.pop(_select)
         if cname in config['set']:
-            config['set'].pop(cname)
+            _set = config['set'].pop(cname)
+            cancel_list.append((cname,_set))
+            if len(cancel_list) > cancel_limit:
+                cancel_list.pop(0)
+
+
+def cancel_delete():
+    if cancel_list:
+        key,setting = cancel_list.pop()
+        tab_id = bind_frame(request_window(setting),key)
+        config['set'][key] = setting
+        nb.select(tab_id)
 
 
 def change_tab_name():
@@ -108,25 +128,34 @@ def create_helper():
     nb.select(bind_frame(helper_window(),'帮助'))
 
 
+
+def set_request_config(name,setting):
+    method  = setting.get('fr_method').get()
+    url     = setting.get('fr_url').get(0.,tkinter.END).strip()
+    url     = format_url(url)
+    headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
+    body    = setting.get('fr_body').get(0.,tkinter.END).strip()
+    config['set'][name] = {}
+    config['set'][name]['type'] = 'request'
+    config['set'][name]['method'] = method
+    config['set'][name]['url'] = url
+    config['set'][name]['headers'] = headers
+    config['set'][name]['body'] = body
+    headers = format_headers_str(headers)
+    setting.get('fr_url').delete(0.,tkinter.END)
+    setting.get('fr_url').insert(0.,format_url_show(url))
+    return method,url,headers,body
+
+
 @save
 def send_request():
     global config
     _select = nb.select()
-    name = nb_names[_select]['name']
+    name    = nb_names[_select]['name']
     setting = nb_names[_select]['setting']
-    foc_toggle = True
+    foc_tog = True
     if setting.get('type') == 'request':
-        method = setting.get('fr_method').get()
-        url = setting.get('fr_url').get(0.,tkinter.END).strip()
-        headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
-        body = setting.get('fr_body').get(0.,tkinter.END).strip()
-        config['set'][name] = {}
-        config['set'][name]['type'] = 'request'
-        config['set'][name]['method'] = method
-        config['set'][name]['url'] = url
-        config['set'][name]['headers'] = headers
-        config['set'][name]['body'] = body
-
+        method,url,headers,body = set_request_config(name,setting)
         print('[ method ]:',method)
         print('[ url ]:',url)
         print('[ headers ]:',headers)
@@ -134,6 +163,17 @@ def send_request():
         print('================')
         print(config)
     else:
-        foc_toggle = False
-    if foc_toggle:
+        foc_tog = False
+    if foc_tog:
         config['focus'] = name
+
+
+@save
+def save_config():
+    toggle = tkinter.messagebox.askokcancel('是否保存','确定保存当前全部配置信息吗？')
+    if toggle:
+        for tad_id in nb.tabs():
+            name = nb_names[tad_id]['name']
+            setting = nb_names[tad_id]['setting']
+            if setting.get('type') == 'request':
+                set_request_config(name,setting)

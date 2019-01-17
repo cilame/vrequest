@@ -8,28 +8,24 @@ root = tkinter.Tk()
 # 配置文件名字
 DEFAULTS_NAME = '.vrequest'
 DEFAULTS_HEADERS = '''
-accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
 accept-encoding: gzip, deflate
 accept-language: zh-CN,zh;q=0.9
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8
 user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36
 '''
 # TODO, 一般新建请求页的时候需要的默认值，方便使用。
 
 '''
 #20190117
-考虑到插入的顺序的问题，所以需要一个数字id来标识创建的顺序
-这样在重启时候也会保持创建顺序的去获取配置结构，即便是中间有删除也能保持顺序
-    # 1 配置顺序id
-    # 2 边框大小
-    # 3 需要的配置数据
+    # 1 边框大小位置
+    # 2 需要的配置数据
     # 初步定下下面的数据结构
     {
-        idx:0
         siz:'500x300'
         set:{
-            id1:{setting}
-            id2:{setting}
-            id3:{setting}
+            tab_name1:{setting}
+            tab_name2:{setting}
+            tab_name3:{setting}
         }
     }
     关于 setting的数据结构
@@ -38,6 +34,7 @@ user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
         set:{
             # 不同类型的配置结构不一样
             # 以 request为例，
+            method: GET/POST/...
             url: url
             headers: headers
             body: body
@@ -50,10 +47,8 @@ user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 # 默认的数据结构
 config = {
     'idx':0,
-    'siz':'600x600',
-    'set':{
-
-    },
+    'siz':'600x600+200+200',
+    'set':{},
     'focus':None,
 }
 

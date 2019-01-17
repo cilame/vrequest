@@ -9,10 +9,12 @@ from tab import (
     nb,
     bind_frame,
     delete_curr_tab,
+    cancel_delete,
     create_new_tab,
     create_helper,
     change_tab_name,
     send_request,
+    save_config,
 )
 from combinekey import bind_ctl_key
 
@@ -41,13 +43,22 @@ bind_menu(delete_curr_tab,  '删除当前标签')
 bind_menu(create_new_tab,   '创建新的标签')
 bind_menu(create_helper,    '帮助文档标签')
 bind_menu(change_tab_name,  '改当前标签名')
+bind_menu(save_config,      '保存配置快照')
 bind_menu(send_request,     '发送请求任务')
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(delete_curr_tab,   'w')
-bind_ctl_key(create_new_tab,    'r')
+# ctrl + shift + w （必须是保存过的配置）
+bind_ctl_key(cancel_delete,     'w',shift=True) 
+bind_ctl_key(create_new_tab,    't')
 bind_ctl_key(create_helper,     'h')
 bind_ctl_key(change_tab_name,   'e')
-bind_ctl_key(send_request,      's')
+bind_ctl_key(save_config,       's')
+bind_ctl_key(send_request,      'r')
+
+
+
+
+
 
 
 root.title('vrequest')

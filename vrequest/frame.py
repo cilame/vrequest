@@ -34,8 +34,9 @@ def request_window(setting=None):
             temp_fr2.pack_forget()
 
     temp_fr0 = Frame(fr)
+    methods = ('GET','POST','DELETE','PUT','HEAD','OPTIONS')
     cbx = Combobox(temp_fr0,width=10,state='readonly')
-    cbx['values'] = ('GET','POST','DELETE','PUT','HEAD','OPTIONS')     # 设置下拉列表的值
+    cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
     cbx.pack(side=tkinter.RIGHT)
     cbx.bind('<<ComboboxSelected>>', change_method)
@@ -64,7 +65,8 @@ def request_window(setting=None):
     tx3 = Text  (temp_fr2,height=1,width=1,font=ft)
     lb3.pack(side=tkinter.TOP)
     tx3.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
-    if setting and setting.get('fr_method') == 'POST':
+    if setting and setting.get('method') == 'POST':
+        cbx.current(methods.index('POST'))
         temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
 
     if setting:
@@ -95,13 +97,12 @@ def helper_window():
     ft = Font(family='Consolas',size=10)
     hp = '''
 删除当前标签 (Ctrl + w)
-创建新的标签 (Ctrl + r)
+创建新的标签 (Ctrl + t)
 帮助文档标签 (Ctrl + h)
 改当前标签名 (Ctrl + e)
-发送请求任务 (Ctrl + s)
-    针对 url 请求使用的功能，执行时会自动整理 url 结构
-    无论是否执行任务，只要按下 Ctrl+s 都会进行配置快照保存
-    下次开启工具时会回到当前配置（目前只保存 request）
+保存配置快照 (Ctrl + s)
+发送请求任务 (Ctrl + r)
+    一旦请求就会保留请求过的配置
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)
@@ -114,13 +115,13 @@ def helper_window():
 
 if __name__ == '__main__':
     import tkinter
-    top = tkinter.Tk()
-    top.geometry('500x300')
+    from root import root
+    root.geometry('500x500+900+100')
 
     # test
     fr = request_window()
-    fr.master = top
+    fr.master = root
     fr.pack(fill=tkinter.BOTH, expand=True)
-    top.bind('<Control-w>',lambda e:top.quit())
-    top.mainloop()
+    root.bind('<Control-w>',lambda e:root.quit())
+    root.mainloop()
     
