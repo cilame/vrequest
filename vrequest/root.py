@@ -46,7 +46,6 @@ user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 # 默认的数据结构
 config = {
-    'idx':0,
     'siz':'600x600+200+200',
     'set':{},
     'focus':None,
@@ -108,6 +107,3 @@ def change_siz():
         root.winfo_height(),
         root.winfo_x(),
         root.winfo_y(), )
-
-
-

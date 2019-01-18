@@ -11,6 +11,7 @@ from root import (
 )
 from frame import (
     request_window,
+    response_window,
     helper_window,
     frame_setting,
 )
@@ -106,12 +107,13 @@ def change_tab_name():
         nb.tab(_select, text=cname)
 
 
-def create_new_tab(setting=None):
+
+def create_new_tab(setting=None, prefix=None, window=None):
     nums = []
     for val in nb_names.values():
-        v = re.findall('标签\d+', val['name'])
+        v = re.findall('{}\d+'.format(prefix), val['name'])
         if v:
-            num = int(re.findall('标签(\d+)', v[0])[0])
+            num = int(re.findall('{}(\d+)'.format(prefix), v[0])[0])
             nums.append(num)
     idx = 0
     while True:
@@ -120,8 +122,16 @@ def create_new_tab(setting=None):
         else:
             retn = idx
             break
-    name = '标签{}'.format(retn)
-    nb.select(bind_frame(request_window(setting),name))
+    name = '{}{}'.format(prefix, retn)
+    nb.select(bind_frame(window(setting),name))
+
+
+def create_new_reqtab(setting=None, prefix='请求'):
+    create_new_tab(setting, prefix, request_window)
+
+
+def create_new_rsptab(setting=None, prefix='响应'):
+    create_new_tab(setting, prefix, response_window)
 
 
 def create_helper():
@@ -168,12 +178,31 @@ def send_request():
         config['focus'] = name
 
 
-@save
+
 def save_config():
     toggle = tkinter.messagebox.askokcancel('是否保存','确定保存当前全部配置信息吗？')
-    if toggle:
+    @save
+    def _save_config():
         for tad_id in nb.tabs():
             name = nb_names[tad_id]['name']
             setting = nb_names[tad_id]['setting']
             if setting.get('type') == 'request':
                 set_request_config(name,setting)
+    if toggle: _save_config()
+
+
+# 显示或取消显示 response 窗口内的输出窗口
+def switch_response_log(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        temp_fr2 = setting.get('fr_temp2')
+        try:
+            temp_fr2.pack_info()
+            packed = True
+        except:
+            packed = False
+        if packed:
+            temp_fr2.pack_forget()
+        else:
+            temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
