@@ -1,4 +1,8 @@
+
+import requests
+
 import json
+import traceback
 import tkinter
 from tkinter import ttk
 from tkinter import scrolledtext
@@ -97,9 +101,12 @@ def response_window(setting=None):
     body    :str
     '''
 
+    def insert_txt(fr_txt, txt):
+        fr_txt.delete(0.,tkinter.END)
+        fr_txt.insert(0.,txt)
+
     def document(*a):
-        tx3.delete(0.,tkinter.END)
-        tx3.insert(0.,'niubi')
+        insert_txt(tx3,'test')
 
     fr = Frame()
     ft = Font(family='Consolas',size=10)
@@ -115,19 +122,19 @@ def response_window(setting=None):
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
-    lb1 = Label (temp_fold_fr1,text='HTML文本展示(前2000字符)')
-    tx1 = Text  (temp_fold_fr1,height=1,width=1,font=ft)
+    lb1 = Label (temp_fold_fr1,text='HTML文本展示')
+    tx1 = Text  (temp_fold_fr1,height=1,width=1,font=ft,wrap='none')
     lb1.pack(side=tkinter.TOP)
     tx1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP,padx=pdx,pady=pdy)
 
     temp_fold_fr2 = Frame(temp_fr1)
     temp_fold_fold_fr1 = Frame(temp_fold_fr2)
     temp_fold_fold_fr2 = Frame(temp_fold_fr2)
-    lb2 = Label (temp_fold_fold_fr1,text='功能配置文件')
+    lb2 = Label (temp_fold_fold_fr1,text='配置数据')
     tx2 = Text  (temp_fold_fold_fr1,height=1,width=1,font=ft)
     lb2.pack(side=tkinter.TOP)
     tx2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP,padx=pdx,pady=pdy)
-    lb3 = Label (temp_fold_fold_fr2,text='功能执行说明')
+    lb3 = Label (temp_fold_fold_fr2,text='执行说明')
     tx3 = Text  (temp_fold_fold_fr2,height=1,width=1,font=ft)
     lb3.pack(side=tkinter.TOP)
     tx3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP,padx=pdx,pady=pdy)
@@ -148,21 +155,45 @@ def response_window(setting=None):
     frame_setting[fr]['type'] = 'response'
     frame_setting[fr]['fr_setting'] = setting # 用于生成代码时候需要调用到
     frame_setting[fr]['fr_html_content'] = tx1
-    frame_setting[fr]['fr_undefined1'] = tx2 # 暂未考虑用途
+    frame_setting[fr]['fr_local_set'] = tx2 # 暂未考虑用途
     frame_setting[fr]['fr_undefined2'] = tx3 # 暂未考虑用途
     frame_setting[fr]['fr_parse_info'] = tx4
-    frame_setting[fr]['fr_temp2'] = temp_fr2
-    
-    hp = '''
-由于 tkinter 的性能限制
-向 HTML 文本框内粘贴的数据
-都会被限制 3000 个字符展示
+    frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
 
-但是粘贴这个过程仍会把
-粘贴的全部内容作为 HTML 文本
-配置进该 response 配置里
-'''
-    tx3.insert(0.,hp)
+
+    # 简单处理数据的格式
+    def format_content(content):
+        if type(content) is str:
+            return content
+        elif type(content) is bytes:
+            try:
+                content = s.content.decode('utf-8')
+                typ = 'utf-8'
+            except:
+                content = s.content.decode('gbk')
+                typ = 'gbk'
+            insert_txt(tx3, '解析格式：{}'.format(typ))
+            return content
+        else:
+            raise TypeError('type:{} is not in [str,bytes]'.format(type(content)))
+
+    if setting is not None:
+        method  = setting.get('method')
+        url     = setting.get('url')
+        headers = setting.get('headers')
+        body    = setting.get('body')
+        try:
+            if method == 'GET':
+                s = requests.get(url,headers=headers)
+                insert_txt(tx1, format_content(s.content))
+            elif method == 'POST':
+                # 这里的post 里面的body 暂时还没有进行处理
+                s = requests.post(url,headers=headers,data=body)
+                insert_txt(tx1, format_content(s.content))
+        except:
+            insert_txt(tx1, format_content(traceback.format_exc()))
+
+
     return fr
 
 
@@ -173,7 +204,7 @@ def helper_window():
     hp = '''
 request
 (Ctrl + w) 删除当前标签
-(Ctrl + t) 创建新的标签
+(Ctrl + q) 创建新的标签
 (Ctrl + h) 帮助文档标签
 (Ctrl + e) 改当前标签名
 (Ctrl + s) 保存配置快照

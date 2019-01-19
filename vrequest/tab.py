@@ -1,4 +1,8 @@
+from lxml import etree
+
 import re
+import json
+import traceback
 import tkinter
 import tkinter.messagebox
 from tkinter import ttk
@@ -16,10 +20,13 @@ from frame import (
     frame_setting,
 )
 from util import (
-    format_headers_str,
     format_url,
     format_url_show,
     format_url_code,
+    format_headers_str,
+    format_headers_code,
+    format_request,
+    format_response,
 )
 
 nb = ttk.Notebook(root)
@@ -112,6 +119,8 @@ def create_new_tab(setting=None, prefix=None, window=None):
     nums = []
     for val in nb_names.values():
         v = re.findall('{}\d+'.format(prefix), val['name'])
+        if val['name'] == prefix:
+            nums.append(0)
         if v:
             num = int(re.findall('{}(\d+)'.format(prefix), v[0])[0])
             nums.append(num)
@@ -122,7 +131,7 @@ def create_new_tab(setting=None, prefix=None, window=None):
         else:
             retn = idx
             break
-    name = '{}{}'.format(prefix, retn)
+    name = '{}{}'.format(prefix, '' if retn==0 else retn)
     nb.select(bind_frame(window(setting),name))
 
 
@@ -130,7 +139,9 @@ def create_new_reqtab(setting=None, prefix='请求'):
     create_new_tab(setting, prefix, request_window)
 
 
-def create_new_rsptab(setting=None, prefix='响应'):
+def create_new_rsptab(setting=None, prefix='响应', reqname=None):
+    fmt = '<{}>'
+    prefix = prefix+fmt.format('空') if reqname is None else prefix+fmt.format(reqname)
     create_new_tab(setting, prefix, response_window)
 
 
@@ -157,6 +168,36 @@ def set_request_config(name,setting):
     return method,url,headers,body
 
 
+
+def get_request_config(setting):
+    method  = setting.get('fr_method').get()
+    url     = setting.get('fr_url').get(0.,tkinter.END).strip()
+    url     = format_url(url)
+    headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
+    body    = setting.get('fr_body').get(0.,tkinter.END).strip()
+    c_headers = format_headers_code(headers)
+    c_url = format_url_code(url)
+    return method,c_url,c_headers,body
+
+
+
+
+def get_response_config(setting):
+    tx1 = setting.get('fr_html_content')
+    tx2 = setting.get('fr_local_set')
+    tx3 = setting.get('fr_undefined2')
+    tx4 = setting.get('fr_parse_info')
+    temp_fr2 = setting.get('fr_temp2')
+
+    c_set = tx2.get(0.,tkinter.END).strip() # 配置，用来配置生成代码的方式
+
+    r_setting = setting.get('fr_setting')
+    r_setting = r_setting if r_setting is not None else None
+    return r_setting,c_set
+
+
+
+
 @save
 def send_request():
     global config
@@ -166,12 +207,12 @@ def send_request():
     foc_tog = True
     if setting.get('type') == 'request':
         method,url,headers,body = set_request_config(name,setting)
-        print('[ method ]:',method)
-        print('[ url ]:',url)
-        print('[ headers ]:',headers)
-        print('[ body ]:',body)
-        print('================')
-        print(config)
+        _setting = {}
+        _setting['method'] = method
+        _setting['url'] = url
+        _setting['headers'] = headers
+        _setting['body'] = body
+        create_new_rsptab(_setting,reqname=name)
     else:
         foc_tog = False
     if foc_tog:
@@ -191,7 +232,7 @@ def save_config():
     if toggle: _save_config()
 
 
-# 显示或取消显示 response 窗口内的输出窗口
+# 切换状态：显示/取消显示 response 窗口内的输出窗口
 def switch_response_log(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
@@ -206,3 +247,85 @@ def switch_response_log(*a):
             temp_fr2.pack_forget()
         else:
             temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
+
+
+
+# 生成代码的函数
+def create_test_code(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'request':
+        method,c_url,c_headers,body = get_request_config(setting)
+        code_string = format_request(method,c_url,c_headers,body)
+        print(code_string)
+    if setting.get('type') == 'response':
+        r_setting,c_set = get_response_config(setting)
+        code_string = format_response(r_setting,c_set)
+        print(code_string)
+
+
+
+
+# 获取HTML纯文本函数
+def normal_content(content,
+                   tags=['script','style','select','noscript'],
+                   rootxpath='//html'):
+    if type(content) is bytes:
+        try:
+            c = content.decode('utf-8')
+        except:
+            c = content.decode('gbk')
+    elif type(content) is str:
+        c = content
+    else:
+        raise TypeError('content type must in [bytes, str].')
+    c = re.sub('>([^>]*[\u4e00-\u9fa5]{1,}[^<]*)<','>\g<1> <',c)
+    e = etree.HTML(c)
+    q = []
+    for it in e.getiterator():
+        if it.tag in tags or type(it.tag) is not str:
+            q.append(it)
+    for it in q:
+        p = it.getparent()
+        if p is not None:
+            p.remove(it)
+    t = e.xpath('normalize-space({})'.format(rootxpath))
+    return t.strip()
+
+# 显示 response 窗口内的输出窗口
+def show_response_log():
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        setting.get('fr_temp2').pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
+
+# 获取内部文本的函数
+def get_html_pure_text(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+
+        c_set = tx2.get(0.,tkinter.END).strip()
+        rt = '//html'
+        toggle = True
+        for i in c_set.splitlines():
+            i = i.strip()
+            if i.startswith('<') and i.endswith('>'):
+                if i.startswith('<normal_content:'):
+                    rt = re.findall('<normal_content:(.*)>', i)[0].strip()
+                    toggle = False
+
+        tx4 = setting.get('fr_parse_info')
+        try:
+            content = normal_content(txt.get(0.,tkinter.END), rootxpath=rt)
+        except:
+            content = traceback.format_exc()
+        tx4.delete(0.,tkinter.END)
+        tx4.insert(0.,content)
+        if toggle:
+            tx2.delete(0.,tkinter.END)
+            tx2.insert(0.,'<normal_content://html>')
+            
+        show_response_log()
