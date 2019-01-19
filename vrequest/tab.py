@@ -185,14 +185,21 @@ def get_request_config(setting):
 def get_response_config(setting):
     tx1 = setting.get('fr_html_content')
     tx2 = setting.get('fr_local_set')
-    tx3 = setting.get('fr_undefined2')
+    tx3 = setting.get('fr_local_info')
     tx4 = setting.get('fr_parse_info')
     temp_fr2 = setting.get('fr_temp2')
 
     c_set = tx2.get(0.,tkinter.END).strip() # 配置，用来配置生成代码的方式
 
     r_setting = setting.get('fr_setting')
-    r_setting = r_setting if r_setting is not None else None
+    if r_setting is not None:
+        method    = r_setting.get('method')
+        url       = r_setting.get('url')
+        headers   = r_setting.get('headers')
+        body      = r_setting.get('body')
+        c_headers = format_headers_code(r_setting.get('headers'))
+        c_url = format_url_code(r_setting.get('url'))
+        r_setting = method,c_url,c_headers,body
     return r_setting,c_set
 
 
@@ -329,3 +336,36 @@ def get_html_pure_text(*a):
             tx2.insert(0.,'<normal_content://html>')
             
         show_response_log()
+
+
+
+# TODO
+# 通过xpath获取element内部数据和内容
+def get_xpath_elements(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+
+        c_set = tx2.get(0.,tkinter.END).strip()
+        xp = '//html'
+        toggle = True
+        for i in c_set.splitlines():
+            i = i.strip()
+            if i.startswith('<') and i.endswith('>'):
+                if i.startswith('<xpath:'):
+                    xp = re.findall('<xpath:(.*)>', i)[0].strip()
+                    toggle = False
+
+        tx4 = setting.get('fr_parse_info')
+
+        ########################################
+        ################# TODO #################
+        ########################################
+
+        tx4.delete(0.,tkinter.END)
+        tx4.insert(0.,content)
+        if toggle:
+            tx2.delete(0.,tkinter.END)
+            tx2.insert(0.,'<xpath://html>')

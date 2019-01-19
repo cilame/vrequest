@@ -155,8 +155,8 @@ def response_window(setting=None):
     frame_setting[fr]['type'] = 'response'
     frame_setting[fr]['fr_setting'] = setting # 用于生成代码时候需要调用到
     frame_setting[fr]['fr_html_content'] = tx1
-    frame_setting[fr]['fr_local_set'] = tx2 # 暂未考虑用途
-    frame_setting[fr]['fr_undefined2'] = tx3 # 暂未考虑用途
+    frame_setting[fr]['fr_local_set'] = tx2 # 当前解析脚本的方法类型以及配置
+    frame_setting[fr]['fr_local_info'] = tx3 # 一个辅助说明的文本空间
     frame_setting[fr]['fr_parse_info'] = tx4
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
 

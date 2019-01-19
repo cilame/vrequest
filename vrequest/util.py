@@ -95,9 +95,9 @@ from lxml import etree
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
-    return e
+    return e,s.content
 
-get(url,headers)
+e,content = get(url,headers)
 '''
 
     _format_post = '''
@@ -110,9 +110,9 @@ from lxml import etree
 def post(url,headers{}):
     s = requests.get(url,headers=headers{})
     e = etree.HTML(s.content)
-    return e
+    return e,s.content
 
-post(url,headers{})
+e,content = post(url,headers{})
 '''
 
     if method == 'GET':
@@ -147,9 +147,9 @@ from lxml import etree
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
-    return e
+    return e,s.content
 
-get(url,headers)
+e,content = get(url,headers)
 '''
 
     _format_post = '''
@@ -162,9 +162,9 @@ from lxml import etree
 def post(url,headers{}):
     s = requests.get(url,headers=headers{})
     e = etree.HTML(s.content)
-    return e
+    return e,s.content
 
-post(url,headers{})
+e,content = post(url,headers{})
 '''
 
     # 请求部分的代码
@@ -191,8 +191,6 @@ post(url,headers{})
         _format = ''
     _format = _format.strip()
 
-
-
     for i in c_set.splitlines():
         i = i.strip()
         if i.startswith('<') and i.endswith('>'):
@@ -202,11 +200,8 @@ post(url,headers{})
                 from tab import normal_content
                 func_code = inspect.getsource(normal_content).strip()
                 func_code += '\n\ncontent = normal_content(content, rootxpath="{}")'.format(rt)
-                print(func_code)
-
-
-    
-
+                _format = _format + '\n\n' + func_code
+                break
 
     return _format
     
