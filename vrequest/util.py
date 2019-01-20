@@ -203,6 +203,6 @@ e,content = post(url,headers{})
                 _format = _format + '\n\n' + func_code
                 break
 
-    return _format
+    return _format.strip()
     
 
