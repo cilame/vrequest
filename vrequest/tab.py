@@ -16,6 +16,7 @@ from .root import (
 from .frame import (
     request_window,
     response_window,
+    code_window,
     helper_window,
     frame_setting,
 )
@@ -146,6 +147,11 @@ def create_new_rsptab(setting=None, prefix='响应', reqname=None):
     prefix = prefix+fmt.format('空') if reqname is None else prefix+fmt.format(reqname)
     create_new_tab(setting, prefix, response_window)
 
+def create_new_codetab(setting=None, prefix='代码', reqname=None):
+    fmt = '<{}>'
+    prefix = prefix+fmt.format('空') if reqname is None else prefix+fmt.format(reqname)
+    create_new_tab(setting, prefix, code_window)
+
 
 def create_helper():
     nb.select(bind_frame(helper_window(),'帮助'))
@@ -262,17 +268,20 @@ def switch_response_log(*a):
 # 生成代码的函数
 def create_test_code(*a):
     _select = nb.select()
+    name    = nb_names[_select]['name']
     setting = nb_names[_select]['setting']
+    code_string = None
     if setting.get('type') == 'request':
         method,c_url,c_headers,body = get_request_config(setting)
         code_string = format_request(method,c_url,c_headers,body)
-        print(code_string)
     if setting.get('type') == 'response':
         r_setting,c_set = get_response_config(setting)
         code_string = format_response(r_setting,c_set)
-        print(code_string)
 
-
+    if code_string:
+        setting = {}
+        setting['code_string'] = code_string
+        create_new_codetab(setting,reqname=name)
 
 
 # 获取HTML纯文本函数

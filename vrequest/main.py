@@ -71,8 +71,6 @@ bind_alt_key(get_html_pure_text,'d') # 获取文本
 bind_alt_key(get_xpath_elements,'x') # 获取xpath
 bind_alt_key(get_auto_xpath,    'f') # 获取路径xpath
 
-
-
 def execute():
     root.title('vrequest')
     root.geometry(config['siz'])

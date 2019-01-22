@@ -219,24 +219,6 @@ e,content = post(url,headers{})
                 _format = _format + '\n\n' + func_code
 
     return _format.strip()
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # 下面是通过字符串模糊查找xpath的函数

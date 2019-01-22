@@ -1,6 +1,7 @@
 
 import requests
 
+import re
 import json
 import traceback
 import tkinter
@@ -103,10 +104,36 @@ def response_window(setting=None):
 
     def insert_txt(fr_txt, txt):
         fr_txt.delete(0.,tkinter.END)
-        fr_txt.insert(0.,txt)
+        fr_txt.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
+
+    doc0 = '''列表解析路径方式
+冒号后面配置的的内容为 xpath
+'''
+
+    doc1 = '''纯文字内容解析
+若在此生成代码，将自动添加解析函数的代码
+<normal_content://html>
+'''
+
+    doc2 = '''根据字符串自动解析 xpath 路径
+一般用于列表形式的路径
+冒号后面配置需要处理的字符串
+多个字符串可以通过空格分隔
+eg.:
+    <auto_list_xpath:白天 黑夜>
+不写则为查找所有 "string(.)" (xpath语法)
+能解析出含有非空字符串的内容路径
+'''
+
 
     def document(*a):
-        insert_txt(tx3,'test')
+        method = cbx.get()
+        if methods.index(method) == 0:
+            insert_txt(tx3,doc0)
+        if methods.index(method) == 1:
+            insert_txt(tx3,doc1)
+        if methods.index(method) == 2:
+            insert_txt(tx3,doc2)
 
     fr = Frame()
     ft = Font(family='Consolas',size=10)
@@ -192,8 +219,19 @@ def response_window(setting=None):
                 insert_txt(tx1, format_content(s.content))
         except:
             insert_txt(tx1, format_content(traceback.format_exc()))
+    return fr
 
 
+# 生成代码临时放在这里
+def code_window(setting=None):
+    fr = Frame()
+    ft = Font(family='Consolas',size=10)
+    tx = Text(fr,height=1,width=1,font=ft)
+    cs = setting.get('code_string')
+    if cs:
+        tx.delete(0.,tkinter.END)
+        tx.insert(0.,cs)
+    tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
     return fr
 
 
@@ -212,8 +250,6 @@ request
     一旦请求就会保留请求过的任务配置
     发送任务后自动打开一个 response 标签
 
-# TODO
-# 下面的功能暂时还不够完善
 response
 (Alt + r) 打开一个空的 response 标签
 (Alt + c) 生成请求代码，有解析则包含解析过程
