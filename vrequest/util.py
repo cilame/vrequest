@@ -2,6 +2,7 @@ import re
 import json
 import urllib.parse as ps
 import inspect
+from lxml import etree
 
 
 def format_headers_str(headers:str):
@@ -86,6 +87,7 @@ def format_url_code(url:str):
 def format_request(method,c_url,c_headers,body):
 
     _format_get = '''
+import re
 import requests
 from lxml import etree
 
@@ -101,6 +103,7 @@ e,content = get(url,headers)
 '''
 
     _format_post = '''
+import re
 import requests
 from lxml import etree
 
@@ -138,6 +141,7 @@ e,content = post(url,headers{})
 def format_response(r_setting,c_set):
 
     _format_get = '''
+import re
 import requests
 from lxml import etree
 
@@ -153,6 +157,7 @@ e,content = get(url,headers)
 '''
 
     _format_post = '''
+import re
 import requests
 from lxml import etree
 
@@ -202,7 +207,135 @@ e,content = post(url,headers{})
                 func_code += '\n\ncontent = normal_content(content, rootxpath="{}")'.format(rt)
                 _format = _format + '\n\n' + func_code
                 break
+            if i.startswith('<xpath:'):
+                xp = re.findall('<xpath:(.*)>', i)[0].strip()
+                xp = xp if xp else '//html'
+                func_code =("tree = etree.HTML(content)\n"
+                            "for x in tree.xpath('{}'):\n".format(xp) + 
+                            "    strs = re.sub('\s+',' ',x.xpath('string(.)'))\n"
+                            "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
+                            "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
+                            "    print(attr)\n")
+                _format = _format + '\n\n' + func_code
 
     return _format.strip()
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 下面是通过字符串模糊查找xpath的函数
+def get_simple_path_tail(e):
+    root = e.getroottree()
+    try:
+        xp = root.getelementpath(e)
+    except:
+        return
+    v = xp.count('/')
+    # 优先找路径上的id和class项优化路径
+    for i in range(v):
+        xpa = xp.rsplit('/',i)[0]
+        rke = '/'.join(xp.rsplit('/',i)[1:])
+        ele = root.xpath(xpa)[0].attrib
+        tag = root.xpath(xpa)[0].tag
+        if 'id' in ele:
+            key = '[@id="{}"]'.format(ele["id"])
+            rke = '/'+rke if rke else ""
+            val = '//{}{}{}'.format(xpa.rsplit('/',1)[1],key,rke)
+            return xp,val,key
+        if 'class' in ele:
+            if ' ' in ele["class"] and not ele["class"].startswith(' '):
+                elass = ele["class"].split(' ',1)[0]
+            else:
+                elass = ele["class"]
+            key = '[@class="{}"]'.format(elass)
+            rke = '/'+rke if rke else ""
+            val = '//{}{}{}'.format(xpa.rsplit('/',1)[1],key,rke)
+            if not elass.strip():
+                continue
+            return xp,val,key
+
+
+# 对列表的优化处理
+def get_simple_path_head(p,lilimit=5):
+    # 先通过绝对xpath路径进行分块处理
+    s = {}
+    w = {}
+    for xp, sxp, key in p:
+        q = re.sub('\[\d+\]','',xp)#.rsplit('/',1)[0]
+        if q not in s:
+            s[q] = [[xp, sxp, key]]
+        else:
+            s[q].append([xp, sxp, key])
+    rm = []
+    for px in sorted(s,key=lambda i: -len(i)):
+        xps,sxps,keys = zip(*s[px])
+        if len(sxps) == len(set(sxps)): continue
+        p = {}
+        ls = list(set(keys))
+        for j in s[px]:
+            if j[2] not in p:
+                p[j[2]] = [j]
+            else:
+                p[j[2]].append(j)
+        for i in p:
+            le = len(p[i])
+            v = ''
+            if le > lilimit:
+                for idx in range(p[i][0][0].count('/')):
+                    v = p[i][0][0].rsplit('/',idx)[0]
+                    q = list(map(lambda i:i[0].startswith(v),p[i]))
+                    if all(q):
+                        break
+                for idx,j in enumerate(p[i]):
+                    a,b,c = j
+                    t = '/{}{}'.format(a.replace(v,''),c) + b.split(c,1)[1]
+                    t = t if t.startswith('//') else '/' + t
+                    p[i][idx][1] = t
+                    p[i][idx].append(px)
+                    yield j
+
+def get_xpath_by_str(strs, html_content):
+    e = etree.HTML(html_content)
+    q = []
+    p = []
+    for i in e.xpath('//*'):
+        xps = get_simple_path_tail(i) 
+        if xps:
+            xp, sxp, key = xps
+            if sxp not in q:
+                q.append(xp)
+                p.append([xp, sxp, key])
+    p.sort(key=lambda i: -len(i[0]))
+    p = get_simple_path_head(p)
+
+    def instrs(strs,v):
+        if type(strs) is str:
+            return strs in v
+        elif type(strs) in (tuple,list):
+            for i in strs:
+                if i in v:
+                    return True
+
+    for key, xp, sxp, px in p:
+        v = e.xpath('string({})'.format(xp))
+        v = re.sub('\s+',' ',v)
+        v = v[:40] + '...' if len(v) > 40 else v
+        v = '[{}] {}'.format(len(v),v)
+        if instrs(strs,v):
+            yield xp,v

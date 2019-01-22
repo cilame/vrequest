@@ -27,6 +27,8 @@ from util import (
     format_headers_code,
     format_request,
     format_response,
+    get_simple_path_tail,
+    get_xpath_by_str,
 )
 
 nb = ttk.Notebook(root)
@@ -357,15 +359,60 @@ def get_xpath_elements(*a):
                 if i.startswith('<xpath:'):
                     xp = re.findall('<xpath:(.*)>', i)[0].strip()
                     toggle = False
-
         tx4 = setting.get('fr_parse_info')
-
-        ########################################
-        ################# TODO #################
-        ########################################
-
+        if xp.startswith('//'):
+            p = ['[ xpath ]: {}'.format(xp)]
+            tree = etree.HTML(txt.get(0.,tkinter.END))
+            idx = 0
+            for x in tree.xpath(xp):
+                xpth = get_simple_path_tail(x)
+                strs = re.sub('\s+',' ',x.xpath('string(.)'))
+                strs = strs[:40] + '...' if len(strs) > 40 else strs
+                xpth = '[ xptail ]: {} {}'.format(xpth[1] if xpth else xpth, strs)
+                p.append(xpth)
+                idx += 1
+            p.append('[ count ]: {}'.format(idx))
+            content = '\n'.join(p)
         tx4.delete(0.,tkinter.END)
         tx4.insert(0.,content)
         if toggle:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<xpath://html>')
+        show_response_log()
+
+
+# 通过xpath获取element内部数据和内容
+def get_auto_xpath(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+
+        c_set = tx2.get(0.,tkinter.END).strip()
+        sx = ''
+        toggle = True
+        for i in c_set.splitlines():
+            i = i.strip()
+            if i.startswith('<') and i.endswith('>'):
+                if i.startswith('<auto_list_xpath:'):
+                    sx = re.findall('<auto_list_xpath:(.*)>', i)[0].strip()
+                    toggle = False
+        tx4 = setting.get('fr_parse_info')
+
+        # 通过字符串自动分析列表文件路径的函数
+        strs = re.split('\s+',sx)
+        p = []
+        idx = 0
+        for xp,strs in get_xpath_by_str(strs,txt.get(0.,tkinter.END)):
+            if len(strs.strip()) > 3:
+                idx += 1
+                p.append('[ xpath ]: {} {}'.format(xp, strs))
+        p.append('[ count ]: {}'.format(idx))
+        content = '\n'.join(p)
+        tx4.delete(0.,tkinter.END)
+        tx4.insert(0.,content)
+        if toggle:
+            tx2.delete(0.,tkinter.END)
+            tx2.insert(0.,'<auto_list_xpath:>')
+        show_response_log()

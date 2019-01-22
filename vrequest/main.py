@@ -19,6 +19,8 @@ from tab import (
     switch_response_log,
     create_test_code,
     get_html_pure_text,
+    get_xpath_elements,
+    get_auto_xpath,
 )
 from combinekey import (
     bind_ctl_key,
@@ -66,13 +68,8 @@ bind_ctl_key(create_helper,     'h')
 bind_alt_key(create_new_rsptab, 'r')
 bind_alt_key(create_test_code,  'c') # 生成代码
 bind_alt_key(get_html_pure_text,'d') # 获取文本
-
-
-
-
-
-
-
+bind_alt_key(get_xpath_elements,'x') # 获取xpath
+bind_alt_key(get_auto_xpath,    'f') # 获取路径xpath
 
 
 root.title('vrequest')
