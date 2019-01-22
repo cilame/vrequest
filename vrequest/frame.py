@@ -256,6 +256,7 @@ response
 (Alt + x) 使用 xpath 解析
 (Alt + f) 智能解析列表路径
 (Alt + d) 获取纯文字内容
+(Esc)     开启/关闭 response 解析装口
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)

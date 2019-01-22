@@ -26,6 +26,8 @@ from .util import (
     format_url_code,
     format_headers_str,
     format_headers_code,
+    format_body_str,
+    format_body_code,
     format_request,
     format_response,
     get_simple_path_tail,
@@ -171,6 +173,7 @@ def set_request_config(name,setting):
     config['set'][name]['headers'] = headers
     config['set'][name]['body'] = body
     headers = format_headers_str(headers)
+    body    = format_body_str(body)
     setting.get('fr_url').delete(0.,tkinter.END)
     setting.get('fr_url').insert(0.,format_url_show(url))
     return method,url,headers,body
@@ -185,7 +188,8 @@ def get_request_config(setting):
     body    = setting.get('fr_body').get(0.,tkinter.END).strip()
     c_headers = format_headers_code(headers)
     c_url = format_url_code(url)
-    return method,c_url,c_headers,body
+    c_body = format_body_code(body)
+    return method,c_url,c_headers,c_body
 
 
 
@@ -207,7 +211,8 @@ def get_response_config(setting):
         body      = r_setting.get('body')
         c_headers = format_headers_code(r_setting.get('headers'))
         c_url = format_url_code(r_setting.get('url'))
-        r_setting = method,c_url,c_headers,body
+        c_body = format_body_code(body)
+        r_setting = method,c_url,c_headers,c_body
     return r_setting,c_set
 
 
@@ -272,8 +277,8 @@ def create_test_code(*a):
     setting = nb_names[_select]['setting']
     code_string = None
     if setting.get('type') == 'request':
-        method,c_url,c_headers,body = get_request_config(setting)
-        code_string = format_request(method,c_url,c_headers,body)
+        method,c_url,c_headers,c_body = get_request_config(setting)
+        code_string = format_request(method,c_url,c_headers,c_body)
     if setting.get('type') == 'response':
         r_setting,c_set = get_response_config(setting)
         code_string = format_response(r_setting,c_set)

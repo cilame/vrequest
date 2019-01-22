@@ -22,6 +22,24 @@ def format_headers_code(headers):
     return 'headers = ' + json.dumps(headers,indent=4,ensure_ascii=False)
 
 
+def format_body_str(body:str):
+    # return dict
+    body = body.splitlines()
+    body = [i.split(':',1) for i in body if i.strip() and ':' in i]
+    body = {k.strip():v.strip() for k,v in body}
+    return body
+
+
+def format_body_code(body):
+    # body 参数可以是字符串，可以是字典
+    # return str
+    assert type(body) in (str, dict)
+    if type(body) is str:
+        body = format_body_str(body)
+    return 'body = ' + json.dumps(body,indent=4,ensure_ascii=False)
+
+
+
 def format_url(url:str):
     # return str
     return ''.join([i.strip() for i in url.splitlines()])
@@ -84,7 +102,7 @@ def format_url_code(url:str):
 
 
 
-def format_request(method,c_url,c_headers,body):
+def format_request(method,c_url,c_headers,c_body):
 
     _format_get = '''
 import re
@@ -111,7 +129,7 @@ from lxml import etree
 {}{}
 
 def post(url,headers{}):
-    s = requests.get(url,headers=headers{})
+    s = requests.post(url,headers=headers{})
     e = etree.HTML(s.content)
     return e,s.content
 
@@ -121,13 +139,10 @@ e,content = post(url,headers{})
     if method == 'GET':
         _format = _format_get.format(c_url,c_headers)
     elif method == 'POST':
-        if body.strip():
-            # 这里暂时没有对 body 的处理，
-            # 因为 post 请求还没有进行全面的了解
-            # 后续的 body 肯定是需要进行一定的处理后再放在下面的地方
-            _body = '\ndata={}'.format(body)
-            _body2 = ',data'
-            _body3 = ',data=data'
+        if c_body.strip():
+            _body = '\n{}'.format(c_body)
+            _body2 = ',body'
+            _body3 = ',data=body'
         else:
             _body = ''
             _body2 = ''
@@ -165,7 +180,7 @@ from lxml import etree
 {}{}
 
 def post(url,headers{}):
-    s = requests.get(url,headers=headers{})
+    s = requests.post(url,headers=headers{})
     e = etree.HTML(s.content)
     return e,s.content
 
@@ -182,9 +197,9 @@ e,content = post(url,headers{})
                 # 这里暂时没有对 body 的处理，
                 # 因为 post 请求还没有进行全面的了解
                 # 后续的 body 肯定是需要进行一定的处理后再放在下面的地方
-                _body = '\ndata={}'.format(body)
-                _body2 = ',data'
-                _body3 = ',data=data'
+                _body = '\n{}'.format(body)
+                _body2 = ',body'
+                _body3 = ',data=body'
             else:
                 _body = ''
                 _body2 = ''
