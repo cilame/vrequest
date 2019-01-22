@@ -8,18 +8,18 @@ import tkinter.messagebox
 from tkinter import ttk
 from tkinter.simpledialog import askstring
 
-from root import (
+from .root import (
     root,
     config,
     save,
 )
-from frame import (
+from .frame import (
     request_window,
     response_window,
     helper_window,
     frame_setting,
 )
-from util import (
+from .util import (
     format_url,
     format_url_show,
     format_url_code,

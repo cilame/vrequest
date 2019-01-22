@@ -8,7 +8,7 @@ from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.font import Font
 
-from root import DEFAULTS_HEADERS
+from .root import DEFAULTS_HEADERS
 
 Text = scrolledtext.ScrolledText
 #Text = tkinter.Text

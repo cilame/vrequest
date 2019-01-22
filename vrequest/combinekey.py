@@ -1,6 +1,6 @@
 import types
 
-from root import root
+from .root import root
 
 def bind_ctl_key(func, key=None, shift=False):
     if key is None:

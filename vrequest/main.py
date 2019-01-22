@@ -1,11 +1,11 @@
 
-from root import (
+from .root import (
     root,
     config,
     change_siz,
 )
-from menu import bind_menu
-from tab import (
+from .menu import bind_menu
+from .tab import (
     nb,
     bind_frame,
     delete_curr_tab,
@@ -22,13 +22,13 @@ from tab import (
     get_xpath_elements,
     get_auto_xpath,
 )
-from combinekey import (
+from .combinekey import (
     bind_ctl_key,
     bind_alt_key,
 )
 
 # 这里的框架就是目前需要设计处理的图形内容
-from frame import (
+from .frame import (
     helper_window,
     request_window,
 )
@@ -72,8 +72,13 @@ bind_alt_key(get_xpath_elements,'x') # 获取xpath
 bind_alt_key(get_auto_xpath,    'f') # 获取路径xpath
 
 
-root.title('vrequest')
-root.geometry(config['siz'])
-root.bind('<Configure>',lambda e:change_siz())
-root.bind('<Escape>',lambda e:switch_response_log())
-root.mainloop()
+
+def execute():
+    root.title('vrequest')
+    root.geometry(config['siz'])
+    root.bind('<Configure>',lambda e:change_siz())
+    root.bind('<Escape>',lambda e:switch_response_log())
+    root.mainloop()
+
+if __name__ == '__main__':
+    execute()

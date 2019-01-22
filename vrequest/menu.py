@@ -1,7 +1,7 @@
 import tkinter
 import types
 
-from root import root
+from .root import root
 
 menu = tkinter.Menu(root, tearoff=0)
 

@@ -202,7 +202,7 @@ e,content = post(url,headers{})
             if i.startswith('<normal_content:'):
                 rt = re.findall('<normal_content:(.*)>', i)[0].strip()
                 rt = rt if rt else '//html'
-                from tab import normal_content
+                from .tab import normal_content
                 func_code = inspect.getsource(normal_content).strip()
                 func_code += '\n\ncontent = normal_content(content, rootxpath="{}")'.format(rt)
                 _format = _format + '\n\n' + func_code
