@@ -86,10 +86,10 @@ def format_url_code(url:str):
         if len(i) > 50 and ',' in i:
             _pms = []
             for j in i.split(','):
-                j = j.join([symbol(j)]*2)
-                j = ' '*2*indent + j + ','
+                j = (j + ',').join([symbol(j)]*2)
+                j = ' '*2*indent + j
                 _pms.append(j)
-            _pms[-1] = _pms[-1][:-1]
+            _pms[-1] = _pms[-1][:-2] + _pms[-1][-1]
             pms += _pms
         else:
             i = i.join([symbol(i)]*2)
