@@ -52,5 +52,20 @@ response 窗口的标签名字对应请求的标签名字
 
 #20190123
 修复生成url代码中的小问题，在比较苛刻情况下才会出现的结构解析也能生成正确的代码了。
-比如说知乎的超长接口 url，现在能正确格式化成正确的代码。
+比如说知乎的超长接口 url，现在能正确格式化成正确的代码。解决 post 中 body 传输的问题，
+算是一种暂时通配解决方式。现在body能接收的格式有两种：一种用冒号分割，一种用等号分割
+eg.1
+    courseId: 1001553026
+    pageIndex: 1
+    pageSize: 20
+    orderBy: 3
+eg.2
+    callCount=1
+    scriptSessionId=${scriptSessionId}190
+    httpSessionId=11e660f244a04251ab8e8420f4cc28b3
+    c0-scriptName=CommonBean
+    c0-methodName=obtain
+    c0-id=0
+    c0-param0=string:ActivitySetting
+    batchId=1548220950032
 ```

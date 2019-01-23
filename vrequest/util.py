@@ -8,7 +8,7 @@ from lxml import etree
 def format_headers_str(headers:str):
     # return dict
     headers = headers.splitlines()
-    headers = [i.split(':',1) for i in headers if i.strip() and ':' in i]
+    headers = [re.split(':|=',i,1) for i in headers if i.strip() and ':' in i or '=' in i]
     headers = {k.strip():v.strip() for k,v in headers}
     return headers
 
@@ -25,7 +25,7 @@ def format_headers_code(headers):
 def format_body_str(body:str):
     # return dict
     body = body.splitlines()
-    body = [i.split(':',1) for i in body if i.strip() and ':' in i]
+    body = [re.split(':|=',i,1) for i in body if i.strip() and ':' in i or '=' in i]
     body = {k.strip():v.strip() for k,v in body}
     return body
 
@@ -106,6 +106,7 @@ def format_request(method,c_url,c_headers,c_body):
 
     _format_get = '''
 import re
+import json
 import requests
 from lxml import etree
 
@@ -122,6 +123,7 @@ e,content = get(url,headers)
 
     _format_post = '''
 import re
+import json
 import requests
 from lxml import etree
 
@@ -157,6 +159,7 @@ def format_response(r_setting,c_set):
 
     _format_get = '''
 import re
+import json
 import requests
 from lxml import etree
 
@@ -173,6 +176,7 @@ e,content = get(url,headers)
 
     _format_post = '''
 import re
+import json
 import requests
 from lxml import etree
 

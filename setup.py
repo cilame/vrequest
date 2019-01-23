@@ -2,7 +2,7 @@ from setuptools import setup
  
 setup(
     name = "vrequest",
-    version = "1.0.5",
+    version = "1.0.6",
 
     keywords = "vrequest",
     author = "cilame",
