@@ -256,7 +256,7 @@ def save_config():
 def switch_response_log(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') == 'response':
+    if setting.get('type') in ['response','code']:
         temp_fr2 = setting.get('fr_temp2')
         try:
             temp_fr2.pack_info()

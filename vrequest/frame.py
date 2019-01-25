@@ -222,6 +222,37 @@ eg.:
     return fr
 
 
+
+
+# 暂时考虑用下面的方式来试着挂钩函数执行的状态。
+# 不过似乎还是有些漏洞，先就这样，后面再补充完整。
+import sys
+__org_stdout__ = sys.stdout
+__org_stderr__ = sys.stderr
+class stdhooker:
+    def __init__(self,hook=None,logtx=None,style=None):
+        self.__org_func__ = __org_stdout__ if hook.lower() == 'stdout' else __org_stderr__
+        self.cache = ''
+    def write(self,text):
+        self.cache += text
+        if '\n' in self.cache:
+            _text = self.cache.rsplit('\n',1)
+            self.cache = '' if len(_text) == 1 else _text[1]
+            _text_ = _text[0] + '\n'
+            # TODO
+            # 挂钩“正常”和“错误”输出内容，针对 logtx 和 style 的配置进行处理
+            self.__org_func__.write(_text_)
+    def flush(self):
+        self.__org_func__.flush()
+
+def hook_log(logtx=None):
+    sys.stdout = stdhooker('stdout',logtx,style='normal')
+    sys.stderr = stdhooker('stderr',logtx,style='error')
+
+
+
+
+
 # 生成代码临时放在这里
 def code_window(setting=None):
     fr = Frame()
@@ -232,6 +263,30 @@ def code_window(setting=None):
         tx.delete(0.,tkinter.END)
         tx.insert(0.,cs)
     tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
+
+
+    # TODO
+    # 生成一个代码输出窗口，并且这里的代码执行需要考虑实时输出
+    # 不能等全部的输出结果都输出完毕再进行写入操作，那样非常傻逼
+    # 这里考虑使用 Ctrl+v 的方式来实现代码的执行，不爽再改
+    temp_fr2 = Frame(fr,highlightthickness=lin)
+    lb = Label (temp_fr2,text='代码执行')
+    cd = Text  (temp_fr2,height=1,width=1,font=ft)
+    lb.pack(side=tkinter.TOP)
+    cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
+
+    frame_setting[fr] = {}
+    frame_setting[fr]['type'] = 'code'
+    frame_setting[fr]['fr_temp2'] = temp_fr2 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
+
+    try:
+        from idlelib.colorizer import ColorDelegator
+        from idlelib.percolator import Percolator
+        p = ColorDelegator()
+        Percolator(tx).insertfilter(p)
+    except:
+        traceback.print_exc()
+
     return fr
 
 
@@ -256,7 +311,7 @@ response
 (Alt + x) 使用 xpath 解析
 (Alt + f) 智能解析列表路径
 (Alt + d) 获取纯文字内容
-(Esc)     开启/关闭 response 解析装口
+(Esc)     开启/关闭 response 解析窗口
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)
@@ -264,20 +319,3 @@ response
     temp_fr1.pack()
 
     return fr
-
-
-
-if __name__ == '__main__':
-    import tkinter
-    from root import root
-    root.geometry('600x500+900+100')
-
-    # test request window
-    fr = response_window()
-    fr.master = root
-    fr.pack(fill=tkinter.BOTH, expand=True)
-
-    root.bind('<space>',lambda e:root.quit())
-    root.bind('<`>',lambda e:root.quit())
-    root.mainloop()
-    
