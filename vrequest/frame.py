@@ -1,10 +1,15 @@
 
 import requests
 
+import os
 import re
+import sys
 import json
+import shutil
+import tempfile
 import traceback
 import tkinter
+import inspect
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.font import Font
@@ -194,10 +199,10 @@ eg.:
             return content
         elif type(content) is bytes:
             try:
-                content = s.content.decode('utf-8')
+                content = content.decode('utf-8')
                 typ = 'utf-8'
             except:
-                content = s.content.decode('gbk')
+                content = content.decode('gbk')
                 typ = 'gbk'
             insert_txt(tx3, '解析格式：{}'.format(typ))
             return content
@@ -230,26 +235,45 @@ import sys
 __org_stdout__ = sys.stdout
 __org_stderr__ = sys.stderr
 class stdhooker:
-    def __init__(self,hook=None,logtx=None,style=None):
-        self.__org_func__ = __org_stdout__ if hook.lower() == 'stdout' else __org_stderr__
+    def __init__(self, hook=None, style=None):
+        if hook.lower() == 'stdout':
+            self.__org_func__ = __org_stdout__
+        elif hook.lower() == 'stderr':
+            self.__org_func__ = __org_stderr__
+        else:
+            raise 'stdhooker init error'
         self.cache = ''
+        self.style = style
+        self.predk = {}
+
     def write(self,text):
+        self.logtx = get_tx()
+        if self.logtx not in self.predk:
+            self.predk[self.logtx] = 0
+
         self.cache += text
         if '\n' in self.cache:
             _text = self.cache.rsplit('\n',1)
             self.cache = '' if len(_text) == 1 else _text[1]
             _text_ = _text[0] + '\n'
-            # TODO
-            # 挂钩“正常”和“错误”输出内容，针对 logtx 和 style 的配置进行处理
-            self.__org_func__.write(_text_)
+            if self.logtx:
+                self.logtx.insert(tkinter.END, _text_)
+                self.logtx.see(tkinter.END)
+                if _text_.startswith('Traceback (most recent call last):'):
+                    self.logtx.tag_add('tag1',self.predk[self.logtx],tkinter.END)
+                    self.logtx.tag_config('tag1',foreground='red')
+                else:
+                    self.predk[self.logtx] = self.logtx.index('insert')
+
     def flush(self):
         self.__org_func__.flush()
 
-def hook_log(logtx=None):
-    sys.stdout = stdhooker('stdout',logtx,style='normal')
-    sys.stderr = stdhooker('stderr',logtx,style='error')
+def get_tx():
+    for i in inspect.stack():
+        if '__very_unique_cd__' in i[0].f_locals:
+            return i[0].f_locals['cd']
 
-
+sys.stdout = stdhooker('stdout',style='normal')
 
 
 
@@ -264,7 +288,6 @@ def code_window(setting=None):
         tx.insert(0.,cs)
     tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
-
     # TODO
     # 生成一个代码输出窗口，并且这里的代码执行需要考虑实时输出
     # 不能等全部的输出结果都输出完毕再进行写入操作，那样非常傻逼
@@ -275,8 +298,31 @@ def code_window(setting=None):
     lb.pack(side=tkinter.TOP)
     cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
+    def execute_func():
+        __very_unique_cd__ = None
+        nonlocal cd
+        cd.delete(0.,tkinter.END)
+        td = tempfile.mkdtemp()
+        tf = os.path.join(td,'temp.py')
+        cs = tx.get(0.,tkinter.END)
+        with open(tf,'w',encoding='utf-8') as f:
+            f.write(cs)
+        s = sys.executable
+        s = s + ' ' + tf
+        import subprocess
+        p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
+        for line in iter(p.stdout.readline, ''):
+            if line:
+                print(line, end='')
+            else:
+                break
+        p.stdout.close()
+        p.wait()
+        shutil.rmtree(td)
+
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'code'
+    frame_setting[fr]['execute_func'] = execute_func
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
 
     try:
@@ -295,23 +341,28 @@ def helper_window():
     fr = Frame()
     ft = Font(family='Consolas',size=10)
     hp = '''
-request
-(Ctrl + w) 删除当前标签
-(Ctrl + q) 创建新的标签
-(Ctrl + h) 帮助文档标签
-(Ctrl + e) 改当前标签名
-(Ctrl + s) 保存配置快照
-(Ctrl + r) 发送请求任务 
-    一旦请求就会保留请求过的任务配置
-    发送任务后自动打开一个 response 标签
+通用快捷键：
+(Ctrl + e) 修改当前标签名字
+(Ctrl + w) 关闭当前标签
+(Ctrl + h) 创建帮助标签
+(Ctrl + s) 保存请求配置快照(只能保存请求配置)
 
-response
-(Alt + r) 打开一个空的 response 标签
+请求窗口快捷键：
+(Ctrl + q) 创建新的请求标签
+(Ctrl + r) 发送请求任务并保存
+*(Alt + c) 生成请求代码(该窗口下该功能不常用)
+
+响应窗口快捷键：
+(Alt + r) 打开一个空的响应标签
 (Alt + c) 生成请求代码，有解析则包含解析过程
 (Alt + x) 使用 xpath 解析
 (Alt + f) 智能解析列表路径
 (Alt + d) 获取纯文字内容
 (Esc)     开启/关闭 response 解析窗口
+
+代码窗口快捷键：
+(Alt + v) 代码执行
+(Esc)     开启/关闭 代码执行结果窗口
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)

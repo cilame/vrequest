@@ -105,6 +105,12 @@ def format_url_code(url:str):
 def format_request(method,c_url,c_headers,c_body):
 
     _format_get = '''
+import io
+import sys
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+except:
+    pass
 import re
 import json
 import requests
@@ -116,12 +122,19 @@ from lxml import etree
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
-    return e,s.content
+    return s,e,s.content
 
-e,content = get(url,headers)
+s,e,content = get(url,headers)
+print(s)
 '''
 
     _format_post = '''
+import io
+import sys
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+except:
+    pass
 import re
 import json
 import requests
@@ -133,9 +146,10 @@ from lxml import etree
 def post(url,headers{}):
     s = requests.post(url,headers=headers{})
     e = etree.HTML(s.content)
-    return e,s.content
+    return s,e,s.content
 
-e,content = post(url,headers{})
+s,e,content = post(url,headers{})
+print(s)
 '''
 
     if method == 'GET':
@@ -158,6 +172,12 @@ e,content = post(url,headers{})
 def format_response(r_setting,c_set):
 
     _format_get = '''
+import io
+import sys
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+except:
+    pass
 import re
 import json
 import requests
@@ -169,12 +189,19 @@ from lxml import etree
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
-    return e,s.content
+    return s,e,s.content
 
-e,content = get(url,headers)
+s,e,content = get(url,headers)
+print(s)
 '''
 
     _format_post = '''
+import io
+import sys
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+except:
+    pass
 import re
 import json
 import requests
@@ -186,9 +213,10 @@ from lxml import etree
 def post(url,headers{}):
     s = requests.post(url,headers=headers{})
     e = etree.HTML(s.content)
-    return e,s.content
+    return s,e,s.content
 
-e,content = post(url,headers{})
+s,e,content = post(url,headers{})
+print(s)
 '''
 
     # 请求部分的代码
@@ -223,7 +251,7 @@ e,content = post(url,headers{})
                 rt = rt if rt else '//html'
                 from .tab import normal_content
                 func_code = inspect.getsource(normal_content).strip()
-                func_code += '\n\ncontent = normal_content(content, rootxpath="{}")'.format(rt)
+                func_code += '\n\ncontent = normal_content(content, rootxpath="{}")\nprint(content)'.format(rt)
                 _format = _format + '\n\n' + func_code
                 break
             if i.startswith('<xpath:'):

@@ -3,6 +3,7 @@ from lxml import etree
 import re
 import json
 import traceback
+import threading
 import tkinter
 import tkinter.messagebox
 from tkinter import ttk
@@ -352,6 +353,25 @@ def get_html_pure_text(*a):
             tx2.insert(0.,'<normal_content://html>')
             
         show_response_log()
+
+
+
+
+# 显示 代码 窗口内的输出窗口
+def show_code_log():
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'code':
+        setting.get('fr_temp2').pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
+
+def execute_code(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'code':
+        execute_func = setting.get('execute_func')
+        threading.Thread(target=execute_func).start()
+        show_code_log()
+
 
 
 
