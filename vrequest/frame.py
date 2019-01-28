@@ -151,8 +151,8 @@ eg.:
     ft = Font(family='Consolas',size=10)
 
     temp_fr0 = Frame(fr)
-    methods = ('(Alt+x) 列表路径解析','(Alt+d) 纯文字内容','(Alt+f) 用内容查找路径','(Alt+z) 用内容解析数据')
-    cbx = Combobox(temp_fr0,width=20,state='readonly')
+    methods = ('(Alt+x) 列表路径解析说明','(Alt+d) 纯文字内容说明','(Alt+f) 用内容查找路径说明','(Alt+z) 用内容解析数据说明')
+    cbx = Combobox(temp_fr0,width=22,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
     cbx.pack(side=tkinter.RIGHT)
@@ -348,11 +348,10 @@ def helper_window():
     fr = Frame()
     ft = Font(family='Consolas',size=10)
     hp = '''
-通用快捷键：
-(Ctrl + e) 修改当前标签名字
-(Ctrl + w) 关闭当前标签
-(Ctrl + h) 创建帮助标签
-(Ctrl + s) 保存请求配置快照(只能保存请求配置)
+
+vrequest：
+基于 requests 和 lxml 库
+用于快速发起请求，快速生成测试代码的工具
 
 请求窗口快捷键：
 (Ctrl + q) 创建新的请求标签
@@ -360,16 +359,26 @@ def helper_window():
 *(Alt + c) 生成请求代码(该窗口下该功能不常用)
 
 响应窗口快捷键：
-(Alt + r) 打开一个空的响应标签
-(Alt + c) 生成请求代码，有解析则包含解析过程
-(Alt + x) 使用 xpath 解析
+*(Alt + r) 打开一个空的响应标签(不常用)
 (Alt + f) 智能解析列表路径
-(Alt + d) 获取纯文字内容
+(Alt + x) <代码过程> 使用 xpath 解析
+(Alt + z) <代码过程> 粗分析 json 数据
+(Alt + d) <代码过程> 获取纯文字内容
+(Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码
 (Esc)     开启/关闭 response 解析窗口
 
 代码窗口快捷键：
 (Alt + v) 代码执行
 (Esc)     开启/关闭 代码执行结果窗口
+
+通用快捷键：
+(Ctrl + e) 修改当前标签名字
+(Ctrl + w) 关闭当前标签
+(Ctrl + h) 创建帮助标签
+(Ctrl + s) 保存当前全部请求配置(只能保存请求配置)
+
+开源代码：
+https://github.com/cilame/vrequest
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)
