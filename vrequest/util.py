@@ -116,8 +116,14 @@ import re
 import json
 import requests
 from lxml import etree
+def quote_val(url):
+    import urllib
+    for i in re.findall('=([^=&]+)',url):
+        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+    return url
 
 {}
+#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
 {}
 
 def get(url,headers):
@@ -140,8 +146,14 @@ import re
 import json
 import requests
 from lxml import etree
+def quote_val(url):
+    import urllib
+    for i in re.findall('=([^=&]+)',url):
+        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+    return url
 
 {}
+#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
 {}{}
 
 def post(url,headers{}):
@@ -154,7 +166,7 @@ print(s)
 '''
 
     if method == 'GET':
-        _format = _format_get.format(c_url,c_headers)
+        _format = _format_get.format({},c_url,c_headers)
     elif method == 'POST':
         if c_body.strip():
             _body = '\n{}'.format(c_body)
@@ -164,7 +176,7 @@ print(s)
             _body = ''
             _body2 = ''
             _body3 = ''
-        _format = _format_post.format(c_url,c_headers,_body,_body2,_body3,_body2)
+        _format = _format_post.format({},c_url,c_headers,_body,_body2,_body3,_body2)
     return _format.strip()
 
 
@@ -183,8 +195,14 @@ import re
 import json
 import requests
 from lxml import etree
+def quote_val(url):
+    import urllib
+    for i in re.findall('=([^=&]+)',url):
+        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+    return url
 
 {}
+#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
 {}
 
 def get(url,headers):
@@ -207,8 +225,14 @@ import re
 import json
 import requests
 from lxml import etree
+def quote_val(url):
+    import urllib
+    for i in re.findall('=([^=&]+)',url):
+        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+    return url
 
 {}
+#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
 {}{}
 
 def post(url,headers{}):
@@ -224,7 +248,7 @@ print(s)
     if r_setting is not None:
         method,c_url,c_headers,body = r_setting
         if method == 'GET':
-            _format = _format_get.format(c_url,c_headers)
+            _format = _format_get.format({},c_url,c_headers)
         elif method == 'POST':
             if body.strip():
                 # 这里暂时没有对 body 的处理，
@@ -237,7 +261,7 @@ print(s)
                 _body = ''
                 _body2 = ''
                 _body3 = ''
-            _format = _format_post.format(c_url,c_headers,_body,_body2,_body3,_body2)
+            _format = _format_post.format({},c_url,c_headers,_body,_body2,_body3,_body2)
         else:
             _format = ''
     else:
