@@ -2,6 +2,7 @@ from lxml import etree
 
 import re
 import json
+import pprint
 import traceback
 import threading
 import tkinter
@@ -33,6 +34,7 @@ from .util import (
     format_response,
     get_simple_path_tail,
     get_xpath_by_str,
+    get_json_show,
 )
 
 nb = ttk.Notebook(root)
@@ -202,6 +204,7 @@ def get_response_config(setting):
     tx4 = setting.get('fr_parse_info')
     temp_fr2 = setting.get('fr_temp2')
 
+    c_content = tx1.get(0.,tkinter.END).strip() # 配置，目前在解析json数据部分有用
     c_set = tx2.get(0.,tkinter.END).strip() # 配置，用来配置生成代码的方式
 
     r_setting = setting.get('fr_setting')
@@ -214,7 +217,7 @@ def get_response_config(setting):
         c_url = format_url_code(r_setting.get('url'))
         c_body = format_body_code(body)
         r_setting = method,c_url,c_headers,c_body
-    return r_setting,c_set
+    return r_setting,c_set,c_content
 
 
 
@@ -281,8 +284,8 @@ def create_test_code(*a):
         method,c_url,c_headers,c_body = get_request_config(setting)
         code_string = format_request(method,c_url,c_headers,c_body)
     if setting.get('type') == 'response':
-        r_setting,c_set = get_response_config(setting)
-        code_string = format_response(r_setting,c_set)
+        r_setting,c_set,c_content = get_response_config(setting)
+        code_string = format_response(r_setting,c_set,c_content)
 
     if code_string:
         setting = {}
@@ -449,4 +452,44 @@ def get_auto_xpath(*a):
         if toggle:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<auto_list_xpath:>')
+        show_response_log()
+
+
+
+# 通过xpath获取element内部数据和内容
+def get_auto_json(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+
+        c_set = tx2.get(0.,tkinter.END).strip()
+        sx = ''
+        toggle = True
+        for i in c_set.splitlines():
+            i = i.strip()
+            if i.startswith('<') and i.endswith('>'):
+                if i.startswith('<auto_list_json:'):
+                    sx = re.findall('<auto_list_json:(.*)>', i)[0].strip()
+                    toggle = False
+        tx4 = setting.get('fr_parse_info')
+        try:
+            content = get_json_show(txt.get(0.,tkinter.END))
+            if not content:
+                try:
+                    _content = 'cannot use auto parse json list\nnow use simple pprint json.\n===============================\n'
+                    _content += pprint.pformat(json.loads(txt.get(0.,tkinter.END)))
+                    content = _content
+                except:
+                    content = 'cannot format this content to json struct.\n'
+                    content += '==========================================\n'
+                    content += traceback.format_exc()
+        except:
+            content = traceback.format_exc()
+        tx4.delete(0.,tkinter.END)
+        tx4.insert(0.,content)
+        if toggle:
+            tx2.delete(0.,tkinter.END)
+            tx2.insert(0.,'<auto_list_json:>')
         show_response_log()

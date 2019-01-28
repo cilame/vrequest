@@ -113,6 +113,7 @@ def response_window(setting=None):
 
     doc0 = '''列表解析路径方式
 冒号后面配置的的内容为 xpath
+<xpath:>
 '''
 
     doc1 = '''纯文字内容解析
@@ -130,6 +131,10 @@ eg.:
 能解析出含有非空字符串的内容路径
 '''
 
+    doc3 = '''简单分析json数据内容
+找出最长的list进行初步的迭代分析
+<auto_list_json:>
+'''
 
     def document(*a):
         method = cbx.get()
@@ -139,12 +144,14 @@ eg.:
             insert_txt(tx3,doc1)
         if methods.index(method) == 2:
             insert_txt(tx3,doc2)
+        if methods.index(method) == 3:
+            insert_txt(tx3,doc3)
 
     fr = Frame()
     ft = Font(family='Consolas',size=10)
 
     temp_fr0 = Frame(fr)
-    methods = ('(Alt+x) 列表路径解析','(Alt+d) 纯文字内容','(Alt+f) 用内容查找路径')
+    methods = ('(Alt+x) 列表路径解析','(Alt+d) 纯文字内容','(Alt+f) 用内容查找路径','(Alt+z) 用内容解析数据')
     cbx = Combobox(temp_fr0,width=20,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)

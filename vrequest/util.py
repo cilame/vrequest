@@ -2,6 +2,7 @@ import re
 import json
 import urllib.parse as ps
 import inspect
+import builtins
 from lxml import etree
 
 
@@ -169,7 +170,7 @@ print(s)
 
 
 
-def format_response(r_setting,c_set):
+def format_response(r_setting,c_set,c_content):
 
     _format_get = '''
 import io
@@ -263,6 +264,14 @@ print(s)
                             "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
                             "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
                             "    print(attr)\n")
+                _format = _format + '\n\n' + func_code
+            if i.startswith('<auto_list_json:'):
+                try:
+                    func_code = get_json_code(c_content).strip()
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    func_code = ''
                 _format = _format + '\n\n' + func_code
 
     return _format.strip()
@@ -368,3 +377,133 @@ def get_xpath_by_str(strs, html_content):
         v = '[{}] {}'.format(len(v),v)
         if instrs(strs,v):
             yield xp,v
+
+
+
+
+
+# ==== 解析 json 格式的数据 ====
+
+def get_parse_list(dicts):
+    p = {}
+    def parse_list(dicts,uri=''):
+        if type(dicts) != dict:
+            return
+        for idi,i in enumerate(dicts):
+            _uri = uri + "['{}']".format(i)
+            iner = dicts[i]
+            if type(iner) == list:
+                if iner: 
+                    p[_uri] = {}
+                    p[_uri]['iner'] = iner
+                    p[_uri]['lens'] = len(iner)
+                for idj,j in enumerate(iner):
+                    _urj = _uri + "[{}]".format(idj)
+                    parse_list(j, _urj)
+            elif type(iner) == dict:
+                parse_list(iner, _uri)
+    parse_list(dicts)
+    return p
+
+def get_max_len_list(p):
+    templen = 0
+    temp = None
+    for i in p:
+        lens = p[i]['lens']
+        iner = p[i]['iner']
+        if lens > templen:
+            templen = lens
+            temp = i, iner
+    return templen, temp
+
+def analisys_key_sort(p):
+    lens, (okey, iner) = p
+    allkeys = []
+    for i in iner:
+        for j in i:
+            if j not in allkeys:
+                allkeys.append(j)
+    keyscores = []
+    mx = 0
+    for key in allkeys:
+        mx = len(key) if len(key)>mx else mx
+        temp = []
+        for i in iner:
+            val = i.get(key, '')
+            temp.append(str(val))
+        dupscore = len(set(temp))/float(lens)
+        argvlens = len(''.join(temp))/5.
+        # 第一个是重复度，越大越不重复，0~1
+        # 第二个是平均字符串长度，
+        keyscores.append([key, argvlens, dupscore, str(val)])
+    return mx,okey,sorted(keyscores,key=lambda i:i[1:])
+
+def format_json_parse_code(p):
+    mx,okey,sortkeys = analisys_key_sort(p)
+    ret = '''for i in json.loads(content[content.find(b'{'):content.rfind(b'}')+1])%s:\n''' % okey
+    indent = 4
+    ret += ' '*indent + 'd = {}\n'
+    for key,alen,dups,val in sortkeys:
+        key1 = '_'+key if key in dir(builtins) or key in ['d','i','s','e','content'] else key
+        _ret = ' '*indent + ('d["{} = i.get("{:<'+str(mx+3)+'}').format(('{:<'+str(mx+2)+'}').format(key1+'"]'),key+'")')
+        _comment = ''
+        for i in range(5):
+            slen = 60
+            sval = val[i*slen:(i+1)*slen]
+            spre = ' '*len(_ret) if i != 0 else ''
+            if not sval:
+                break
+            _comment += spre + '# {:<20}\n'.format(sval.replace('\n','')) # 注释部分
+        if not _comment:
+            _comment = '\n'
+        ret += (_ret + _comment).rstrip() + '\n'
+    tail = ' '*indent + 'import pprint\n'
+    tail += ' '*indent + 'pprint.pprint(d)\n'
+    tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
+    return ret + tail
+
+def format_json_parse_show(p):
+    mx,okey,sortkeys = analisys_key_sort(p)
+    ret = 'jsondata{}\n'.format(okey)
+    ret += '='*(len(ret)-1) + '\n'
+    for key,alen,dups,val in sortkeys:
+        _ret = ('{:<'+str(mx)+'}').format(key)
+        _comment = ''
+        for i in range(5):
+            slen = 60
+            sval = val[i*slen:(i+1)*slen]
+            spre = ' '*len(_ret) if i != 0 else ''
+            if not sval:
+                break
+            _comment += spre + ' # {:<20}\n'.format(sval.replace('\n','')) # 注释部分
+        if not _comment:
+            _comment = '\n'
+        ret += (_ret + _comment).rstrip() + '\n'
+    return ret
+
+
+def get_json_code(content):
+    if type(content) == str:
+        s = json.loads(content[content.find('{'):content.rfind('}')+1])
+    elif type(content) == bytes:
+        s = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
+    else:
+        raise TypeError('unparse type {}'.format(type(s)))
+    p = get_parse_list(s)
+    p = get_max_len_list(p)
+    if p[0] == 0:
+        return ''
+    return format_json_parse_code(p)
+
+def get_json_show(content):
+    if type(content) == str:
+        s = json.loads(content[content.find('{'):content.rfind('}')+1])
+    elif type(content) == bytes:
+        s = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
+    else:
+        raise TypeError('unparse type {}'.format(type(s)))
+    p = get_parse_list(s)
+    p = get_max_len_list(p)
+    if p[0] == 0:
+        return ''
+    return format_json_parse_show(p)

@@ -21,6 +21,7 @@ from .tab import (
     get_html_pure_text,
     get_xpath_elements,
     get_auto_xpath,
+    get_auto_json,
     execute_code,
 )
 from .combinekey import (
@@ -70,8 +71,9 @@ bind_alt_key(create_new_rsptab, 'r')
 bind_alt_key(create_test_code,  'c') # 生成代码
 bind_alt_key(get_html_pure_text,'d') # 获取文本
 bind_alt_key(get_xpath_elements,'x') # 获取xpath
-bind_alt_key(get_auto_xpath,    'f') # 获取路径xpath
-bind_alt_key(execute_code,      'v') # 获取路径xpath
+bind_alt_key(get_auto_xpath,    'f') # 解析路径xpath
+bind_alt_key(get_auto_json,     'z') # 解析json数据
+bind_alt_key(execute_code,      'v') # 代码执行
 
 def execute():
     root.title('vrequest')
