@@ -2,7 +2,7 @@ from setuptools import setup
  
 setup(
     name = "vrequest",
-    version = "1.1.0",
+    version = "1.1.1",
 
     keywords = "vrequest",
     author = "cilame",
@@ -26,6 +26,9 @@ setup(
     ],
 
     entry_points={
-        'gui_scripts': ['vv = vrequest.main:execute']
+        'gui_scripts': [
+            'vv = vrequest.main:execute',
+            'vreqeust = vrequest.main:execute',
+        ]
     },
 )

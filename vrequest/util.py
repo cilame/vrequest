@@ -20,7 +20,17 @@ def format_headers_code(headers):
     assert type(headers) in (str, dict)
     if type(headers) is str:
         headers = format_headers_str(headers)
-    return 'headers = ' + json.dumps(headers,indent=4,ensure_ascii=False)
+    ret = 'headers = ' + json.dumps(headers,indent=4,ensure_ascii=False)
+    for name in headers:
+        if name.lower() == 'cookie':
+            q = '(\n'
+            p =[]
+            for i in headers[name].split('; '): p.append(i)
+            for i in sorted(p):
+                q += '        "'+i+'; "\n'
+            q += '    )'
+            ret = ret.replace('"'+headers[name]+'"',q)
+    return ret
 
 
 def format_body_str(body:str):
@@ -109,7 +119,9 @@ def format_request(method,c_url,c_headers,c_body):
 import io
 import sys
 try:
+    # 处理 sublime 命令行输出乱码
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
 except:
     pass
 import re
@@ -122,15 +134,18 @@ def quote_val(url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
 
-{}
-#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-{}
+def mk_url_headers():
+    $c_url
+    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+    $c_headers
+    return url,headers
 
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
     return s,e,s.content
 
+url,headers = mk_url_headers()
 s,e,content = get(url,headers)
 print(s)
 '''
@@ -139,7 +154,9 @@ print(s)
 import io
 import sys
 try:
+    # 处理 sublime 命令行输出乱码
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
 except:
     pass
 import re
@@ -152,34 +169,49 @@ def quote_val(url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
 
-{}
-#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-{}{}
+def mk_url_headers$c_body4():
+    $c_url
+    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+    $c_headers$c_body1
+    return url,headers,$c_body2
 
-def post(url,headers{}):
-    s = requests.post(url,headers=headers{})
+def post(url,headers,$c_body2):
+    s = requests.post(url,headers=headers,$c_body3) #少量需要string情况，设置data=json.dumps(body)即可
     e = etree.HTML(s.content)
     return s,e,s.content
 
-s,e,content = post(url,headers{})
+url,headers,$c_body2 = mk_url_headers$c_body4()
+s,e,content = post(url,headers,$c_body2)
 print(s)
 '''
 
+    func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
+    c_url       = func(c_url).strip()
+    c_headers   = func(c_headers).strip()
+    c_body      = func(c_body).strip()
     if method == 'GET':
-        _format = _format_get.format({},c_url,c_headers)
+        _format = _format_get
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
     elif method == 'POST':
         if c_body.strip():
-            _body = '\n{}'.format(c_body)
-            _body2 = ',body'
-            _body3 = ',data=body'
+            c_body1 = '\n    {}'.format(c_body)
+            c_body2 = 'body'
+            c_body3 = 'data=body'
+            c_body4 = '_body'
         else:
-            _body = ''
-            _body2 = ''
-            _body3 = ''
-        _format = _format_post.format({},c_url,c_headers,_body,_body2,_body3,_body2)
+            c_body1 = ''
+            c_body2 = ''
+            c_body3 = ''
+            c_body4 = ''
+        _format = _format_post
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
+        _format = _format.replace('$c_body1',c_body1)
+        _format = _format.replace('$c_body2',c_body2)
+        _format = _format.replace('$c_body3',c_body3)
+        _format = _format.replace('$c_body4',c_body4)
     return _format.strip()
-
-
 
 
 def format_response(r_setting,c_set,c_content):
@@ -188,7 +220,9 @@ def format_response(r_setting,c_set,c_content):
 import io
 import sys
 try:
+    # 处理 sublime 命令行输出乱码
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
 except:
     pass
 import re
@@ -201,15 +235,18 @@ def quote_val(url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
 
-{}
-#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-{}
+def mk_url_headers():
+    $c_url
+    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+    $c_headers
+    return url,headers
 
 def get(url,headers):
     s = requests.get(url,headers=headers)
     e = etree.HTML(s.content)
     return s,e,s.content
 
+url,headers = mk_url_headers()
 s,e,content = get(url,headers)
 print(s)
 '''
@@ -218,7 +255,9 @@ print(s)
 import io
 import sys
 try:
+    # 处理 sublime 命令行输出乱码
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
 except:
     pass
 import re
@@ -231,39 +270,51 @@ def quote_val(url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
 
-{}
-#url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-{}{}
+def mk_url_headers$c_body4():
+    $c_url
+    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+    $c_headers$c_body1
+    return url,headers,$c_body2
 
-def post(url,headers{}):
-    s = requests.post(url,headers=headers{})
+def post(url,headers,$c_body2):
+    s = requests.post(url,headers=headers,$c_body3) #少量需要string情况，设置data=json.dumps(body)即可
     e = etree.HTML(s.content)
     return s,e,s.content
 
-s,e,content = post(url,headers{})
+url,headers,$c_body2 = mk_url_headers$c_body4()
+s,e,content = post(url,headers,$c_body2)
 print(s)
 '''
 
     # 请求部分的代码
     if r_setting is not None:
-        method,c_url,c_headers,body = r_setting
+        method,c_url,c_headers,c_body = r_setting
+        func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
+        c_url       = func(c_url).strip()
+        c_headers   = func(c_headers).strip()
+        c_body      = func(c_body).strip()
         if method == 'GET':
-            _format = _format_get.format({},c_url,c_headers)
+            _format = _format_get
+            _format = _format.replace('$c_url',c_url)
+            _format = _format.replace('$c_headers',c_headers)
         elif method == 'POST':
-            if body.strip():
-                # 这里暂时没有对 body 的处理，
-                # 因为 post 请求还没有进行全面的了解
-                # 后续的 body 肯定是需要进行一定的处理后再放在下面的地方
-                _body = '\n{}'.format(body)
-                _body2 = ',body'
-                _body3 = ',data=body'
+            if c_body.strip():
+                c_body1 = '\n    {}'.format(c_body)
+                c_body2 = 'body'
+                c_body3 = 'data=body'
+                c_body4 = '_body'
             else:
-                _body = ''
-                _body2 = ''
-                _body3 = ''
-            _format = _format_post.format({},c_url,c_headers,_body,_body2,_body3,_body2)
-        else:
-            _format = ''
+                c_body1 = ''
+                c_body2 = ''
+                c_body3 = ''
+                c_body4 = ''
+            _format = _format_post
+            _format = _format.replace('$c_url',c_url)
+            _format = _format.replace('$c_headers',c_headers)
+            _format = _format.replace('$c_body1',c_body1)
+            _format = _format.replace('$c_body2',c_body2)
+            _format = _format.replace('$c_body3',c_body3)
+            _format = _format.replace('$c_body4',c_body4)
     else:
         _format = ''
     _format = _format.strip()
