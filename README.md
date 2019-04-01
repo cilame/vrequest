@@ -28,3 +28,5 @@ C:\Users\zhoulin08>vv
 #   哪怕关掉工具也能很方便的恢复请求的配置状态，方便使用
 # 2 快速生成请求代码，让请求更加方便实现。
 ```
+
+![image](https://raw.githubusercontent.com/cilame/vrequest/master/test/show.png)
