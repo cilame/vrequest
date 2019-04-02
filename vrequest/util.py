@@ -133,6 +133,20 @@ def quote_val(url):
     for i in re.findall('=([^=&]+)',url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
+def parse_content_type(content):
+    types = ['utf-8','gbk']
+    try:
+        import chardet
+        types.append(chardet.detect(content)['encoding'])
+    except:pass
+    for tp in types:
+        try:
+            content = content.decode(tp)
+            return tp, content
+        except StopIteration:
+            raise TypeError('not in {}'.format(types))
+        except:
+            continue
 
 def mk_url_headers():
     $c_url
@@ -147,7 +161,11 @@ def get(url,headers):
 
 url,headers = mk_url_headers()
 s,e,content = get(url,headers)
+tp, content = parse_content_type(content)
 print(s)
+print('decode type: {}'.format(tp))
+print('response length: {}'.format(len(s.content)))
+print("============================== start ==============================")
 '''
 
     _format_post = '''
@@ -168,6 +186,20 @@ def quote_val(url):
     for i in re.findall('=([^=&]+)',url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
+def parse_content_type(content):
+    types = ['utf-8','gbk']
+    try:
+        import chardet
+        types.append(chardet.detect(content)['encoding'])
+    except:pass
+    for tp in types:
+        try:
+            content = content.decode(tp)
+            return tp, content
+        except StopIteration:
+            raise TypeError('not in {}'.format(types))
+        except:
+            continue
 
 def mk_url_headers$c_body4():
     $c_url
@@ -182,7 +214,11 @@ def post(url,headers,$c_body2):
 
 url,headers,$c_body2 = mk_url_headers$c_body4()
 s,e,content = post(url,headers,$c_body2)
+tp, content = parse_content_type(content)
 print(s)
+print('decode type: {}'.format(tp))
+print('response length: {}'.format(len(s.content)))
+print("============================== start ==============================")
 '''
 
     func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
@@ -234,6 +270,20 @@ def quote_val(url):
     for i in re.findall('=([^=&]+)',url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
+def parse_content_type(content):
+    types = ['utf-8','gbk']
+    try:
+        import chardet
+        types.append(chardet.detect(content)['encoding'])
+    except:pass
+    for tp in types:
+        try:
+            content = content.decode(tp)
+            return tp, content
+        except StopIteration:
+            raise TypeError('not in {}'.format(types))
+        except:
+            continue
 
 def mk_url_headers():
     $c_url
@@ -248,7 +298,11 @@ def get(url,headers):
 
 url,headers = mk_url_headers()
 s,e,content = get(url,headers)
+tp, content = parse_content_type(content)
 print(s)
+print('decode type: {}'.format(tp))
+print('response length: {}'.format(len(s.content)))
+print("============================== start ==============================")
 '''
 
     _format_post = '''
@@ -269,6 +323,20 @@ def quote_val(url):
     for i in re.findall('=([^=&]+)',url):
         url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
     return url
+def parse_content_type(content):
+    types = ['utf-8','gbk']
+    try:
+        import chardet
+        types.append(chardet.detect(content)['encoding'])
+    except:pass
+    for tp in types:
+        try:
+            content = content.decode(tp)
+            return tp, content
+        except StopIteration:
+            raise TypeError('not in {}'.format(types))
+        except:
+            continue
 
 def mk_url_headers$c_body4():
     $c_url
@@ -283,7 +351,11 @@ def post(url,headers,$c_body2):
 
 url,headers,$c_body2 = mk_url_headers$c_body4()
 s,e,content = post(url,headers,$c_body2)
+tp, content = parse_content_type(content)
 print(s)
+print('decode type: {}'.format(tp))
+print('response length: {}'.format(len(s.content)))
+print("============================== start ==============================")
 '''
 
     # 请求部分的代码
@@ -515,7 +587,7 @@ def analisys_key_sort(p):
 
 def format_json_parse_code(p):
     mx,okey,sortkeys = analisys_key_sort(p)
-    ret = '''for i in json.loads(content[content.find(b'{'):content.rfind(b'}')+1])%s:\n''' % okey
+    ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
     indent = 4
     ret += ' '*indent + 'd = {}\n'
     for key,alen,dups,val in sortkeys:
