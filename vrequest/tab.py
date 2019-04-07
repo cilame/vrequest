@@ -35,6 +35,7 @@ from .util import (
     get_simple_path_tail,
     get_xpath_by_str,
     get_json_show,
+    parse_json_content,
 )
 
 nb = ttk.Notebook(root)
@@ -479,7 +480,7 @@ def get_auto_json(*a):
             if not content:
                 try:
                     _content = 'cannot use auto parse json list\nnow use simple pprint json.\n===============================\n'
-                    _content += pprint.pformat(json.loads(txt.get(0.,tkinter.END)))
+                    _content += pprint.pformat(parse_json_content(txt.get(0.,tkinter.END)))
                     content = _content
                 except:
                     content = 'cannot format this content to json struct.\n'

@@ -318,11 +318,13 @@ def code_window(setting=None):
         s = s + ' ' + tf
         import subprocess
         p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
+        print('============================== start ==============================')
         for line in iter(p.stdout.readline, ''):
             if line:
                 print(line, end='')
             else:
                 break
+        print('==============================  end  ==============================')
         p.stdout.close()
         p.wait()
         shutil.rmtree(td)

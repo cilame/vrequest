@@ -113,115 +113,125 @@ def format_url_code(url:str):
 
 
 
-def format_request(method,c_url,c_headers,c_body):
+def format_req(method,c_url,c_headers,c_body):
 
     _format_get = '''
-import io
-import sys
 try:
-    # 处理 sublime 命令行输出乱码
+    # 处理 sublime 执行时输出乱码
+    import io
+    import sys
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
     pass
+
 import re
 import json
 import requests
 from lxml import etree
-def quote_val(url):
-    import urllib
-    for i in re.findall('=([^=&]+)',url):
-        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-    return url
-def parse_content_type(content):
-    types = ['utf-8','gbk']
-    try:
-        import chardet
-        types.append(chardet.detect(content)['encoding'])
-    except:pass
-    for tp in types:
+
+def get_info():
+    # 功能函数（对url里面的 param 进行编码操作）
+    def quote_val(url):
+        import urllib
+        for i in re.findall('=([^=&]+)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+        return url
+    # 功能函数（解析解码格式）
+    def parse_content_type(content):
+        types = ['utf-8','gbk']
         try:
-            content = content.decode(tp)
-            return tp, content
-        except StopIteration:
-            raise TypeError('not in {}'.format(types))
-        except:
-            continue
+            import chardet
+            types.append(chardet.detect(content)['encoding'])
+        except:pass
+        for tp in types:
+            try:
+                content = content.decode(tp)
+                return tp, content
+            except StopIteration:
+                raise TypeError('not in {}'.format(types))
+            except:
+                continue
+    # 生成请求参数函数
+    def mk_url_headers():
+        $c_url
+        #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+        $c_headers
+        return url,headers
 
-def mk_url_headers():
-    $c_url
-    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-    $c_headers
-    return url,headers
-
-def get(url,headers):
+    url,headers = mk_url_headers()
     s = requests.get(url,headers=headers)
-    e = etree.HTML(s.content)
-    return s,e,s.content
+    tp, content = parse_content_type(s.content)
+    print(s)
+    print('decode type: {}'.format(tp))
+    print('response length: {}'.format(len(s.content)))
+$plus
 
-url,headers = mk_url_headers()
-s,e,content = get(url,headers)
-tp, content = parse_content_type(content)
-print(s)
-print('decode type: {}'.format(tp))
-print('response length: {}'.format(len(s.content)))
-print("============================== start ==============================")
+get_info()
+
+#
 '''
 
     _format_post = '''
-import io
-import sys
 try:
-    # 处理 sublime 命令行输出乱码
+    # 处理 sublime 执行时输出乱码
+    import io
+    import sys
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
     pass
+
 import re
 import json
 import requests
 from lxml import etree
-def quote_val(url):
-    import urllib
-    for i in re.findall('=([^=&]+)',url):
-        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-    return url
-def parse_content_type(content):
-    types = ['utf-8','gbk']
-    try:
-        import chardet
-        types.append(chardet.detect(content)['encoding'])
-    except:pass
-    for tp in types:
+
+def post_info():
+    # 功能函数（对url里面的 param 进行编码操作）
+    def quote_val(url):
+        import urllib
+        for i in re.findall('=([^=&]+)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+        return url
+    # 功能函数（解析解码格式）
+    def parse_content_type(content):
+        types = ['utf-8','gbk']
         try:
-            content = content.decode(tp)
-            return tp, content
-        except StopIteration:
-            raise TypeError('not in {}'.format(types))
-        except:
-            continue
+            import chardet
+            types.append(chardet.detect(content)['encoding'])
+        except:pass
+        for tp in types:
+            try:
+                content = content.decode(tp)
+                return tp, content
+            except StopIteration:
+                raise TypeError('not in {}'.format(types))
+            except:
+                continue
+    # 生成请求参数函数
+    def mk_url_headers_body():
+        $c_url
+        #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+        $c_headers
+        $c_body
+        return url,headers,body
 
-def mk_url_headers$c_body4():
-    $c_url
-    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-    $c_headers$c_body1
-    return url,headers,$c_body2
+    url,headers,body = mk_url_headers_body()    
+    #body = json.dumps(body) #极少情况需要data为string情况下的json数据，如需要解开该注释
+    s = requests.post(url,headers=headers,data=body) 
+    tp, content = parse_content_type(s.content)
+    print(s)
+    print('decode type: {}'.format(tp))
+    print('response length: {}'.format(len(s.content)))
+$plus
 
-def post(url,headers,$c_body2):
-    s = requests.post(url,headers=headers,$c_body3) #少量需要string情况，设置data=json.dumps(body)即可
-    e = etree.HTML(s.content)
-    return s,e,s.content
+post_info()
 
-url,headers,$c_body2 = mk_url_headers$c_body4()
-s,e,content = post(url,headers,$c_body2)
-tp, content = parse_content_type(content)
-print(s)
-print('decode type: {}'.format(tp))
-print('response length: {}'.format(len(s.content)))
-print("============================== start ==============================")
+#
 '''
 
-    func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
+    func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines()))
     c_url       = func(c_url).strip()
     c_headers   = func(c_headers).strip()
     c_body      = func(c_body).strip()
@@ -230,169 +240,31 @@ print("============================== start ==============================")
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
     elif method == 'POST':
-        if c_body.strip():
-            c_body1 = '\n    {}'.format(c_body)
-            c_body2 = 'body'
-            c_body3 = 'data=body'
-            c_body4 = '_body'
-        else:
-            c_body1 = ''
-            c_body2 = ''
-            c_body3 = ''
-            c_body4 = ''
         _format = _format_post
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
-        _format = _format.replace('$c_body1',c_body1)
-        _format = _format.replace('$c_body2',c_body2)
-        _format = _format.replace('$c_body3',c_body3)
-        _format = _format.replace('$c_body4',c_body4)
+        _format = _format.replace('$c_body',c_body)
     return _format.strip()
+
+
+def format_request(method,c_url,c_headers,c_body):
+    return format_req(method,c_url,c_headers,c_body).replace('$plus','')
 
 
 def format_response(r_setting,c_set,c_content):
 
-    _format_get = '''
-import io
-import sys
-try:
-    # 处理 sublime 命令行输出乱码
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-    sys.stdout._CHUNK_SIZE = 1
-except:
-    pass
-import re
-import json
-import requests
-from lxml import etree
-def quote_val(url):
-    import urllib
-    for i in re.findall('=([^=&]+)',url):
-        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-    return url
-def parse_content_type(content):
-    types = ['utf-8','gbk']
-    try:
-        import chardet
-        types.append(chardet.detect(content)['encoding'])
-    except:pass
-    for tp in types:
-        try:
-            content = content.decode(tp)
-            return tp, content
-        except StopIteration:
-            raise TypeError('not in {}'.format(types))
-        except:
-            continue
-
-def mk_url_headers():
-    $c_url
-    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-    $c_headers
-    return url,headers
-
-def get(url,headers):
-    s = requests.get(url,headers=headers)
-    e = etree.HTML(s.content)
-    return s,e,s.content
-
-url,headers = mk_url_headers()
-s,e,content = get(url,headers)
-tp, content = parse_content_type(content)
-print(s)
-print('decode type: {}'.format(tp))
-print('response length: {}'.format(len(s.content)))
-print("============================== start ==============================")
-'''
-
-    _format_post = '''
-import io
-import sys
-try:
-    # 处理 sublime 命令行输出乱码
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-    sys.stdout._CHUNK_SIZE = 1
-except:
-    pass
-import re
-import json
-import requests
-from lxml import etree
-def quote_val(url):
-    import urllib
-    for i in re.findall('=([^=&]+)',url):
-        url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-    return url
-def parse_content_type(content):
-    types = ['utf-8','gbk']
-    try:
-        import chardet
-        types.append(chardet.detect(content)['encoding'])
-    except:pass
-    for tp in types:
-        try:
-            content = content.decode(tp)
-            return tp, content
-        except StopIteration:
-            raise TypeError('not in {}'.format(types))
-        except:
-            continue
-
-def mk_url_headers$c_body4():
-    $c_url
-    #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
-    $c_headers$c_body1
-    return url,headers,$c_body2
-
-def post(url,headers,$c_body2):
-    s = requests.post(url,headers=headers,$c_body3) #少量需要string情况，设置data=json.dumps(body)即可
-    e = etree.HTML(s.content)
-    return s,e,s.content
-
-url,headers,$c_body2 = mk_url_headers$c_body4()
-s,e,content = post(url,headers,$c_body2)
-tp, content = parse_content_type(content)
-print(s)
-print('decode type: {}'.format(tp))
-print('response length: {}'.format(len(s.content)))
-print("============================== start ==============================")
-'''
-
+    
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
-        func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
-        c_url       = func(c_url).strip()
-        c_headers   = func(c_headers).strip()
-        c_body      = func(c_body).strip()
-        if method == 'GET':
-            _format = _format_get
-            _format = _format.replace('$c_url',c_url)
-            _format = _format.replace('$c_headers',c_headers)
-        elif method == 'POST':
-            if c_body.strip():
-                c_body1 = '\n    {}'.format(c_body)
-                c_body2 = 'body'
-                c_body3 = 'data=body'
-                c_body4 = '_body'
-            else:
-                c_body1 = ''
-                c_body2 = ''
-                c_body3 = ''
-                c_body4 = ''
-            _format = _format_post
-            _format = _format.replace('$c_url',c_url)
-            _format = _format.replace('$c_headers',c_headers)
-            _format = _format.replace('$c_body1',c_body1)
-            _format = _format.replace('$c_body2',c_body2)
-            _format = _format.replace('$c_body3',c_body3)
-            _format = _format.replace('$c_body4',c_body4)
+        _format = format_req(method,c_url,c_headers,c_body)
     else:
         _format = ''
     _format = _format.strip()
 
     for i in c_set.splitlines():
         i = i.strip()
+        func_code = None
         if i.startswith('<') and i.endswith('>'):
             if i.startswith('<normal_content:'):
                 rt = re.findall('<normal_content:(.*)>', i)[0].strip()
@@ -400,18 +272,16 @@ print("============================== start ==============================")
                 from .tab import normal_content
                 func_code = inspect.getsource(normal_content).strip()
                 func_code += '\n\ncontent = normal_content(content, rootxpath="{}")\nprint(content)'.format(rt)
-                _format = _format + '\n\n' + func_code
-                break
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
-                func_code =("tree = etree.HTML(content)\n"
+                func_code =("print('------------------------------ split ------------------------------')\n"
+                            "tree = etree.HTML(content)\n"
                             "for x in tree.xpath('{}'):\n".format(xp) + 
                             "    strs = re.sub('\s+',' ',x.xpath('string(.)'))\n"
                             "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
                             "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
                             "    print(attr)\n")
-                _format = _format + '\n\n' + func_code
             if i.startswith('<auto_list_json:'):
                 try:
                     func_code = get_json_code(c_content).strip()
@@ -419,8 +289,9 @@ print("============================== start ==============================")
                     import traceback
                     traceback.print_exc()
                     func_code = ''
-                _format = _format + '\n\n' + func_code
-
+        func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
+        _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
+    _format = _format if '$plus' not in _format else _format.replace('$plus','')
     return _format.strip()
 
 
@@ -608,17 +479,17 @@ def format_json_parse_code(p,standard=True):
             if not _comment:
                 _comment = '\n'
             ret += (_ret + _comment).rstrip() + '\n'
-        tail = ' '*indent + 'import pprint\n'
+        tail = ' '*indent + "print('------------------------------ split ------------------------------')\n"
+        tail += ' '*indent + 'import pprint\n'
         tail += ' '*indent + 'pprint.pprint(d)\n'
-        tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
         return ret + tail
     else:
         lens, (okey, iner) = p
         ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
         indent = 4
-        tail = ' '*indent + 'import pprint\n'
+        tail = ' '*indent + "print('------------------------------ split ------------------------------')\n"
+        tail += ' '*indent + 'import pprint\n'
         tail += ' '*indent + 'pprint.pprint(i)\n'
-        tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
         return ret + tail
 
 def format_json_parse_show(p,standard=True):
@@ -651,30 +522,28 @@ def format_json_parse_show(p,standard=True):
             ret += str(i) + '\n'
         return ret
 
-def get_json_code(content):
+
+def parse_json_content(content):
     if type(content) == str:
-        s = json.loads(content[content.find('{'):content.rfind('}')+1])
+        json_content = json.loads(content[content.find('{'):content.rfind('}')+1])
     elif type(content) == bytes:
-        s = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
+        json_content = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
     else:
         raise TypeError('unparse type {}'.format(type(s)))
+    return json_content
+
+def get_json_code(content):
+    s = parse_json_content(content)
     p = get_parse_list(s)
     p = get_max_len_list(p)
-    if p[0] == 0:
-        return ''
+    if p[0] == 0: return ''
     standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
     return format_json_parse_code(p,standard)
 
 def get_json_show(content):
-    if type(content) == str:
-        s = json.loads(content[content.find('{'):content.rfind('}')+1])
-    elif type(content) == bytes:
-        s = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
-    else:
-        raise TypeError('unparse type {}'.format(type(s)))
+    s = parse_json_content(content)
     p = get_parse_list(s)
     p = get_max_len_list(p)
-    if p[0] == 0:
-        return ''
+    if p[0] == 0: return ''
     standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
     return format_json_parse_show(p,standard)
