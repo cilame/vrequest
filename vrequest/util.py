@@ -585,49 +585,71 @@ def analisys_key_sort(p):
         keyscores.append([key, argvlens, dupscore, str(val)])
     return mx,okey,sorted(keyscores,key=lambda i:i[1:])
 
-def format_json_parse_code(p):
-    mx,okey,sortkeys = analisys_key_sort(p)
-    ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
-    indent = 4
-    ret += ' '*indent + 'd = {}\n'
-    for key,alen,dups,val in sortkeys:
-        key1 = '_'+key if key in dir(builtins) or key in ['d','i','s','e','content'] else key
-        _ret = ' '*indent + ('d["{} = i.get("{:<'+str(mx+3)+'}').format(('{:<'+str(mx+2)+'}').format(key1+'"]'),key+'")')
-        _comment = ''
-        for i in range(5):
-            slen = 60
-            sval = val[i*slen:(i+1)*slen]
-            spre = ' '*len(_ret) if i != 0 else ''
-            if not sval:
-                break
-            _comment += spre + '# {:<20}\n'.format(sval.replace('\n','')) # 注释部分
-        if not _comment:
-            _comment = '\n'
-        ret += (_ret + _comment).rstrip() + '\n'
-    tail = ' '*indent + 'import pprint\n'
-    tail += ' '*indent + 'pprint.pprint(d)\n'
-    tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
-    return ret + tail
+def format_json_parse_code(p,standard=True):
+    # 这里将处理一些非典型的数据结构
+    # 通常能解析的json列表的数据结构都是 list[dict1,dict2,...]，将这些当作标准解析结构
+    # 不过也会有一些列表内部并非都是dict的数据结构，这时候就需要考虑一些别的方法进行格式化处理。
+    if standard:
+        mx,okey,sortkeys = analisys_key_sort(p)
+        ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
+        indent = 4
+        ret += ' '*indent + 'd = {}\n'
+        for key,alen,dups,val in sortkeys:
+            key1 = '_'+key if key in dir(builtins) or key in ['d','i','s','e','content'] else key
+            _ret = ' '*indent + ('d["{} = i.get("{:<'+str(mx+3)+'}').format(('{:<'+str(mx+2)+'}').format(key1+'"]'),key+'")')
+            _comment = ''
+            for i in range(5):
+                slen = 60
+                sval = val[i*slen:(i+1)*slen]
+                spre = ' '*len(_ret) if i != 0 else ''
+                if not sval:
+                    break
+                _comment += spre + '# {:<20}\n'.format(sval.replace('\n','')) # 注释部分
+            if not _comment:
+                _comment = '\n'
+            ret += (_ret + _comment).rstrip() + '\n'
+        tail = ' '*indent + 'import pprint\n'
+        tail += ' '*indent + 'pprint.pprint(d)\n'
+        tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
+        return ret + tail
+    else:
+        lens, (okey, iner) = p
+        ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
+        indent = 4
+        tail = ' '*indent + 'import pprint\n'
+        tail += ' '*indent + 'pprint.pprint(i)\n'
+        tail += ' '*indent + 'pprint.pprint("============================== split ==============================")\n'
+        return ret + tail
 
-def format_json_parse_show(p):
-    mx,okey,sortkeys = analisys_key_sort(p)
-    ret = 'jsondata{}\n'.format(okey)
-    ret += '='*(len(ret)-1) + '\n'
-    for key,alen,dups,val in sortkeys:
-        _ret = ('{:<'+str(mx)+'}').format(key)
-        _comment = ''
-        for i in range(5):
-            slen = 60
-            sval = val[i*slen:(i+1)*slen]
-            spre = ' '*len(_ret) if i != 0 else ''
-            if not sval:
-                break
-            _comment += spre + ' # {:<20}\n'.format(sval.replace('\n','')) # 注释部分
-        if not _comment:
-            _comment = '\n'
-        ret += (_ret + _comment).rstrip() + '\n'
-    return ret
-
+def format_json_parse_show(p,standard=True):
+    # 这里将处理一些非典型的数据结构
+    # 通常能解析的json列表的数据结构都是 list[dict1,dict2,...]，将这些当作标准解析结构
+    # 不过也会有一些列表内部并非都是dict的数据结构，这时候就需要考虑一些别的方法进行格式化处理。
+    if standard:
+        mx,okey,sortkeys = analisys_key_sort(p)
+        ret = 'jsondata{}\n'.format(okey)
+        ret += '='*(len(ret)-1) + '\n'
+        for key,alen,dups,val in sortkeys:
+            _ret = ('{:<'+str(mx)+'}').format(key)
+            _comment = ''
+            for i in range(5):
+                slen = 60
+                sval = val[i*slen:(i+1)*slen]
+                spre = ' '*len(_ret) if i != 0 else ''
+                if not sval:
+                    break
+                _comment += spre + ' # {:<20}\n'.format(sval.replace('\n','')) # 注释部分
+            if not _comment:
+                _comment = '\n'
+            ret += (_ret + _comment).rstrip() + '\n'
+        return ret
+    else:
+        lens, (okey, iner) = p
+        ret = 'jsondata{}\n'.format(okey)
+        ret += '='*(len(ret)-1) + '\n'
+        for i in iner:
+            ret += str(i) + '\n'
+        return ret
 
 def get_json_code(content):
     if type(content) == str:
@@ -640,7 +662,8 @@ def get_json_code(content):
     p = get_max_len_list(p)
     if p[0] == 0:
         return ''
-    return format_json_parse_code(p)
+    standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
+    return format_json_parse_code(p,standard)
 
 def get_json_show(content):
     if type(content) == str:
@@ -653,4 +676,5 @@ def get_json_show(content):
     p = get_max_len_list(p)
     if p[0] == 0:
         return ''
-    return format_json_parse_show(p)
+    standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
+    return format_json_parse_show(p,standard)
