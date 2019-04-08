@@ -216,6 +216,12 @@ eg.:
         else:
             raise TypeError('type:{} is not in [str,bytes]'.format(type(content)))
 
+    def quote_val(url):
+        import urllib
+        for i in re.findall('=([^=&]+)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+        return url
+
     if setting is not None:
         method  = setting.get('method')
         url     = setting.get('url')
@@ -223,11 +229,11 @@ eg.:
         body    = setting.get('body')
         try:
             if method == 'GET':
-                s = requests.get(url,headers=headers)
+                s = requests.get(quote_val(url),headers=headers)
                 insert_txt(tx1, format_content(s.content))
             elif method == 'POST':
                 # 这里的post 里面的body 暂时还没有进行处理
-                s = requests.post(url,headers=headers,data=body)
+                s = requests.post(quote_val(url),headers=headers,data=body)
                 insert_txt(tx1, format_content(s.content))
         except:
             insert_txt(tx1, format_content(traceback.format_exc()))

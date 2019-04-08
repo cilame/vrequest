@@ -155,7 +155,7 @@ def get_info():
     # 生成请求参数函数
     def mk_url_headers():
         $c_url
-        #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+        url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
         return url,headers
 
@@ -212,7 +212,7 @@ def post_info():
     # 生成请求参数函数
     def mk_url_headers_body():
         $c_url
-        #url = quote_val(url) # 部分网页需要请求参数中的 param 保持编码状态，解开该注释即可
+        url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
         $c_body
         return url,headers,body
