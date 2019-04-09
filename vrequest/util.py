@@ -134,6 +134,7 @@ def get_info():
     # 功能函数（对url里面的 param 进行编码操作）
     def quote_val(url):
         import urllib
+        url = urllib.parse.unquote(url)
         for i in re.findall('=([^=&]+)',url):
             url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
         return url
@@ -191,6 +192,7 @@ def post_info():
     # 功能函数（对url里面的 param 进行编码操作）
     def quote_val(url):
         import urllib
+        url = urllib.parse.unquote(url)
         for i in re.findall('=([^=&]+)',url):
             url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
         return url
