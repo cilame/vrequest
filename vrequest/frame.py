@@ -10,6 +10,7 @@ import tempfile
 import traceback
 import tkinter
 import inspect
+import urllib.parse as ps
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.font import Font
@@ -229,11 +230,11 @@ eg.:
         body    = setting.get('body')
         try:
             if method == 'GET':
-                s = requests.get(quote_val(url),headers=headers)
+                s = requests.get(quote_val(ps.unquote(url)),headers=headers)
                 insert_txt(tx1, format_content(s.content))
             elif method == 'POST':
                 # 这里的post 里面的body 暂时还没有进行处理
-                s = requests.post(quote_val(url),headers=headers,data=body)
+                s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body)
                 insert_txt(tx1, format_content(s.content))
         except:
             insert_txt(tx1, format_content(traceback.format_exc()))
