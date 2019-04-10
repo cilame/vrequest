@@ -294,6 +294,30 @@ def create_test_code(*a):
         create_new_codetab(setting,reqname=name)
 
 
+# 生成 scrapy 代码的函数 # 暂时还在开发中
+def create_scrapy_test_code(*a):
+    '''
+    这里的处理可能会需要花上挺长的一段时间，需要考虑新的code_window的处理
+    等明天有时间的时候去处理一下
+    '''
+    _select = nb.select()
+    name    = nb_names[_select]['name']
+    setting = nb_names[_select]['setting']
+    code_string = None
+    if setting.get('type') == 'request':
+        method,c_url,c_headers,c_body = get_request_config(setting)
+        code_string = format_request(method,c_url,c_headers,c_body)
+    if setting.get('type') == 'response':
+        r_setting,c_set,c_content = get_response_config(setting)
+        code_string = format_response(r_setting,c_set,c_content)
+
+    if code_string:
+        setting = {}
+        setting['code_string'] = code_string
+        create_new_codetab(setting,reqname=name)
+
+
+
 # 获取HTML纯文本函数
 def normal_content(content,
                    tags=['script','style','select','noscript'],

@@ -138,18 +138,22 @@ def get_info():
             url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
         return url
     # 功能函数（解析解码格式）
-    def parse_content_type(content):
-        types = ['utf-8','gbk']
-        try:
-            import chardet
-            types.append(chardet.detect(content)['encoding'])
-        except:pass
-        for tp in types:
+    def parse_content_type(content, types=['utf-8','gbk']):
+        itype = iter(types)
+        while True:
             try:
+                tp = next(itype)
                 content = content.decode(tp)
                 return tp, content
             except StopIteration:
-                raise TypeError('not in {}'.format(types))
+                try:
+                    import chardet
+                    tp = chardet.detect(content)['encoding']
+                    types.append(tp)
+                    content = content.decode(tp)
+                    return tp, content
+                except:
+                    raise TypeError('not in {}'.format(types))
             except:
                 continue
     # 生成请求参数函数
@@ -195,18 +199,22 @@ def post_info():
             url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
         return url
     # 功能函数（解析解码格式）
-    def parse_content_type(content):
-        types = ['utf-8','gbk']
-        try:
-            import chardet
-            types.append(chardet.detect(content)['encoding'])
-        except:pass
-        for tp in types:
+    def parse_content_type(content, types=['utf-8','gbk']):
+        itype = iter(types)
+        while True:
             try:
+                tp = next(itype)
                 content = content.decode(tp)
                 return tp, content
             except StopIteration:
-                raise TypeError('not in {}'.format(types))
+                try:
+                    import chardet
+                    tp = chardet.detect(content)['encoding']
+                    types.append(tp)
+                    content = content.decode(tp)
+                    return tp, content
+                except:
+                    raise TypeError('not in {}'.format(types))
             except:
                 continue
     # 生成请求参数函数
