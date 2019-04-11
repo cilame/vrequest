@@ -454,7 +454,8 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                             "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
-                    func_code = 'content = response.body.decode("{}")\n'.format(tps) + get_json_code(c_content).strip()
+                    func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                                get_json_code(c_content).strip() + '\n    yield d'
                 except:
                     import traceback
                     traceback.print_exc()

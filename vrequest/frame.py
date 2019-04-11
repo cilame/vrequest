@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import json
+import time
 import shutil
 import tempfile
 import traceback
@@ -23,6 +24,8 @@ Text = scrolledtext.ScrolledText
 Label = ttk.Label
 Button = ttk.Button
 Combobox = ttk.Combobox
+Entry = ttk.Entry
+Checkbutton = tkinter.Checkbutton
 
 # 测试两种 Frame 效果
 # Frame = ttk.Frame # ttk.Frame 没有 highlightthickness 这个参数
@@ -327,10 +330,6 @@ def code_window(setting=None):
         tx.insert(0.,cs)
     tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
-    # TODO
-    # 生成一个代码输出窗口，并且这里的代码执行需要考虑实时输出
-    # 不能等全部的输出结果都输出完毕再进行写入操作，那样非常傻逼
-    # 这里考虑使用 Ctrl+v 的方式来实现代码的执行，不爽再改
     temp_fr2 = Frame(fr,highlightthickness=lin)
     lb = Label (temp_fr2,text='代码执行')
     cd = Text  (temp_fr2,height=1,width=1,font=ft)
@@ -381,7 +380,29 @@ def code_window(setting=None):
 def scrapy_code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
-    tx = Text(fr,height=1,width=1,font=ft)
+
+    def pprint(*a):
+        __org_stdout__.write(str(a)+'\n')
+        __org_stdout__.flush()
+    temp_fr0 = Frame(fr)
+    va = tkinter.IntVar()
+    rb = Checkbutton(temp_fr0,text='是否输收集数据，输出文件以及目标地址(默认桌面)：',variable=va)
+    rb.deselect()
+    et = Entry (temp_fr0,width=60)
+    rb.pack(side=tkinter.LEFT)
+    et.pack(side=tkinter.LEFT)
+    ltime = '%04d%02d%02d-%02d%02d%02d' % time.localtime()[:6]
+    dtopfile = os.path.join('file:///' + os.path.expanduser("~"),'Desktop\\v{}.json'.format(ltime))
+    et.insert(0,dtopfile)
+    cbx = Combobox(temp_fr0,width=22,state='readonly')
+    cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
+    cbx.current(1)
+    cbx.pack(side=tkinter.RIGHT)
+
+    temp_fr1 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.X)
+    temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    tx = Text(temp_fr1,height=1,width=1,font=ft)
     cs = setting.get('code_string')
     if cs:
         tx.delete(0.,tkinter.END)
@@ -395,9 +416,6 @@ def scrapy_code_window(setting=None):
     except:
         traceback.print_exc()
     def execute_func():
-        def pprint(*a):
-            __org_stdout__.write(' '.join(map(str,a)) + '\n')
-            __org_stdout__.flush()
         home = os.environ.get('HOME')
         home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
         filename = '.vscrapy'
@@ -411,11 +429,14 @@ def scrapy_code_window(setting=None):
             toggle = any([True for i in os.listdir(pyscript) if 'scrapy.exe' in i.lower()])
             if toggle:
                 scrapyexe = os.path.join(pyscript,'scrapy.exe')
+                output = '-o {}'.format(et.get()) if va.get() else ''
                 os.chdir(scriptpath)
                 try:
-                    os.system('start powershell -NoExit "{}" crawl v'.format(scrapyexe))
+                    cmd = 'start powershell -NoExit "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
+                    os.system(cmd)
                 except:
-                    os.system('start cmd /k "{}" crawl v'.format(scrapyexe))
+                    cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
+                    os.system(cmd)
             else:
                 einfo = 'cannot find scrapy'
                 tkinter.messagebox.showinfo('Error',einfo)

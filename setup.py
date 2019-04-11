@@ -2,7 +2,7 @@ from setuptools import setup
  
 setup(
     name = "vrequest",
-    version = "1.1.9",
+    version = "1.2.0",
     keywords = "vrequest",
     author = "cilame",
     author_email = "opaquism@hotmail.com",
@@ -17,13 +17,21 @@ setup(
         'Intended Audience :: Developers',
     ],
 
-    packages = ["vrequest"],
+    packages = [
+        "vrequest",
+    ],
+    package_data ={
+        "vrequest":[
+            'template/*',
+            'template/v/*',
+            'template/v/spiders/*'
+        ]
+    },
     python_requires=">=3.6",
     install_requires=[
        'requests',
        'lxml',
     ],
-
     entry_points={
         'gui_scripts': [
             'vv = vrequest.main:execute',
