@@ -441,10 +441,11 @@ def helper_window():
     fr = Frame()
     ft = Font(family='Consolas',size=10)
     hp = '''
-
 vrequest：
-基于 requests 和 lxml 库
-用于快速发起请求，快速生成测试代码的工具
+基于 requests 和 lxml 库的爬虫请求测试工具
+用于快速发起请求，快速生成且能执行的基于 requests 和 lxml 的代码
+也可以生成且能执行 scrapy 代码，不过由于scrapy库依赖过重，该工具不会依赖下载
+若需要执行 scrapy 代码，需额外下载 scrapy。
 
 请求窗口快捷键：
 (Ctrl + q) 创建新的请求标签
@@ -458,11 +459,15 @@ vrequest：
 (Alt + z) <代码过程> 智能提取 json 数据
 (Alt + d) <代码过程> 获取纯文字内容
 (Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码
+(Alt + s) 生成 scrapy 请求代码，有<代码过程>则生成代码中包含过程代码
 (Esc)     开启/关闭 response 解析窗口
 
 代码窗口快捷键：
 (Alt + v) 代码执行
 (Esc)     开启/关闭 代码执行结果窗口
+
+scrapy 代码窗口快捷键：
+(Alt + w) scrapy 代码执行
 
 通用快捷键：
 (Ctrl + e) 修改当前标签名字
