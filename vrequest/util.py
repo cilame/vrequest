@@ -4,6 +4,7 @@ import urllib.parse as ps
 import inspect
 import builtins
 from lxml import etree
+import tkinter.messagebox
 
 
 def format_headers_str(headers:str):
@@ -131,13 +132,6 @@ import requests
 from lxml import etree
 
 def get_info():
-    # 功能函数（对url里面的 param 进行编码操作）
-    def quote_val(url):
-        import urllib
-        url = urllib.parse.unquote(url)
-        for i in re.findall('=([^=&]+)',url):
-            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-        return url
     # 功能函数（解析解码格式）
     def parse_content_type(content, types=['utf-8','gbk']):
         itype = iter(types)
@@ -159,6 +153,12 @@ def get_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers():
+        def quote_val(url):
+            import urllib
+            url = urllib.parse.unquote(url)
+            for i in re.findall('=([^=&]+)',url):
+                url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+            return url
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -193,13 +193,6 @@ import requests
 from lxml import etree
 
 def post_info():
-    # 功能函数（对url里面的 param 进行编码操作）
-    def quote_val(url):
-        import urllib
-        url = urllib.parse.unquote(url)
-        for i in re.findall('=([^=&]+)',url):
-            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-        return url
     # 功能函数（解析解码格式）
     def parse_content_type(content, types=['utf-8','gbk']):
         itype = iter(types)
@@ -221,6 +214,12 @@ def post_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers_body():
+        def quote_val(url):
+            import urllib
+            url = urllib.parse.unquote(url)
+            for i in re.findall('=([^=&]+)',url):
+                url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
+            return url
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -262,18 +261,18 @@ def format_request(method,c_url,c_headers,c_body):
 
 
 def format_response(r_setting,c_set,c_content):
-
-    
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
         _format = format_req(method,c_url,c_headers,c_body)
     else:
-        _format = ''
+        tkinter.messagebox.showinfo('Error','Canot create code without request.')
+        raise TypeError('Canot create code without request.')
     _format = _format.strip()
 
     for i in c_set.splitlines():
         i = i.strip()
+        if not i: continue
         func_code = None
         if i.startswith('<') and i.endswith('>'):
             if i.startswith('<normal_content:'):
@@ -303,6 +302,171 @@ def format_response(r_setting,c_set,c_content):
         _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
     _format = _format if '$plus' not in _format else _format.replace('$plus','')
     return _format.strip()
+
+
+
+
+
+
+def format_scrapy_req(method,c_url,c_headers,c_body):
+    _format_get = '''
+# -*- coding: utf-8 -*-
+import scrapy
+from scrapy import Request
+
+import re
+import json
+from lxml import etree
+from urllib.parse import quote,unquote
+
+class VSpider(scrapy.Spider):
+    name = 'v'
+
+    def start_requests(self):
+        def mk_url_headers():
+            def quote_val(url):
+                url = unquote(url)
+                for i in re.findall('=([^=&]+)',url):
+                    url = url.replace(i,'{}'.format(quote(i)))
+                return url
+            $c_url
+            url = quote_val(url)
+            $c_headers
+            return url,headers
+        url,headers = mk_url_headers()
+        meta = {}
+        r = Request(
+                url,
+                headers  = headers,
+                callback = self.parse,
+                meta     = meta,
+            )
+        yield r
+
+    def parse(self, response):
+        $plus
+'''
+
+    _format_post = '''
+# -*- coding: utf-8 -*-
+import scrapy
+from scrapy import Request
+
+import re
+import json
+from lxml import etree
+from urllib.parse import quote,unquote,urlencode
+
+class VSpider(scrapy.Spider):
+    name = 'v'
+
+    def start_requests(self):
+        def mk_url_headers_body():
+            def quote_val(url):
+                url = unquote(url)
+                for i in re.findall('=([^=&]+)',url):
+                    url = url.replace(i,'{}'.format(quote(i)))
+                return url
+            $c_url
+            url = quote_val(url)
+            $c_headers
+            $c_body
+            return url,headers,body
+        url,headers,body = mk_url_headers_body()
+        meta = {}
+        r = Request(
+                url,
+                method   = 'POST',
+                headers  = headers,
+                body     = urlencode(body),
+                callback = self.parse,
+                meta     = meta,
+            )
+        yield r
+
+    def parse(self, response):
+        $plus
+'''
+
+    func = lambda c_:''.join(map(lambda i:'            '+i+'\n',c_.splitlines()))
+    c_url       = func(c_url).strip()
+    c_headers   = func(c_headers).strip()
+    c_body      = func(c_body).strip()
+    if method == 'GET':
+        _format = _format_get
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
+    elif method == 'POST':
+        _format = _format_post
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
+        _format = _format.replace('$c_body',c_body)
+    return _format.strip()
+
+
+def format_scrapy_request(method,c_url,c_headers,c_body):
+    return format_scrapy_req(method,c_url,c_headers,c_body).replace('$plus','pass')
+
+
+def normal_scrapy_content(content,
+                   tags=['script','style','select','noscript'],
+                   rootxpath='//html'):
+    c = re.sub('>([^>]*[\u4e00-\u9fa5]{1,}[^<]*)<','>\g<1> <',content)
+    e, q = etree.HTML(c), []
+    for it in e.getiterator():
+        if it.tag in tags or type(it.tag) is not str:
+            q.append(it)
+    for it in q:
+        p = it.getparent()
+        if p is not None:
+            p.remove(it)
+    t = e.xpath('normalize-space({})'.format(rootxpath))
+    return re.sub(r'\s+',' ',t.strip())
+
+def format_scrapy_response(r_setting,c_set,c_content,tps):
+    # 请求部分的代码
+    if r_setting is not None:
+        method,c_url,c_headers,c_body = r_setting
+        _format = format_scrapy_req(method,c_url,c_headers,c_body)
+    else:
+        tkinter.messagebox.showinfo('Error','Canot create code without request.')
+        raise TypeError('Canot create code without request.')
+    _format = _format.strip()
+
+    for i in c_set.splitlines():
+        i = i.strip()
+        if not i: continue
+        func_code = None
+        if i.startswith('<') and i.endswith('>'):
+            if i.startswith('<normal_content:'):
+                rt = re.findall('<normal_content:(.*)>', i)[0].strip()
+                rt = rt if rt else '//html'
+                func_code = inspect.getsource(normal_scrapy_content).strip()
+                func_code += '\ncontent = response.body.decode("{}")\ncontent = normal_scrapy_content(content, rootxpath="{}")\nprint(content)'.format(tps,rt)
+            if i.startswith('<xpath:'):
+                xp = re.findall('<xpath:(.*)>', i)[0].strip()
+                xp = xp if xp else '//html'
+                func_code =("for x in response.xpath('{}'):\n".format(xp) + 
+                            "    strs = x.xpath('string(.)').extract()[0]\n"
+                            "    strs = re.sub('\s+',' ',strs)\n"
+                            "    strs = strs[:60] + '...' if len(strs) > 60 else strs\n"
+                            "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
+                            "    print(attr)\n")
+            if i.startswith('<auto_list_json:'):
+                try:
+                    func_code = 'content = response.body.decode("{}")\n'.format(tps) + get_json_code(c_content).strip()
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    return _format.strip().replace('$plus','pass')
+        func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
+        _format = _format.replace('$plus', func(func_code)) if func_code is not None else _format
+    _format = _format if '$plus' not in _format else _format.replace('$plus','pass')
+    return _format.strip()
+
+
+
+
 
 
 # 下面是通过字符串模糊查找xpath的函数

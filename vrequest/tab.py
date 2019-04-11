@@ -1,7 +1,9 @@
 from lxml import etree
 
 import re
+import os
 import json
+import shutil
 import pprint
 import traceback
 import threading
@@ -19,8 +21,10 @@ from .frame import (
     request_window,
     response_window,
     code_window,
+    scrapy_code_window,
     helper_window,
     frame_setting,
+    __org_stdout__,
 )
 from .util import (
     format_url,
@@ -32,6 +36,8 @@ from .util import (
     format_body_code,
     format_request,
     format_response,
+    format_scrapy_request,
+    format_scrapy_response,
     get_simple_path_tail,
     get_xpath_by_str,
     get_json_show,
@@ -158,6 +164,10 @@ def create_new_codetab(setting=None, prefix='代码', reqname=None):
     prefix = prefix+fmt.format('空') if reqname is None else prefix+fmt.format(reqname)
     create_new_tab(setting, prefix, code_window)
 
+def create_new_scrapy_codetab(setting=None, prefix='scrapy', reqname=None):
+    fmt = '<{}>'
+    prefix = prefix+fmt.format('空') if reqname is None else prefix+fmt.format(reqname)
+    create_new_tab(setting, prefix, scrapy_code_window)
 
 def create_helper():
     nb.select(bind_frame(helper_window(),'帮助'))
@@ -203,6 +213,7 @@ def get_response_config(setting):
     tx2 = setting.get('fr_local_set')
     tx3 = setting.get('fr_local_info')
     tx4 = setting.get('fr_parse_info')
+    tps = setting.get('fr_parse_type')
     temp_fr2 = setting.get('fr_temp2')
 
     c_content = tx1.get(0.,tkinter.END).strip() # 配置，目前在解析json数据部分有用
@@ -218,7 +229,7 @@ def get_response_config(setting):
         c_url = format_url_code(r_setting.get('url'))
         c_body = format_body_code(body)
         r_setting = method,c_url,c_headers,c_body
-    return r_setting,c_set,c_content
+    return r_setting,c_set,c_content,tps
 
 
 
@@ -285,7 +296,7 @@ def create_test_code(*a):
         method,c_url,c_headers,c_body = get_request_config(setting)
         code_string = format_request(method,c_url,c_headers,c_body)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content = get_response_config(setting)
+        r_setting,c_set,c_content,tps = get_response_config(setting)
         code_string = format_response(r_setting,c_set,c_content)
 
     if code_string:
@@ -295,7 +306,7 @@ def create_test_code(*a):
 
 
 # 生成 scrapy 代码的函数 # 暂时还在开发中
-def create_scrapy_test_code(*a):
+def create_scrapy_code(*a):
     '''
     这里的处理可能会需要花上挺长的一段时间，需要考虑新的code_window的处理
     等明天有时间的时候去处理一下
@@ -303,18 +314,33 @@ def create_scrapy_test_code(*a):
     _select = nb.select()
     name    = nb_names[_select]['name']
     setting = nb_names[_select]['setting']
+    home = os.environ.get('HOME')
+    home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+    model_path = os.path.join(os.path.split(__file__)[0],'template')
+    filename = '.vscrapy'
+    scrapypath = os.path.join(home,filename)
+    scriptpath = os.path.join(scrapypath, 'v/spiders/')
+    if not os.path.isdir(scrapypath):
+        shutil.copytree(model_path, scrapypath)
+    elif not os.path.isdir(os.path.join(scrapypath,'v')):
+        toggle = tkinter.messagebox.askokcancel('是否删除已有的、错误的配置文件夹',
+                                                '存在错误的配置文件夹 {} 确定删除该文件夹内容重新创建吗？\n'
+                                                '配置文件夹地址 {}'.format(filename, scrapypath))
+        if toggle:
+            shutil.rmtree(scrapypath)
+            shutil.copytree(model_path, scrapypath)
+        else: return
     code_string = None
     if setting.get('type') == 'request':
         method,c_url,c_headers,c_body = get_request_config(setting)
-        code_string = format_request(method,c_url,c_headers,c_body)
+        code_string = format_scrapy_request(method,c_url,c_headers,c_body)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content = get_response_config(setting)
-        code_string = format_response(r_setting,c_set,c_content)
-
+        r_setting,c_set,c_content,tps = get_response_config(setting)
+        code_string = format_scrapy_response(r_setting,c_set,c_content,tps)
     if code_string:
         setting = {}
         setting['code_string'] = code_string
-        create_new_codetab(setting,reqname=name)
+        create_new_scrapy_codetab(setting,reqname=name)
 
 
 
@@ -400,6 +426,12 @@ def execute_code(*a):
         threading.Thread(target=execute_func).start()
         show_code_log()
 
+def execute_scrapy_code(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'scrapy':
+        execute_func = setting.get('execute_func')
+        threading.Thread(target=execute_func).start()
 
 
 

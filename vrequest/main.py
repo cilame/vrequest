@@ -18,11 +18,13 @@ from .tab import (
     save_config,
     switch_response_log,
     create_test_code,
+    create_scrapy_code,
     get_html_pure_text,
     get_xpath_elements,
     get_auto_xpath,
     get_auto_json,
     execute_code,
+    execute_scrapy_code,
 )
 from .combinekey import (
     bind_ctl_key,
@@ -67,13 +69,17 @@ bind_ctl_key(send_request,      'r')
 bind_ctl_key(create_helper,     'h')
 
 # 绑定 response 事件
-bind_alt_key(create_new_rsptab, 'r')
-bind_alt_key(create_test_code,  'c') # 生成代码
-bind_alt_key(get_html_pure_text,'d') # 获取文本
-bind_alt_key(get_xpath_elements,'x') # 获取xpath
-bind_alt_key(get_auto_xpath,    'f') # 解析路径xpath
-bind_alt_key(get_auto_json,     'z') # 解析json数据
-bind_alt_key(execute_code,      'v') # 代码执行
+bind_alt_key(create_new_rsptab,     'r')
+bind_alt_key(create_test_code,      'c') # 生成代码
+bind_alt_key(get_html_pure_text,    'd') # 获取文本
+bind_alt_key(get_xpath_elements,    'x') # 获取xpath
+bind_alt_key(get_auto_xpath,        'f') # 解析路径xpath
+bind_alt_key(get_auto_json,         'z') # 解析json数据
+bind_alt_key(execute_code,          'v') # 代码执行
+
+bind_alt_key(create_scrapy_code,    's') # 生成scrapy代码
+bind_alt_key(execute_scrapy_code,   'w') # 用自带缓冲区执行scrapy代码
+
 
 def execute():
     root.title('vrequest')

@@ -11,6 +11,7 @@ import traceback
 import tkinter
 import inspect
 import urllib.parse as ps
+import tkinter.messagebox
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.font import Font
@@ -200,8 +201,27 @@ eg.:
     frame_setting[fr]['fr_parse_info'] = tx4
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
 
+    # 检查数据格式
+    def parse_content_type(content, types=['utf-8','gbk']):
+        itype = iter(types)
+        while True:
+            try:
+                tp = next(itype)
+                content = content.decode(tp)
+                return tp, content
+            except StopIteration:
+                try:
+                    import chardet
+                    tp = chardet.detect(content)['encoding']
+                    types.append(tp)
+                    content = content.decode(tp)
+                    return tp, content
+                except:
+                    raise TypeError('not in {}'.format(types))
+            except:
+                continue
 
-    # 简单处理数据的格式
+    # 统一数据格式
     def format_content(content):
         if type(content) is str:
             return content
@@ -223,6 +243,7 @@ eg.:
             url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
         return url
 
+    tp = None
     if setting is not None:
         method  = setting.get('method')
         url     = setting.get('url')
@@ -232,12 +253,16 @@ eg.:
             if method == 'GET':
                 s = requests.get(quote_val(ps.unquote(url)),headers=headers)
                 insert_txt(tx1, format_content(s.content))
+                tp,_ = parse_content_type(s.content)
             elif method == 'POST':
                 # 这里的post 里面的body 暂时还没有进行处理
                 s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body)
                 insert_txt(tx1, format_content(s.content))
+                tp,_ = parse_content_type(s.content)
         except:
             insert_txt(tx1, format_content(traceback.format_exc()))
+
+    frame_setting[fr]['fr_parse_type'] = tp
     return fr
 
 
@@ -350,6 +375,65 @@ def code_window(setting=None):
         traceback.print_exc()
 
     return fr
+
+
+# 生成代码临时放在这里
+def scrapy_code_window(setting=None):
+    fr = Frame()
+    ft = Font(family='Consolas',size=10)
+    tx = Text(fr,height=1,width=1,font=ft)
+    cs = setting.get('code_string')
+    if cs:
+        tx.delete(0.,tkinter.END)
+        tx.insert(0.,cs)
+    tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
+    try:
+        from idlelib.colorizer import ColorDelegator
+        from idlelib.percolator import Percolator
+        p = ColorDelegator()
+        Percolator(tx).insertfilter(p)
+    except:
+        traceback.print_exc()
+    def execute_func():
+        def pprint(*a):
+            __org_stdout__.write(' '.join(map(str,a)) + '\n')
+            __org_stdout__.flush()
+        home = os.environ.get('HOME')
+        home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+        filename = '.vscrapy'
+        scrapypath = os.path.join(home,filename)
+        scriptpath = os.path.join(scrapypath, 'v/spiders/')
+        script = os.path.join(scriptpath, 'v.py')
+        if os.path.isdir(scriptpath):
+            with open(script,'w',encoding='utf-8') as f:
+                f.write(tx.get(0.,tkinter.END))
+            pyscript = os.path.join(os.path.split(sys.executable)[0],'Scripts')
+            toggle = any([True for i in os.listdir(pyscript) if 'scrapy.exe' in i.lower()])
+            if toggle:
+                scrapyexe = os.path.join(pyscript,'scrapy.exe')
+                os.chdir(scriptpath)
+                try:
+                    os.system('start powershell -NoExit "{}" crawl v'.format(scrapyexe))
+                except:
+                    os.system('start cmd /k "{}" crawl v'.format(scrapyexe))
+            else:
+                einfo = 'cannot find scrapy'
+                tkinter.messagebox.showinfo('Error',einfo)
+                raise EnvironmentError(einfo)
+        else:
+            einfo = 'cannot find path: {}'.format(scriptpath)
+            tkinter.messagebox.showinfo('Error',einfo)
+            raise EnvironmentError(einfo)
+    frame_setting[fr] = {}
+    frame_setting[fr]['type'] = 'scrapy'
+    frame_setting[fr]['execute_func'] = execute_func
+    return fr
+
+
+
+
+
+
 
 
 # 帮助文档
