@@ -312,11 +312,11 @@ def format_scrapy_req(method,c_url,c_headers,c_body):
     _format_get = '''
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy import Request
+from scrapy import Request, Selector
+from lxml import etree
 
 import re
 import json
-from lxml import etree
 from urllib.parse import quote,unquote
 
 class VSpider(scrapy.Spider):
@@ -344,17 +344,20 @@ class VSpider(scrapy.Spider):
         yield r
 
     def parse(self, response):
+        # If you need to parse another string in the parsing function.
+        # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
+
         $plus
 '''
 
     _format_post = '''
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy import Request
+from scrapy import Request, Selector
+from lxml import etree
 
 import re
 import json
-from lxml import etree
 from urllib.parse import quote,unquote,urlencode
 
 class VSpider(scrapy.Spider):
@@ -385,6 +388,9 @@ class VSpider(scrapy.Spider):
         yield r
 
     def parse(self, response):
+        # If you need to parse another string in the parsing function.
+        # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
+
         $plus
 '''
 
@@ -454,8 +460,13 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                             "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
-                    func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
-                                get_json_code(c_content).strip() + '\n    yield d'
+                    jsoncode = get_json_code(c_content).strip()
+                    if 'pprint.pprint(d)' in jsoncode:
+                        func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                                    jsoncode + '\n    yield d'
+                    else:
+                        func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                                    jsoncode + '\n    yield {"data": i} # yield data must be a dict.'
                 except:
                     import traceback
                     traceback.print_exc()

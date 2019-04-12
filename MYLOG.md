@@ -68,4 +68,8 @@ eg.2
     c0-id=0
     c0-param0=string:ActivitySetting
     batchId=1548220950032
+
+#20190412
+解决了scrapy代码生成以及执行的功能，后续可能就是简单的整理生成代码的框架上面的小问题了。
+整理修复了一下的几个小的BUG。
 ```

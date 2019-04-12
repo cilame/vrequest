@@ -381,6 +381,13 @@ def scrapy_code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
 
+    home = os.environ.get('HOME')
+    home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+    filename = '.vscrapy'
+    scrapypath = os.path.join(home,filename)
+    scriptpath = os.path.join(scrapypath, 'v/spiders/')
+    script = os.path.join(scriptpath, 'v.py')
+
     def pprint(*a):
         __org_stdout__.write(str(a)+'\n')
         __org_stdout__.flush()
@@ -398,6 +405,11 @@ def scrapy_code_window(setting=None):
     cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
     cbx.current(1)
     cbx.pack(side=tkinter.RIGHT)
+    def open_test(*a):
+        cmd = 'start explorer {}'.format(scrapypath)
+        os.system(cmd)
+    bt = Button(temp_fr0,text='打开测试文件路径',command=open_test)
+    bt.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr)
     temp_fr0.pack(fill=tkinter.X)
@@ -415,13 +427,8 @@ def scrapy_code_window(setting=None):
         Percolator(tx).insertfilter(p)
     except:
         traceback.print_exc()
+
     def execute_func():
-        home = os.environ.get('HOME')
-        home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
-        filename = '.vscrapy'
-        scrapypath = os.path.join(home,filename)
-        scriptpath = os.path.join(scrapypath, 'v/spiders/')
-        script = os.path.join(scriptpath, 'v.py')
         if os.path.isdir(scriptpath):
             with open(script,'w',encoding='utf-8') as f:
                 f.write(tx.get(0.,tkinter.END))
