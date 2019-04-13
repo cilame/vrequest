@@ -479,12 +479,13 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
             if i.startswith('<auto_list_json:'):
                 try:
                     jsoncode = get_json_code(c_content).strip()
-                    if 'pprint.pprint(d)' in jsoncode:
-                        func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
-                                    jsoncode + '\n    yield d'
-                    else:
-                        func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
-                                    jsoncode + '\n    yield {"data": i} # yield data must be a dict.'
+                    if jsoncode:
+                        if 'pprint.pprint(d)' in jsoncode:
+                            func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                                        jsoncode + '\n    yield d'
+                        else:
+                            func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                                        jsoncode + '\n    yield {"data": i} # yield data must be a dict.'
                 except:
                     import traceback
                     traceback.print_exc()
