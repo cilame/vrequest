@@ -35,7 +35,7 @@ def format_headers_code(headers):
             p =[]
             for i in headers[name].split('; '): p.append(i)
             for i in sorted(p):
-                q += '        "'+i+'; "\n'
+                q += '        "'+i.replace('"','\\"')+'; "\n'
             q += '    )'
             ret = re.sub(r'("cookie": )([^\n]+),',r'\1$cookie,',ret,re.I)
             ret = ret.replace('$cookie',q)
@@ -138,6 +138,7 @@ import re
 import json
 import requests
 from lxml import etree
+requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
 
 def get_info():
     # 功能函数（解析解码格式）
@@ -173,7 +174,7 @@ def get_info():
         return url,headers
 
     url,headers = mk_url_headers()
-    s = requests.get(url,headers=headers)
+    s = requests.get(url,headers=headers,verify=False)
     tp, content = parse_content_type(s.content)
     print(s)
     print('decode type: {}'.format(tp))
@@ -199,6 +200,7 @@ import re
 import json
 import requests
 from lxml import etree
+requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
 
 def post_info():
     # 功能函数（解析解码格式）
@@ -236,7 +238,7 @@ def post_info():
 
     url,headers,body = mk_url_headers_body()    
     #body = json.dumps(body) #极少情况需要data为string情况下的json数据，如需要解开该注释
-    s = requests.post(url,headers=headers,data=body) 
+    s = requests.post(url,headers=headers,data=body,verify=False) 
     tp, content = parse_content_type(s.content)
     print(s)
     print('decode type: {}'.format(tp))

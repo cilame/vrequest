@@ -254,12 +254,12 @@ eg.:
         body    = setting.get('body')
         try:
             if method == 'GET':
-                s = requests.get(quote_val(ps.unquote(url)),headers=headers)
+                s = requests.get(quote_val(ps.unquote(url)),headers=headers,verify=False)
                 insert_txt(tx1, format_content(s.content))
                 tp,_ = parse_content_type(s.content)
             elif method == 'POST':
                 # 这里的post 里面的body 暂时还没有进行处理
-                s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body)
+                s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body,verify=False)
                 insert_txt(tx1, format_content(s.content))
                 tp,_ = parse_content_type(s.content)
         except:
