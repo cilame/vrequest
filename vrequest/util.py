@@ -7,6 +7,13 @@ from lxml import etree
 import tkinter.messagebox
 
 
+def dprint(*a):
+    # debug print
+    from .frame import __org_stdout__
+    __org_stdout__.write(str(a)+'\n')
+    __org_stdout__.flush()
+
+
 def format_headers_str(headers:str):
     # return dict
     headers = headers.splitlines()
@@ -30,7 +37,8 @@ def format_headers_code(headers):
             for i in sorted(p):
                 q += '        "'+i+'; "\n'
             q += '    )'
-            ret = ret.replace('"'+headers[name]+'"',q)
+            ret = re.sub(r'("cookie": )([^\n]+),',r'\1$cookie,',ret,re.I)
+            ret = ret.replace('$cookie',q)
     return ret
 
 
@@ -322,6 +330,10 @@ from urllib.parse import quote,unquote
 class VSpider(scrapy.Spider):
     name = 'v'
 
+    custom_settings = {
+        'COOKIES_ENABLED': False,  # use my create cookie in headers
+    }
+
     def start_requests(self):
         def mk_url_headers():
             def quote_val(url):
@@ -362,6 +374,10 @@ from urllib.parse import quote,unquote,urlencode
 
 class VSpider(scrapy.Spider):
     name = 'v'
+
+    custom_settings = {
+        'COOKIES_ENABLED': False,  # use my create cookie in headers
+    }
 
     def start_requests(self):
         def mk_url_headers_body():
