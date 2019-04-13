@@ -429,7 +429,14 @@ class VSpider(scrapy.Spider):
 
 
 def format_scrapy_request(method,c_url,c_headers,c_body):
-    return format_scrapy_req(method,c_url,c_headers,c_body).replace('$plus','pass')
+    pas = (
+        "print('============================== start ==============================')\n"
+        "        print('status:',response.status)\n"
+        "        print('response length: {}'.format(len(response.body)))\n"
+        "        print('response content[:1000]:\\n {}'.format(response.body[:1000]))\n"
+        "        print('==============================  end  ==============================')"
+    )
+    return format_scrapy_req(method,c_url,c_headers,c_body).replace('$plus',pas)
 
 
 def normal_scrapy_content(content,
@@ -492,7 +499,15 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                     return _format.strip().replace('$plus','pass')
         func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
         _format = _format.replace('$plus', func(func_code)) if func_code is not None else _format
-    _format = _format if '$plus' not in _format else _format.replace('$plus','pass')
+    pas = (
+        "print('============================== start ==============================')\n"
+        "        print('status:',response.status)\n"
+        "        print('decode type: {}')\n".format(tps) + 
+        "        print('response length: {}'.format(len(response.body)))\n"
+        "        print('response content[:1000]:\\n {}'.format(response.body[:1000]))\n"
+        "        print('==============================  end  ==============================')"
+    )
+    _format = _format if '$plus' not in _format else _format.replace('$plus',pas)
     return _format.strip()
 
 
