@@ -18,7 +18,7 @@ def format_headers_str(headers:str):
     # return dict
     headers = headers.splitlines()
     headers = [re.split(':|=',i,1) for i in headers if i.strip() and ':' in i or '=' in i]
-    headers = {k.strip():v.strip() for k,v in headers}
+    headers = {k.strip():v.strip() for k,v in headers if k.lower() != "content-length"}
     return headers
 
 
@@ -45,7 +45,13 @@ def format_headers_code(headers):
 def format_body_str(body:str):
     # return dict
     body = body.splitlines()
-    body = [re.split(':|=',i,1) for i in body if i.strip() and ':' in i or '=' in i]
+    body = [i for i in body if i.strip()]
+    # 如果只有一行并且以双引号开始和结尾的话，就直接传字符串，不用传字典了。
+    if len(body) == 1:
+        v = body[0].strip()
+        if v.startswith('"')  and v.endswith('"'):
+            return v.strip('"')
+    body = [re.split(':|=',i,1) for i in body if ':' in i or '=' in i]
     body = {k.strip():v.strip() for k,v in body}
     return body
 
@@ -425,6 +431,8 @@ class VSpider(scrapy.Spider):
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
+        if not c_body.strip().endswith('}'):
+            _format = _format.replace('= urlencode(body)','= body')
     return _format.strip()
 
 

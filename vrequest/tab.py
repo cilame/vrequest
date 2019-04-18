@@ -225,9 +225,9 @@ def get_response_config(setting):
         url       = r_setting.get('url')
         headers   = r_setting.get('headers')
         body      = r_setting.get('body')
-        c_headers = format_headers_code(r_setting.get('headers'))
-        c_url = format_url_code(r_setting.get('url'))
-        c_body = format_body_code(body)
+        c_url     = format_url_code(url)
+        c_headers = format_headers_code(headers)
+        c_body    = format_body_code(body) if type(body) == dict else 'body = ' + json.dumps(body)
         r_setting = method,c_url,c_headers,c_body
     return r_setting,c_set,c_content,tps
 
