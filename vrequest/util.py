@@ -19,6 +19,9 @@ def format_headers_str(headers:str):
     headers = headers.splitlines()
     headers = [re.split(':|=',i,1) for i in headers if i.strip() and ':' in i or '=' in i]
     headers = {k.strip():v.strip() for k,v in headers if k.lower() != "content-length"}
+    for k,v in headers.items():
+        if k.lower() == 'accept-encoding':
+            headers[k] = v.replace('br','')
     return headers
 
 
@@ -39,6 +42,8 @@ def format_headers_code(headers):
             q += '    )'
             ret = re.sub(r'("{}": )([^\n]+),'.format(name),r'\1$cookie,',ret,re.I)
             ret = ret.replace('$cookie',q)
+        if name.lower() == 'accept-encoding':
+            ret = re.sub(r'{}([^\n]+)'.format(name),r'{}\1 # auto delete br encoding. cos requests and scrapy can not decode it.'.format(name), ret)
     return ret
 
 
