@@ -423,7 +423,7 @@ def execute_code(*a):
     setting = nb_names[_select]['setting']
     if setting.get('type') == 'code':
         execute_func = setting.get('execute_func')
-        threading.Thread(target=execute_func).start()
+        execute_func()
         show_code_log()
 
 def execute_scrapy_code(*a):
@@ -431,8 +431,103 @@ def execute_scrapy_code(*a):
     setting = nb_names[_select]['setting']
     if setting.get('type') == 'scrapy':
         execute_func = setting.get('execute_func')
-        threading.Thread(target=execute_func).start()
+        execute_func()
 
+
+
+
+
+import tkinter
+from tkinter import (
+    Toplevel,
+    Message,
+    BOTH,
+    TOP,
+    RIDGE,
+    Frame,
+    Button,
+)
+class SimpleDialog:
+
+    def __init__(self, master,
+                 text='', buttons=[], default=None, cancel=None,
+                 title=None, class_=None):
+        if class_:
+            self.root = Toplevel(master, class_=class_)
+        else:
+            self.root = Toplevel(master)
+        if title:
+            self.root.title(title)
+            self.root.iconname(title)
+        self.message = Message(self.root, text=text, aspect=400)
+        self.message.pack(expand=1, fill=BOTH)
+        self.frame = Frame(self.root)
+        self.frame.pack()
+        self.num = default
+        self.cancel = cancel
+        self.default = default
+        self.root.bind('<Return>', self.return_event)
+        for num in range(len(buttons)):
+            s = buttons[num]
+            b = Button(self.frame, text=s,
+                       command=(lambda self=self, num=num: self.done(num)))
+            if num == default:
+                b.config(relief=RIDGE, borderwidth=8)
+            b.pack(side=TOP, fill=BOTH, expand=1)
+        self.root.protocol('WM_DELETE_WINDOW', self.wm_delete_window)
+        self._set_transient(master)
+
+    def _set_transient(self, master, relx=0.5, rely=0.3):
+        widget = self.root
+        widget.withdraw() # Remain invisible while we figure out the geometry
+        widget.transient(master)
+        widget.update_idletasks() # Actualize geometry information
+        if master.winfo_ismapped():
+            m_width = master.winfo_width()
+            m_height = master.winfo_height()
+            m_x = master.winfo_rootx()
+            m_y = master.winfo_rooty()
+        else:
+            m_width = master.winfo_screenwidth()
+            m_height = master.winfo_screenheight()
+            m_x = m_y = 0
+        w_width = widget.winfo_reqwidth()
+        w_height = widget.winfo_reqheight()
+        x = m_x + (m_width - w_width) * relx
+        y = m_y + (m_height - w_height) * rely
+        if x+w_width > master.winfo_screenwidth():
+            x = master.winfo_screenwidth() - w_width
+        elif x < 0:
+            x = 0
+        if y+w_height > master.winfo_screenheight():
+            y = master.winfo_screenheight() - w_height
+        elif y < 0:
+            y = 0
+        widget.geometry("+%d+%d" % (x, y))
+        widget.deiconify() # Become visible at the desired location
+
+    def go(self):
+        self.root.wait_visibility()
+        self.root.grab_set()
+        self.root.mainloop()
+        self.root.destroy()
+        return self.num
+
+    def return_event(self, event):
+        if self.default is None:
+            self.root.bell()
+        else:
+            self.done(self.default)
+
+    def wm_delete_window(self):
+        if self.cancel is None:
+            self.root.bell()
+        else:
+            self.done(self.cancel)
+
+    def done(self, num):
+        self.num = num
+        self.root.quit()
 
 
 # TODO
@@ -443,16 +538,34 @@ def get_xpath_elements(*a):
     if setting.get('type') == 'response':
         txt = setting.get('fr_html_content')
         tx2 = setting.get('fr_local_set')
+        tx4 = setting.get('fr_parse_info')
 
         c_set = tx2.get(0.,tkinter.END).strip()
         xp = '//html'
-        toggle = True
+        toggle = 0
         for i in c_set.splitlines():
             i = i.strip()
             if i.startswith('<') and i.endswith('>'):
                 if i.startswith('<xpath:'):
                     xp = re.findall('<xpath:(.*)>', i)[0].strip()
-                    toggle = False
+                    toggle = 1
+                    break
+                if i.startswith('<auto_list_xpath:'):
+                    q = ['//html']
+                    for j in tx4.get(0.,tkinter.END).strip().splitlines():
+                        v = re.findall(r'^\[ xpath \]: (.*)$',j)
+                        if v:
+                            q.append(v[0])
+                    d = SimpleDialog(nb,
+                        text="是否选择自动解析出的xpath路径？\n"
+                             "（不选择，默认填充 “//html” ）",
+                        buttons=q,
+                        default=0,
+                        cancel=0,
+                        title="Test Dialog")
+                    xp = q[d.go()]
+                    toggle = 2
+                    break
         tx4 = setting.get('fr_parse_info')
         if xp.startswith('//'):
             p = ['[ xpath ]: {}'.format(xp)]
@@ -469,9 +582,12 @@ def get_xpath_elements(*a):
             content = '\n'.join(p)
         tx4.delete(0.,tkinter.END)
         tx4.insert(0.,content)
-        if toggle:
+        if toggle == 0:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<xpath://html>')
+        if toggle == 2:
+            tx2.delete(0.,tkinter.END)
+            tx2.insert(0.,'<xpath:{}>'.format(xp))
         show_response_log()
 
 
@@ -499,9 +615,10 @@ def get_auto_xpath(*a):
         p = []
         idx = 0
         for xp,strs in get_xpath_by_str(strs,txt.get(0.,tkinter.END)):
-            if len(strs.strip()) > 3:
-                idx += 1
-                p.append('[ xpath ]: {} {}'.format(xp, strs))
+            idx += 1
+            p.append('[ xpath ]: {}'.format(xp))
+            for j,c in strs:
+                p.append('    [ content ]: {} {}'.format(j,c))
         p.append('[ count ]: {}'.format(idx))
         content = '\n'.join(p)
         tx4.delete(0.,tkinter.END)

@@ -621,13 +621,48 @@ def get_xpath_by_str(strs, html_content):
                 if i in v:
                     return True
 
+    rets = []
     for key, xp, sxp, px in p:
         v = e.xpath('string({})'.format(xp))
         v = re.sub('\s+',' ',v)
         v = v[:40] + '...' if len(v) > 40 else v
         v = '[{}] {}'.format(len(v),v)
-        if instrs(strs,v):
-            yield xp,v
+        if instrs(strs,v) and len(v.strip()) > 3: # '[0]' 如果该节点内容为空则过滤
+            rets.append((xp,v))
+    return find_xtree(rets)
+
+def find_xtree(item_list):
+    d = {}
+    for i,v in item_list:
+        b = re.sub(r'\[\d+\]','[$]',i)
+        p = list(map(int,re.findall(r'\[(\d+)\]',i)))
+        if b not in d: 
+            d[b] = { 'level':
+                         { 'all':None,
+                           'map':{}, },
+                     'info':[],
+                     'xtree':None, }
+        d[b]['info'].append({'path':i,'content':v,'ids':p})
+        if d[b]['level']['all'] is None:
+            d[b]['level']['all'] = len(p)
+            d[b]['level']['map'] = {i:[] for i in range(1,len(p)+1)}
+            d[b]['minfo'] = {i:None for i in range(1,len(p)+1)}
+        for idx,i in enumerate(p,1):
+            d[b]['level']['map'][idx].append(i)
+    for i in d:
+        for j in d[i]['level']['map'].items():
+            d[i]['minfo'][j[0]] = 0 if len(set(j[1])) != 1 else j[1][0]
+    for i in d:
+        m = d[i]['minfo']
+        x = i
+        for j in range(1,len(m)+1):
+            if m[j] == 0:
+                x = re.sub(r'^([^\$]+)\[\$\]',r'\1',x)
+            else:
+                x = re.sub(r'^([^\$]+)\[\$\]',r'\1[{}]'.format(m[j]),x)
+        d[i]['xtree'] = x
+    for i in d:
+        yield d[i]['xtree'],[(i['path'],i['content']) for i in d[i]['info']]
 
 
 
