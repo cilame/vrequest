@@ -1,3 +1,4 @@
+import os
 
 from .root import (
     root,
@@ -83,6 +84,8 @@ bind_alt_key(execute_scrapy_code,   'w') # 用自带缓冲区执行scrapy代码
 
 def execute():
     root.title('vrequest')
+    ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
+    root.iconbitmap(ico)
     root.geometry(config['siz'])
     root.bind('<Configure>',lambda e:change_siz())
     root.bind('<Escape>',lambda e:switch_response_log())

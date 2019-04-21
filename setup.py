@@ -2,7 +2,7 @@ from setuptools import setup
  
 setup(
     name = "vrequest",
-    version = "1.2.9",
+    version = "1.2.10",
     keywords = "vrequest",
     author = "cilame",
     author_email = "opaquism@hotmail.com",
@@ -24,7 +24,8 @@ setup(
         "vrequest":[
             'template/*',
             'template/v/*',
-            'template/v/spiders/*'
+            'template/v/spiders/*',
+            'ico.ico'
         ]
     },
     python_requires=">=3.6",
