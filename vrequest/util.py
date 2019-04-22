@@ -656,13 +656,56 @@ def find_xtree(item_list):
         m = d[i]['minfo']
         x = i
         for j in range(1,len(m)+1):
+            if j == len(m):
+                # v = re.sub(r'\[\$\]\[[^\[\]]+\]',r'[$]',x)
+                # v = re.findall(r'\[\$\]([^\$]*)$',v)[0]
+                # c = re.sub(r'\[[^\[\]]+\]',r'[]',v).count('/')
+                # c = '/parent::*' * c
+                # 暂时还没有想好这里怎么处理
+                c = ''
             if m[j] == 0:
                 x = re.sub(r'^([^\$]+)\[\$\]',r'\1',x)
             else:
                 x = re.sub(r'^([^\$]+)\[\$\]',r'\1[{}]'.format(m[j]),x)
-        d[i]['xtree'] = x
+        d[i]['xtree'] = x + c
     for i in d:
         yield d[i]['xtree'],[(i['path'],i['content']) for i in d[i]['info']]
+
+
+# 这里的代码应该会是最后一次对自动列表解析处理的精准度的提升
+# 以各种函数处理将解析上升到像是对json列表解析一样的高度
+# tps = ['href', 'title']
+# d = {}
+# e = {}
+# for x in tree.xpath('//li/ul[@class="sub-nav"]/parent::*'):
+#     def mk_attr_strs(x,s=0,idx=1,xp='.'):
+#         if type(x.tag) is not str: return
+#         strs = re.sub('\s+',' ',x.xpath('string(.)')).strip()
+#         attr = '[ lv:idx ]:{}:{} [ tag ]: {} [ attrib ]: {} [ string ]: {}'.format(s,idx,x.tag, x.attrib, strs)
+#         xp += '/{}[{}]'.format(x.tag, idx)
+#         if 'id' in x.attrib:
+#             a = '[@id="{}"]'.format(x.attrib['id'])
+#         elif x.attrib:
+#             for i in sorted(x.attrib.items(),key=lambda i:-len(i[1].strip())):
+#                 a = '[@{}]'.format(i[0])
+#         else:
+#             a = ''
+#         _xp = xp + a
+#         _sxp = 'string({})'.format(_xp)
+#         if _sxp not in e: e[_sxp] = []
+#         e[_sxp].append(strs)
+#         print(attr)
+#         print('----{}'.format(_xp))
+#         for k,v in x.attrib.items():
+#             _lxp = '{}/@{}'.format(_xp,k)
+#             if k in tps:
+#                 if _lxp not in d: d[_lxp] = []
+#                 if v.strip():     d[_lxp].append(v)
+#         for idx,i in enumerate(x.getchildren(),1):
+#             mk_attr_strs(i,s+1,idx,xp)
+#         if s==0:
+#             print('=================')
+#     mk_attr_strs(x)
 
 
 
