@@ -423,9 +423,9 @@ def execute_code(*a):
     setting = nb_names[_select]['setting']
     if setting.get('type') == 'code':
         execute_func = setting.get('execute_func')
-        # execute_func()
-        threading.Thread(target=execute_func).start()
         show_code_log()
+        execute_func()
+        
 
 def execute_scrapy_code(*a):
     _select = nb.select()
@@ -435,10 +435,6 @@ def execute_scrapy_code(*a):
         execute_func()
 
 
-
-
-
-import tkinter
 from tkinter import (
     Toplevel,
     Message,

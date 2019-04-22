@@ -306,6 +306,7 @@ class stdhooker:
                     self.logtx.tag_config('tag1',foreground='red')
                 else:
                     self.predk[self.logtx] = self.logtx.index('insert')
+                self.logtx.update()
 
     def flush(self):
         self.__org_func__.flush()
@@ -356,8 +357,8 @@ def code_window(setting=None):
             else:
                 break
         print('==============================  end  ==============================')
-        p.stdout.close()
         p.wait()
+        p.stdout.close()
         shutil.rmtree(td)
 
     frame_setting[fr] = {}
