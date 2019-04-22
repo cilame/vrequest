@@ -423,7 +423,8 @@ def execute_code(*a):
     setting = nb_names[_select]['setting']
     if setting.get('type') == 'code':
         execute_func = setting.get('execute_func')
-        execute_func()
+        # execute_func()
+        threading.Thread(target=execute_func).start()
         show_code_log()
 
 def execute_scrapy_code(*a):
