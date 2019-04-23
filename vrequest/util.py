@@ -5,6 +5,7 @@ import inspect
 import builtins
 from lxml import etree
 import tkinter.messagebox
+import traceback
 
 
 def dprint(*a):
@@ -305,13 +306,23 @@ def format_response(r_setting,c_set,c_content):
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
-                func_code =("print('------------------------------ split ------------------------------')\n"
-                            "tree = etree.HTML(content)\n"
-                            "for x in tree.xpath('{}'):\n".format(xp) + 
-                            "    strs = re.sub('\s+',' ',x.xpath('string(.)'))\n"
-                            "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
-                            "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
-                            "    print(attr)\n")
+                indent = 4
+                try:
+                    func = lambda i:i.replace('\n',' ').strip()
+                    p = []
+                    p.append("tree = etree.HTML(content)")
+                    p.append("for x in tree.xpath('{}'):".format(xp))
+                    p.extend([' '*indent+func(i) for i in auto_xpath(xp,c_content)])
+                    func_code ='\n'.join(p)
+                except:
+                    traceback.print_exc()
+                    func_code =("print('------------------------------ split ------------------------------')\n"
+                                "tree = etree.HTML(content)\n"
+                                "for x in tree.xpath('{}'):\n".format(xp) + 
+                                "    strs = re.sub('\s+',' ',x.xpath('string(.)'))\n"
+                                "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
+                                "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
+                                "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
                     func_code = get_json_code(c_content).strip()
@@ -490,12 +501,26 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
-                func_code =("for x in response.xpath('{}'):\n".format(xp) + 
-                            "    strs = x.xpath('string(.)').extract()[0]\n"
-                            "    strs = re.sub('\s+',' ',strs)\n"
-                            "    strs = strs[:60] + '...' if len(strs) > 60 else strs\n"
-                            "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
-                            "    print(attr)\n")
+                indent = 4
+                try:
+                    func = lambda i:re.sub(r'( +# \[cnt:\d+\])',r'.extract()\1',i) \
+                                      .replace(' or [None])[0]',' or [none])[0]') \
+                                      .replace('\n',' ') \
+                                      .strip()
+                    p = []
+                    p.append("class none:pass")
+                    p.append("none.extract = lambda:None")
+                    p.append("for x in response.xpath('{}'):".format(xp))
+                    p.extend([' '*indent+func(i) for i in auto_xpath(xp,c_content)])
+                    func_code ='\n'.join(p)
+                except:
+                    traceback.print_exc()
+                    func_code =("for x in response.xpath('{}'):\n".format(xp) + 
+                                "    strs = x.xpath('string(.)').extract()[0]\n"
+                                "    strs = re.sub('\s+',' ',strs)\n"
+                                "    strs = strs[:60] + '...' if len(strs) > 60 else strs\n"
+                                "    attr = '[ attrib ]: {} [ string ]: {}'.format(x.attrib, strs)\n"
+                                "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
                     jsoncode = get_json_code(c_content).strip()
@@ -507,7 +532,6 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                             func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
                                         jsoncode + '\n    yield {"data": i} # yield data must be a dict.'
                 except:
-                    import traceback
                     traceback.print_exc()
                     return _format.strip().replace('$plus','pass')
         func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
@@ -657,12 +681,12 @@ def find_xtree(item_list):
         x = i
         for j in range(1,len(m)+1):
             if j == len(m):
-                # v = re.sub(r'\[\$\]\[[^\[\]]+\]',r'[$]',x)
-                # v = re.findall(r'\[\$\]([^\$]*)$',v)[0]
-                # c = re.sub(r'\[[^\[\]]+\]',r'[]',v).count('/')
-                # c = '/parent::*' * c
-                # 暂时还没有想好这里怎么处理
-                c = ''
+                v = re.sub(r'\[\$\]\[[^\[\]]+\]',r'[$]',x)
+                v = re.findall(r'\[\$\]([^\$]*)$',v)[0]
+                c = re.sub(r'\[[^\[\]]+\]',r'[]',v).count('/')
+                c = '/parent::*' * c
+                # 测试过了，这里用轴处理确实会更方便一些，且能解决子节点的条件约束问题。
+                # c = ''
             if m[j] == 0:
                 x = re.sub(r'^([^\$]+)\[\$\]',r'\1',x)
             else:
@@ -674,38 +698,154 @@ def find_xtree(item_list):
 
 # 这里的代码应该会是最后一次对自动列表解析处理的精准度的提升
 # 以各种函数处理将解析上升到像是对json列表解析一样的高度
-# tps = ['href', 'title']
-# d = {}
-# e = {}
-# for x in tree.xpath('//li/ul[@class="sub-nav"]/parent::*'):
-#     def mk_attr_strs(x,s=0,idx=1,xp='.'):
-#         if type(x.tag) is not str: return
-#         strs = re.sub('\s+',' ',x.xpath('string(.)')).strip()
-#         attr = '[ lv:idx ]:{}:{} [ tag ]: {} [ attrib ]: {} [ string ]: {}'.format(s,idx,x.tag, x.attrib, strs)
-#         xp += '/{}[{}]'.format(x.tag, idx)
-#         if 'id' in x.attrib:
-#             a = '[@id="{}"]'.format(x.attrib['id'])
-#         elif x.attrib:
-#             for i in sorted(x.attrib.items(),key=lambda i:-len(i[1].strip())):
-#                 a = '[@{}]'.format(i[0])
-#         else:
-#             a = ''
-#         _xp = xp + a
-#         _sxp = 'string({})'.format(_xp)
-#         if _sxp not in e: e[_sxp] = []
-#         e[_sxp].append(strs)
-#         print(attr)
-#         print('----{}'.format(_xp))
-#         for k,v in x.attrib.items():
-#             _lxp = '{}/@{}'.format(_xp,k)
-#             if k in tps:
-#                 if _lxp not in d: d[_lxp] = []
-#                 if v.strip():     d[_lxp].append(v)
-#         for idx,i in enumerate(x.getchildren(),1):
-#             mk_attr_strs(i,s+1,idx,xp)
-#         if s==0:
-#             print('=================')
-#     mk_attr_strs(x)
+def auto_xpath(oxp,content,_type=None):
+    tps = ['href', 'title']
+    d = {}
+    e = {}
+    _oxp = re.sub('//[^/]+/','./',oxp)
+    _oxp = re.sub(r'\[[^\[\]]+\]',r'',_oxp).replace('/parent::*','')
+    def fmti(i):
+        v = re.findall(r'^string\((.*?)\)$',i.strip())
+        i,rf = (v[0],'string({})') if v else (i,'{}')
+        o = ''
+        t = ['.']
+        for idx,j in enumerate(i.split('/')):
+            if idx == 0: continue
+            if idx > _oxp.count('/'):
+                t.append(j)
+                continue
+            r1 = r'\[\d+\]' + r'(\[@.*\])'
+            r2 = r'\[\d+\]'
+            j = re.sub(r1,r'\1',j)
+            j = re.sub(r2,r'',j)
+            t.append(j)
+        r = rf.format('/'.join(t))
+        return r
+    def normal_tree(content,
+                    rootxpath='//html',
+                    tags=['script','style','select','noscript'],):
+        e = etree.HTML(content)
+        q = []
+        for it in e.getiterator():
+            if it.tag in tags or type(it.tag) is not str:
+                q.append(it)
+        for it in q:
+            p = it.getparent()
+            if p is not None:
+                p.remove(it)
+        return e
+    tree = normal_tree(content)
+    for x in tree.xpath(oxp):
+        def mk_attr_strs(x,s=0,idx=1,xp='.'):
+            if type(x.tag) is not str: return
+            strs = re.sub(r'\s+',' ',x.xpath('string(.)')).strip()
+            if s!=0: xp += '/{}[{}]'.format(x.tag, idx)
+            if 'id' in x.attrib:
+                a = '[@id="{}"]'.format(x.attrib['id'])
+            elif 'class' in x.attrib:
+                a = '[@class="{}"]'.format(x.attrib['class'])
+            elif x.attrib:
+                for i in sorted(x.attrib.items(),key=lambda i:-len(i[1].strip())):
+                    a = '[@{}]'.format(i[0])
+            else:
+                a = ''
+            _xp = xp + a
+            _sxp = 'string({})'.format(_xp if not _xp.startswith('.[') else '.')
+            if strs and x.tag not in ['em']:
+                _sxp = fmti(_sxp)
+                if _sxp not in e: e[_sxp] = []
+                e[_sxp].append(strs)
+            for k,v in x.attrib.items():
+                _lxp = '{}/@{}'.format(_xp,k)
+                _lxp = fmti(_lxp)
+                if k in tps:
+                    if _lxp not in d: d[_lxp] = []
+                    if v.strip():     d[_lxp].append(v)
+            for idx,i in enumerate(x.getchildren(),1):
+                mk_attr_strs(i,s+1,idx,xp)
+        mk_attr_strs(x)
+    f = {}
+    for i in e.items():
+        v = str(i[1])
+        if v not in f: f[v] = []
+        f[v].append(i[0])
+    p = []
+    for i in f.items():
+        if len(i[1]) > 1:
+            p.extend(sorted(i[1],key=lambda i:-len(i))[1:])
+    for i in p:
+        e.pop(i)
+    m = set()
+    def func(name):
+        if name not in m:
+            m.add(name)
+            return name
+        else:
+            v = re.findall(r'_(\d+)$',name)
+            name = re.sub(r'_\d+$','_{}'.format(int(v[0]) + 1),name)\
+                if v else name + '_1'
+            if name not in m:
+                m.add(name)
+                return name
+            else:
+                return func(name)
+    def _mk_q():
+        q = []
+        for i in d:
+            v = '''(x.xpath('{}') or [None])[0]'''.format(i)
+            k = func((re.findall(r'@([^@]*)$', i) or [None])[0])
+            q.append((k,v,len(d[i])))
+        for i in e:
+            v = '''x.xpath('{}')'''.format(i)
+            k = (re.findall(r'@[^@"]*"([^@"]*)"[^@"]*$', i) or ['None'])[0]
+            k = func('str_' + re.findall('[a-zA-Z0-9]+', k)[0]) if i != 'string(.)' else 'str_all'
+            q.append((k,v,len(e[i])))
+        return q
+    def count_lu(q):
+        l,u = 0,0
+        for (k,v,_),_ in q:
+            l = len(k) if len(k)>l else l
+            u = len(v) if len(v)>u else u
+        return l,u
+    def clear_dregs(q):
+        d = {}
+        for x in tree.xpath(oxp):
+            for k,v,_ in q:
+                if k not in d: d[k] = 0
+                n = eval(v)
+                if n and str(n).strip():
+                    d[k] += 1
+                    d['$_'+k] = n
+        return [(i,d['$_'+i[0]]) for i in q if d[i[0]] > 1]
+    def mk_code_struct(q,l,u):
+        r = ['d = {}']
+        fmt = '{:<'+str(l+5)+'} = {:<' + str(u) +'} # [cnt:{}] [len:{}] '
+        limit = 30
+        for i,pr in q:
+            lpr = len(pr)
+            pr = pr[:limit]+'...' if lpr > limit else pr
+            k,v,n = i
+            k = 'd["{}"]'.format(k)
+            f = fmt.format(k,v,n,lpr)+pr
+            r.append(f)
+        r.append("print('------------------------------ split ------------------------------')")
+        r.append('import pprint')
+        r.append('pprint.pprint(d)')
+        return r
+    q = _mk_q()
+    q = clear_dregs(q)
+    l,u = count_lu(q)
+    s = mk_code_struct(q,l,u)
+    return s
+
+def get_xpath_code():
+    pass
+
+
+
+
+
+
 
 
 

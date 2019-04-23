@@ -464,6 +464,7 @@ class SimpleDialog:
         self.cancel = cancel
         self.default = default
         self.root.bind('<Return>', self.return_event)
+        self.root.bind('<Escape>', self.wm_delete_window)
         for num in range(len(buttons)):
             s = buttons[num]
             b = Button(self.frame, text=s,
@@ -516,7 +517,7 @@ class SimpleDialog:
         else:
             self.done(self.default)
 
-    def wm_delete_window(self):
+    def wm_delete_window(self, event=None):
         if self.cancel is None:
             self.root.bell()
         else:
@@ -558,9 +559,11 @@ def get_xpath_elements(*a):
                              "（不选择，默认填充 “//html” ）",
                         buttons=q,
                         default=0,
-                        cancel=0,
+                        cancel=-1,
                         title="Test Dialog")
-                    xp = q[d.go()]
+                    id = d.go()
+                    if id == -1: return
+                    xp = q[id]
                     toggle = 2
                     break
         tx4 = setting.get('fr_parse_info')
