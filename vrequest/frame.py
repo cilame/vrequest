@@ -16,6 +16,7 @@ import tkinter.messagebox
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.font import Font
+from tkinter.simpledialog import askstring
 
 from .root import DEFAULTS_HEADERS
 
@@ -409,8 +410,50 @@ def scrapy_code_window(setting=None):
     def open_test(*a):
         cmd = 'start explorer {}'.format(scrapypath)
         os.system(cmd)
-    bt = Button(temp_fr0,text='打开测试文件路径',command=open_test)
-    bt.pack(side=tkinter.RIGHT)
+    bt1 = Button(temp_fr0,text='打开本地文件路径',command=open_test)
+    bt1.pack(side=tkinter.RIGHT)
+
+    def save_project_in_desktop(*a):
+        name = askstring('项目名称','请输入项目名称，尽量小写无空格。')
+        desktop = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isdir(desktop):
+            with open(script,'w',encoding='utf-8') as f:
+                f.write(tx.get(0.,tkinter.END))
+            shutil.copytree(scrapypath, desktop)
+            toggle = tkinter.messagebox.askokcancel('创建成功',
+                            '创建成功，是否打开项目目录地址并执行测试？\n\n'
+                            '（注意，工具内的代码和已经拷贝出去的项目代码已无关联）\n'
+                            '（这里提供一次测试项目的启动命令只是为了方便开发而已）\n'
+                            '（该工具快捷键执行的代码共用临时存储空间，存储不安全）\n'
+                            '（所以开发时尽量在拷贝出去的项目空间中正式实现。\n'
+                            '\n{}'.format(desktop))
+            if not toggle:
+                return
+            cmd = 'start explorer {}'.format(desktop)
+            os.system(cmd)
+            pyscript = os.path.join(os.path.split(sys.executable)[0],'Scripts')
+            toggle = any([True for i in os.listdir(pyscript) if 'scrapy.exe' in i.lower()])
+            if toggle:
+                scrapyexe = os.path.join(pyscript,'scrapy.exe')
+                output = '-o {}'.format(et.get()) if va.get() else ''
+                cwd = os.getcwd()
+                os.chdir(desktop)
+                try:
+                    cmd = 'start powershell -NoExit "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
+                    os.system(cmd)
+                except:
+                    cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
+                    os.system(cmd)
+                os.chdir(cwd)
+                cwd = os.getcwd()             
+            else:
+                einfo = 'cannot find scrapy'
+                tkinter.messagebox.showinfo('Error',einfo)
+                raise EnvironmentError(einfo)
+        else:
+            tkinter.messagebox.showwarning('文件夹已存在','文件夹已存在')
+    bt2 = Button(temp_fr0,text='拷贝项目文件到桌面并以之启动测试',command=save_project_in_desktop)
+    bt2.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr)
     temp_fr0.pack(fill=tkinter.X)
@@ -438,6 +481,7 @@ def scrapy_code_window(setting=None):
             if toggle:
                 scrapyexe = os.path.join(pyscript,'scrapy.exe')
                 output = '-o {}'.format(et.get()) if va.get() else ''
+                cwd = os.getcwd()
                 os.chdir(scriptpath)
                 try:
                     cmd = 'start powershell -NoExit "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
@@ -445,6 +489,7 @@ def scrapy_code_window(setting=None):
                 except:
                     cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
                     os.system(cmd)
+                os.chdir(cwd)
             else:
                 einfo = 'cannot find scrapy'
                 tkinter.messagebox.showinfo('Error',einfo)
