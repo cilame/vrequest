@@ -853,25 +853,32 @@ def get_xpath_code():
 
 # ==== 解析 json 格式的数据 ====
 
-def get_parse_list(dicts):
+def get_parse_list(jsondata):
     p = {}
-    def parse_list(dicts,uri=''):
-        if type(dicts) != dict:
-            return
-        for idi,i in enumerate(dicts):
-            _uri = uri + "['{}']".format(i)
-            iner = dicts[i]
-            if type(iner) == list:
-                if iner: 
-                    p[_uri] = {}
-                    p[_uri]['iner'] = iner
-                    p[_uri]['lens'] = len(iner)
-                for idj,j in enumerate(iner):
-                    _urj = _uri + "[{}]".format(idj)
-                    parse_list(j, _urj)
-            elif type(iner) == dict:
-                parse_list(iner, _uri)
-    parse_list(dicts)
+    def parse_list(jsondata,uri=''):
+        if type(jsondata) == dict:
+            for idi,i in enumerate(jsondata):
+                _uri = uri + "['{}']".format(i)
+                iner = jsondata[i]
+                if type(iner) == list:
+                    if iner: 
+                        p[_uri] = {}
+                        p[_uri]['iner'] = iner
+                        p[_uri]['lens'] = len(iner)
+                    for idj,j in enumerate(iner):
+                        _urj = _uri + "[{}]".format(idj)
+                        parse_list(j, _urj)
+                elif type(iner) == dict:
+                    parse_list(iner, _uri)
+        elif type(jsondata) == list:
+            if jsondata:
+                p[uri] = {}
+                p[uri]['iner'] = jsondata
+                p[uri]['lens'] = len(jsondata)
+            for idj,j in enumerate(jsondata):
+                _urj = uri + "[{}]".format(idj)
+                parse_list(j, _urj)
+    parse_list(jsondata)
     return p
 
 def get_max_len_list(p):
@@ -907,13 +914,17 @@ def analisys_key_sort(p):
         keyscores.append([key, argvlens, dupscore, str(val)])
     return mx,okey,sorted(keyscores,key=lambda i:i[1:])
 
-def format_json_parse_code(p,standard=True):
+def format_json_parse_code(p,standard=True,tp=1):
     # 这里将处理一些非典型的数据结构
     # 通常能解析的json列表的数据结构都是 list[dict1,dict2,...]，将这些当作标准解析结构
     # 不过也会有一些列表内部并非都是dict的数据结构，这时候就需要考虑一些别的方法进行格式化处理。
+    if tp == 1:
+        ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n'''
+    if tp == 2:
+        ret = '''jsondata = json.loads(content[content.find('['):content.rfind(']')+1])\nfor i in jsondata%s:\n'''
     if standard:
         mx,okey,sortkeys = analisys_key_sort(p)
-        ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
+        ret = ret % okey
         indent = 4
         ret += ' '*indent + 'd = {}\n'
         for key,alen,dups,val in sortkeys:
@@ -936,7 +947,7 @@ def format_json_parse_code(p,standard=True):
         return ret + tail
     else:
         lens, (okey, iner) = p
-        ret = '''jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nfor i in jsondata%s:\n''' % okey
+        ret = ret % okey
         indent = 4
         tail = ' '*indent + "print('------------------------------ split ------------------------------')\n"
         tail += ' '*indent + 'import pprint\n'
@@ -976,23 +987,33 @@ def format_json_parse_show(p,standard=True):
 
 def parse_json_content(content):
     if type(content) == str:
-        json_content = json.loads(content[content.find('{'):content.rfind('}')+1])
+        try:
+            json_content = json.loads(content[content.find('{'):content.rfind('}')+1])
+            tp = 1
+        except:
+            json_content = json.loads(content[content.find('['):content.rfind(']')+1])
+            tp = 2
     elif type(content) == bytes:
-        json_content = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
+        try:
+            json_content = json.loads(content[content.find(b'{'):content.rfind(b'}')+1])
+            tp = 1
+        except:
+            json_content = json.loads(content[content.find(b'['):content.rfind(b']')+1])
+            tp = 2
     else:
         raise TypeError('unparse type {}'.format(type(s)))
-    return json_content
+    return json_content,tp
 
 def get_json_code(content):
-    s = parse_json_content(content)
+    s,tp = parse_json_content(content)
     p = get_parse_list(s)
     p = get_max_len_list(p)
     if p[0] == 0: return ''
     standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
-    return format_json_parse_code(p,standard)
+    return format_json_parse_code(p,standard,tp)
 
 def get_json_show(content):
-    s = parse_json_content(content)
+    s,tp = parse_json_content(content)
     p = get_parse_list(s)
     p = get_max_len_list(p)
     if p[0] == 0: return ''
