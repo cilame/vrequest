@@ -507,11 +507,18 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                                       .replace(' or [None])[0]',' or [none])[0]') \
                                       .replace('\n',' ') \
                                       .strip()
+                    def func2(i):
+                        i = func(i)
+                        if re.findall(r'''= (x\.xpath\('string\(.*?\)'\))\.extract\(\)   ''', i):
+                            i = re.sub(r'''= (x\.xpath\('string\(.*?\)'\))\.extract\(\)   ''',r'= \1[0].extract()',i)
+                        else:
+                            i = re.sub(r'''= (x\.xpath\('string\(.*?\)'\))\.extract\(\)''',r'= \1[0].extract()',i)
+                        return i
                     p = []
                     p.append("class none:pass")
                     p.append("none.extract = lambda:None")
                     p.append("for x in response.xpath('{}'):".format(xp))
-                    p.extend([' '*indent+func(i) for i in auto_xpath(xp,c_content)])
+                    p.extend([' '*indent+func2(i) for i in auto_xpath(xp,c_content)])
                     func_code ='\n'.join(p)
                 except:
                     traceback.print_exc()
@@ -822,6 +829,7 @@ def auto_xpath(oxp,content,_type=None):
         fmt = '{:<'+str(l+5)+'} = {:<' + str(u) +'} # [cnt:{}] [len:{}] '
         limit = 30
         for i,pr in q:
+            pr = re.sub(' +',' ',pr.replace('\n',''))
             lpr = len(pr)
             pr = pr[:limit]+'...' if lpr > limit else pr
             k,v,n = i
