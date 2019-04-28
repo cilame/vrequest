@@ -302,7 +302,7 @@ def format_response(r_setting,c_set,c_content):
                 rt = rt if rt else '//html'
                 from .tab import normal_content
                 func_code = inspect.getsource(normal_content).strip()
-                func_code += '\n\ncontent = normal_content(content, rootxpath="{}")\nprint(content)'.format(rt)
+                func_code += '''\n\ncontent = normal_content(content, rootxpath='{}')\nprint(content)'''.format(rt)
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
@@ -497,7 +497,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                 rt = re.findall('<normal_content:(.*)>', i)[0].strip()
                 rt = rt if rt else '//html'
                 func_code = inspect.getsource(normal_scrapy_content).strip()
-                func_code += '\ncontent = response.body.decode("{}")\ncontent = normal_scrapy_content(content, rootxpath="{}")\nprint(content)'.format(tps,rt)
+                func_code += '''\ncontent = response.body.decode("{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,rt)
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
@@ -827,14 +827,22 @@ def auto_xpath(oxp,content,_type=None):
     def mk_code_struct(q,l,u):
         r = ['d = {}']
         fmt = '{:<'+str(l+5)+'} = {:<' + str(u) +'} # [cnt:{}] [len:{}] '
+        fmt2 = 'if {:<'+str(l+2)+'''} in d: d[{:<'''+str(l+2)+'''}] = re.sub(r'\s+',' ',d["{}"])'''
         limit = 30
+        fmtstr = []
         for i,pr in q:
-            pr = re.sub(' +',' ',pr.replace('\n',''))
+            pr = re.sub(r'\s+',' ',pr.replace('\n',''))
             lpr = len(pr)
             pr = pr[:limit]+'...' if lpr > limit else pr
             k,v,n = i
             k = 'd["{}"]'.format(k)
             f = fmt.format(k,v,n,lpr)+pr
+            r.append(f)
+            if not v.endswith('[None])[0]'):
+                fmtstr.append(i)
+        for i in fmtstr:
+            k,v,n = i
+            f = fmt2.format('"{}"'.format(k),'"{}"'.format(k),k)
             r.append(f)
         r.append("print('------------------------------ split ------------------------------')")
         r.append('import pprint')
