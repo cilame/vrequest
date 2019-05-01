@@ -123,7 +123,7 @@ def response_window(setting=None):
 '''
 
     doc1 = '''纯文字内容解析
-若在此生成代码，将自动添加解析函数的代码
+解析某个 xpath 路径下面的所有文字字符串，默认是 //html 路径下的所有文字
 <normal_content://html>
 '''
 
@@ -206,30 +206,29 @@ eg.:
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
 
     # 检查数据格式
-    def parse_content_type(content, types=['utf-8','gbk']):
-        itype = iter(types)
-        while True:
-            try:
-                tp = next(itype)
-                content = content.decode(tp)
-                return tp, content
-            except StopIteration:
-                try:
-                    import chardet
-                    tp = chardet.detect(content)['encoding']
-                    types.append(tp)
-                    content = content.decode(tp)
-                    return tp, content
-                except:
-                    raise TypeError('not in {}'.format(types))
-            except:
-                continue
+    # 非常坑，后续再考虑，现在只考虑 ['utf-8','gbk'] 两种
+    # def parse_content_type(content, types=['utf-8','gbk']):
+    #     itype = iter(types)
+    #     while True:
+    #         try:
+    #             tp = next(itype)
+    #             content = content.decode(tp)
+    #             return tp, content
+    #         except StopIteration:
+    #             try:
+    #                 import chardet
+    #                 tp = chardet.detect(content)['encoding']
+    #                 types.append(tp)
+    #                 content = content.decode(tp)
+    #                 return tp, content
+    #             except:
+    #                 raise TypeError('not in {}'.format(types))
+    #         except:
+    #             continue
 
     # 统一数据格式
     def format_content(content):
-        if type(content) is str:
-            return content
-        elif type(content) is bytes:
+        if type(content) is bytes:
             try:
                 content = content.decode('utf-8')
                 typ = 'utf-8'
@@ -237,9 +236,15 @@ eg.:
                 content = content.decode('gbk')
                 typ = 'gbk'
             insert_txt(tx3, '解析格式：{}'.format(typ))
-            return content
+            return typ,content
         else:
-            raise TypeError('type:{} is not in [str,bytes]'.format(type(content)))
+            try:
+                content = content.decode('utf-8',errors='ignore')
+                typ = 'utf-8 ignore'
+                insert_txt(tx3, '解析格式：{}'.format(typ))
+                return typ,content
+            except:
+                raise TypeError('type:{} is not in [str,bytes]'.format(type(content)))
 
     def quote_val(url):
         import urllib
@@ -256,13 +261,13 @@ eg.:
         try:
             if method == 'GET':
                 s = requests.get(quote_val(ps.unquote(url)),headers=headers,verify=False)
-                insert_txt(tx1, format_content(s.content))
-                tp,_ = parse_content_type(s.content)
+                tp,content = format_content(s.content)
+                insert_txt(tx1, content)
             elif method == 'POST':
                 # 这里的post 里面的body 暂时还没有进行处理
                 s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body,verify=False)
-                insert_txt(tx1, format_content(s.content))
-                tp,_ = parse_content_type(s.content)
+                tp,content = format_content(s.content)
+                insert_txt(tx1, content)
         except:
             insert_txt(tx1, format_content(traceback.format_exc()))
 
@@ -524,11 +529,14 @@ vrequest：
 请求窗口快捷键：
 (Ctrl + q) 创建新的请求标签
 (Ctrl + r) 发送请求任务并保存
-*(Alt + c) 生成请求代码(该窗口下该功能不常用)
+*(Alt + c) 生成请求代码(一般建议在请求后处理分析再生成代码，那样包含解析代码)
+           HEADERS 窗口接受 “:” 或 “=” 分割
+           BODY    窗口接受 “:” 或 “=” 分割
+                   若是BODY窗口需要传字符串可以在字符串前后加英文双引号
 
 响应窗口快捷键：
 *(Alt + r) 打开一个空的响应标签(不常用)
-(Alt + f) 智能解析列表路径
+(Alt + f) 智能解析列表路径，解析后使用 xpath 解析功能会自动弹出解析选择窗
 (Alt + x) <代码过程> 使用 xpath 解析
 (Alt + z) <代码过程> 智能提取 json 数据
 (Alt + d) <代码过程> 获取纯文字内容

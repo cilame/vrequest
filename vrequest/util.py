@@ -488,6 +488,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
         raise TypeError('Canot create code without request.')
     _format = _format.strip()
 
+    tps,err = tps.split(' ') if len(tps.split(' '))==2 else tps,'strict'
     for i in c_set.splitlines():
         i = i.strip()
         if not i: continue
@@ -533,10 +534,10 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                     jsoncode = get_json_code(c_content).strip()
                     if jsoncode:
                         if 'pprint.pprint(d)' in jsoncode:
-                            func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                            func_code = 'content = response.body.decode("{}",errors="{}")\n'.format(tps,err) + \
                                         jsoncode + '\n    yield d'
                         else:
-                            func_code = 'content = response.body.decode("{}")\n'.format(tps) + \
+                            func_code = 'content = response.body.decode("{}",errors="{}")\n'.format(tps,err) + \
                                         jsoncode + '\n    yield {"data": i} # yield data must be a dict.'
                 except:
                     traceback.print_exc()
