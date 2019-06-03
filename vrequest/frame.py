@@ -566,3 +566,87 @@ https://github.com/cilame/vrequest
     temp_fr1.pack()
 
     return fr
+
+
+
+def exec_js_window(setting=None):
+    '''
+    这里可能会使用两到三种js的加载方式，并且，js2py能生成 python 的代码，可能需要考虑生成python代码的功能
+    目前暂时没有完全实现
+    '''
+    fr = Frame()
+    ft = Font(family='Consolas',size=10)
+
+    # js代码转python代码
+    def execute_func():
+        jscode = txt1.get(0.,tkinter.END)
+        try:
+            import js2py
+            js2pycode = js2py.translate_js(jscode)
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,js2pycode)
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
+    # 查看常用的js解析器的引入状态
+    support_modules = ['execjs', 'js2py', 'PyV8']
+    def get_js_import_stat(support_modules):
+        s = []
+        def _temp(module):
+            try:
+                __import__(module)
+                s.append('+ Enable Use [{}] js driver.'.format(module))
+            except:
+                s.append('- Unable Use [{}] js driver.'.format(module))
+        for module in support_modules:
+            _temp(module)
+        return s
+    import_stat = get_js_import_stat(support_modules)
+    temp_fr0 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.X)
+    import_modules = [i for i in import_stat if i.startswith('+')]
+    if not import_modules:
+        einfo = 'unfind any of {} module.'.format(support_modules)
+        tkinter.messagebox.showinfo('Error',einfo)
+        raise EnvironmentError(einfo)
+    cbx = Combobox(temp_fr0,width=30,state='readonly')
+    cbx['values'] = import_modules
+    cbx.current(0)
+    cbx.pack(fill=tkinter.X,side=tkinter.RIGHT)
+    btn_translate_js = Button(temp_fr0,text='将js解析成python代码',command=execute_func)
+    btn_translate_js.pack(fill=tkinter.X,side=tkinter.RIGHT)
+
+
+    temp_fr1 = Frame(fr)
+    temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    lab1 = Label(temp_fr1, font=ft, text='jscode')
+    txt1 = Text(temp_fr1,height=1,width=1,font=ft)
+    lab1.pack(side=tkinter.TOP)
+    txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    temp_fr2 = Frame(fr)
+    temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+    lab2 = Label(temp_fr2, font=ft, text='js2py_code [only 4 js2py]')
+    txt2 = Text(temp_fr2,height=1,width=1,font=ft)
+    lab2.pack(side=tkinter.TOP)
+    txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+
+    try:
+        from idlelib.colorizer import ColorDelegator
+        from idlelib.percolator import Percolator
+        p = ColorDelegator()
+        Percolator(txt2).insertfilter(p) # txt2 是js2py生成的python代码，需要填色
+    except:
+        e = traceback.format_exc()
+        txt2.delete(0.,tkinter.END)
+        txt2.insert(0.,e)
+
+
+
+
+    frame_setting[fr] = {}
+    frame_setting[fr]['type'] = 'js'
+    frame_setting[fr]['execute_func'] = execute_func
+    frame_setting[fr]['import_stat'] = import_stat
+    return fr

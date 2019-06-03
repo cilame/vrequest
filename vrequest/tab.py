@@ -24,6 +24,7 @@ from .frame import (
     scrapy_code_window,
     helper_window,
     frame_setting,
+    exec_js_window,
     __org_stdout__,
 )
 from .util import (
@@ -172,6 +173,8 @@ def create_new_scrapy_codetab(setting=None, prefix='scrapy', reqname=None):
 def create_helper():
     nb.select(bind_frame(helper_window(),'帮助'))
 
+def create_js_parse(setting=None, prefix='js执行窗'):
+    create_new_tab(setting, prefix, exec_js_window)
 
 
 def set_request_config(name,setting):
@@ -438,6 +441,7 @@ def execute_scrapy_code(*a):
 from tkinter import (
     Toplevel,
     Message,
+    LEFT,
     BOTH,
     TOP,
     RIDGE,
@@ -445,7 +449,6 @@ from tkinter import (
     Button,
 )
 class SimpleDialog:
-
     def __init__(self, master,
                  text='', buttons=[], default=None, cancel=None,
                  title=None, class_=None):
@@ -467,11 +470,13 @@ class SimpleDialog:
         self.root.bind('<Escape>', self.wm_delete_window)
         for num in range(len(buttons)):
             s = buttons[num]
-            b = Button(self.frame, text=s,
+            f = Frame(self.frame)
+            b = Button(f, text=s, 
                        command=(lambda self=self, num=num: self.done(num)))
             if num == default:
-                b.config(relief=RIDGE, borderwidth=8)
-            b.pack(side=TOP, fill=BOTH, expand=1)
+                pass
+            b.pack(side=LEFT, fill=BOTH)
+            f.pack(side=TOP, fill=BOTH)
         self.root.protocol('WM_DELETE_WINDOW', self.wm_delete_window)
         self._set_transient(master)
 
@@ -550,20 +555,30 @@ def get_xpath_elements(*a):
                     break
                 if i.startswith('<auto_list_xpath:'):
                     q = ['//html']
+                    d = {}
+                    p = None
                     for j in tx4.get(0.,tkinter.END).strip().splitlines():
                         v = re.findall(r'^\[ xpath \]: (.*)$',j)
                         if v:
-                            q.append(v[0])
+                            p = v[0]
+                            d[p] = 0
+                        elif p:
+                            d[p] += 1
+                    show_num = 25
+                    m = sorted(d,key=len)[:show_num]
+                    for i in m:
+                        q.append('[ cnt:{} ]'.format(d[i]) + i)
+                    q = sorted(q,key=len)[:show_num]
                     d = SimpleDialog(nb,
                         text="是否选择自动解析出的xpath路径？\n"
-                             "（不选择，默认填充 “//html” ）",
+                             "（不选择，默认填充 “//html” ，最大显示{}条内容）".format(show_num),
                         buttons=q,
                         default=0,
                         cancel=-1,
                         title="Test Dialog")
                     id = d.go()
                     if id == -1: return
-                    xp = q[id]
+                    xp = re.sub(r'^\[ cnt:\d+ \]', '', q[id])
                     toggle = 2
                     break
         tx4 = setting.get('fr_parse_info')
@@ -667,3 +682,10 @@ def get_auto_json(*a):
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<auto_list_json:>')
         show_response_log()
+
+
+
+
+
+def execute_js_code():
+    pass
