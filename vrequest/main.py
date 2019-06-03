@@ -88,7 +88,7 @@ def execute():
     root.title('vrequest')
     ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
     root.iconbitmap(ico)
-    root.geometry(config['siz'])
+    root.geometry(config.get('siz') or '600x675+200+200')
     root.bind('<Configure>',lambda e:change_siz())
     root.bind('<Escape>',lambda e:switch_response_log())
     root.mainloop()
