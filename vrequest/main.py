@@ -82,7 +82,6 @@ bind_alt_key(get_auto_json,         'z') # 解析json数据
 bind_alt_key(execute_code,          'v') # 代码执行
 bind_alt_key(create_scrapy_code,    's') # 生成scrapy代码
 bind_alt_key(execute_scrapy_code,   'w') # 用自动生成的环境执行scrapy代码
-bind_alt_key(execute_js_code,       'j') # 执行js
 
 
 def execute():

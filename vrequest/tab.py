@@ -275,7 +275,7 @@ def save_config():
 def switch_response_log(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') in ['response','code']:
+    if setting.get('type') in ['response','code','js']:
         temp_fr2 = setting.get('fr_temp2')
         try:
             temp_fr2.pack_info()
@@ -301,6 +301,8 @@ def create_test_code(*a):
     if setting.get('type') == 'response':
         r_setting,c_set,c_content,tps = get_response_config(setting)
         code_string = format_response(r_setting,c_set,c_content)
+    if setting.get('type') == 'js':
+        setting.get('execute_func0')()
 
     if code_string:
         setting = {}
@@ -418,13 +420,13 @@ def get_html_pure_text(*a):
 def show_code_log():
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') == 'code':
+    if setting.get('type') == 'code' or setting.get('type') == 'js':
         setting.get('fr_temp2').pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
 
 def execute_code(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') == 'code':
+    if setting.get('type') == 'code' or setting.get('type') == 'js':
         execute_func = setting.get('execute_func')
         show_code_log()
         execute_func()

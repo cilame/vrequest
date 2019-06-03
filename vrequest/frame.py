@@ -307,11 +307,6 @@ class stdhooker:
             if self.logtx:
                 self.logtx.insert(tkinter.END, _text_)
                 self.logtx.see(tkinter.END)
-                if _text_.startswith('Traceback (most recent call last):'):
-                    self.logtx.tag_add('tag1',self.predk[self.logtx],tkinter.END)
-                    self.logtx.tag_config('tag1',foreground='red')
-                else:
-                    self.predk[self.logtx] = self.logtx.index('insert')
                 self.logtx.update()
 
     def flush(self):
@@ -540,12 +535,12 @@ vrequest：
 (Alt + x) <代码过程> 使用 xpath 解析
 (Alt + z) <代码过程> 智能提取 json 数据
 (Alt + d) <代码过程> 获取纯文字内容
-(Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码
+(Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码 [在js代码窗同样适用]
 (Alt + s) 生成 scrapy 请求代码，有<代码过程>则生成代码中包含过程代码
 (Esc)     开启/关闭 response 解析窗口
 
 代码窗口快捷键：
-(Alt + v) 代码执行
+(Alt + v) 代码执行 [在js代码窗同样适用]
 (Esc)     开启/关闭 代码执行结果窗口
 
 scrapy 代码窗口快捷键：
@@ -578,7 +573,7 @@ def exec_js_window(setting=None):
     ft = Font(family='Consolas',size=10)
 
     # js代码转python代码
-    def execute_func():
+    def translate_js_js2py():
         jscode = txt1.get(0.,tkinter.END)
         try:
             import js2py
@@ -590,8 +585,66 @@ def exec_js_window(setting=None):
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,e)
 
+    def change_module(*a):
+        tp = cbx.get().strip()
+        btn_create_python_code['text'] = re.sub(r'\[[^\[\]]*\]',tp,btn_create_python_code['text'])
+
+    def translate_js():
+        tp = cbx.get().strip()
+        jscode = txt1.get(0.,tkinter.END)
+        if 'execjs' in tp:
+            pythoncode = """
+#coding=utf-8
+jscode = r'''
+$^^$jscode$^^$
+'''
+
+import execjs
+ctx = execjs.compile(jscode)
+result = ctx.call('func',10,20) # 执行函数，需要传参函数将参从第二个开始数依次排在$function 参数的后面
+# result = ctx.eval('func(22,33)')
+print(result)
+""".replace('$^^$jscode$^^$', jscode).strip()
+        if 'js2py' in tp:
+            pythoncode = """
+#coding=utf-8
+jscode = r'''
+$^^$jscode$^^$
+'''
+
+import js2py
+js = js2py.eval_js(jscode) # eval_js模式会自动将js代码执行后最后一个 var赋值的参数返回出来。
+print(js)
+""".replace('$^^$jscode$^^$', jscode).strip()
+        txt2.delete(0.,tkinter.END)
+        txt2.insert(0.,pythoncode)
+
+    def exec_javascript(*a):
+        __very_unique_cd__ = None
+        nonlocal cd
+        cd.delete(0.,tkinter.END)
+        td = tempfile.mkdtemp()
+        tf = os.path.join(td,'temp.py')
+        cs = txt2.get(0.,tkinter.END)
+        with open(tf,'w',encoding='utf-8') as f:
+            f.write(cs)
+        s = sys.executable
+        s = s + ' ' + tf
+        import subprocess
+        p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
+        print('============================== start ==============================')
+        for line in iter(p.stdout.readline, ''):
+            if line:
+                print(line, end='')
+            else:
+                break
+        print('==============================  end  ==============================')
+        p.wait()
+        p.stdout.close()
+        shutil.rmtree(td)
+
     # 查看常用的js解析器的引入状态
-    support_modules = ['execjs', 'js2py', 'PyV8']
+    support_modules = ['js2py', 'execjs']
     def get_js_import_stat(support_modules):
         s = []
         def _temp(module):
@@ -606,32 +659,58 @@ def exec_js_window(setting=None):
     import_stat = get_js_import_stat(support_modules)
     temp_fr0 = Frame(fr)
     temp_fr0.pack(fill=tkinter.X)
-    import_modules = [i for i in import_stat if i.startswith('+')]
+    import_modules = [i[i.find('['):i.rfind(']')+1] for i in import_stat if i.startswith('+')]
     if not import_modules:
         einfo = 'unfind any of {} module.'.format(support_modules)
         tkinter.messagebox.showinfo('Error',einfo)
         raise EnvironmentError(einfo)
-    cbx = Combobox(temp_fr0,width=30,state='readonly')
+    cbx = Combobox(temp_fr0,width=13,state='readonly')
     cbx['values'] = import_modules
     cbx.current(0)
-    cbx.pack(fill=tkinter.X,side=tkinter.RIGHT)
-    btn_translate_js = Button(temp_fr0,text='将js解析成python代码',command=execute_func)
-    btn_translate_js.pack(fill=tkinter.X,side=tkinter.RIGHT)
+    cbx.pack(fill=tkinter.X,side=tkinter.LEFT)
+    cbx.bind('<<ComboboxSelected>>', change_module)
 
+    temp_fr0 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
 
-    temp_fr1 = Frame(fr)
+    temp_fr1 = Frame(temp_fr0)
+    temp_fr1_1 = Frame(temp_fr1)
+    temp_fr1_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
-    lab1 = Label(temp_fr1, font=ft, text='jscode')
     txt1 = Text(temp_fr1,height=1,width=1,font=ft)
-    lab1.pack(side=tkinter.TOP)
+    btn_create_python_code = Button(temp_fr1_1,text='<生成代码> 生成python[]代码',command=translate_js)
+    btn_create_python_code.pack(fill=tkinter.X,side=tkinter.LEFT)
+    btn_translate_js = Button(temp_fr1_1,text='<翻译代码> 将js翻译成python[js2py]代码',command=translate_js_js2py)
+    btn_translate_js.pack(fill=tkinter.X,side=tkinter.LEFT)
     txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-    temp_fr2 = Frame(fr)
+    temp_fr2 = Frame(temp_fr0)
+    temp_fr2_1 = Frame(temp_fr2)
+    temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    lab2 = Label(temp_fr2, font=ft, text='js2py_code [only 4 js2py]')
+    btn2 = Button(temp_fr2_1, text='[执行代码]', command=exec_javascript)
+    btn2.pack(side=tkinter.LEFT)
     txt2 = Text(temp_fr2,height=1,width=1,font=ft)
-    lab2.pack(side=tkinter.TOP)
     txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
 
+    temp_fr3 = Frame(fr)
+    lab3 = Label(temp_fr3, text='代码结果 [Esc 切换显示状态]')
+    lab3.pack(side=tkinter.TOP)
+    cd = Text(temp_fr3,font=ft)
+    cd.pack(fill=tkinter.BOTH,expand=True)
+
+
+    test_code = '''
+// test_code
+function func(a,b){
+    return a+b
+}
+
+var a = 123;
+'''.strip()
+    txt1.insert(0.,test_code)
+
+
+    change_module()
     try:
         from idlelib.colorizer import ColorDelegator
         from idlelib.percolator import Percolator
@@ -647,6 +726,9 @@ def exec_js_window(setting=None):
 
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'js'
-    frame_setting[fr]['execute_func'] = execute_func
+    frame_setting[fr]['execute_func0'] = translate_js
+    frame_setting[fr]['execute_func1'] = translate_js_js2py
+    frame_setting[fr]['execute_func'] = exec_javascript
     frame_setting[fr]['import_stat'] = import_stat
+    frame_setting[fr]['fr_temp2'] = temp_fr3 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
     return fr
