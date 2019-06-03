@@ -604,7 +604,7 @@ ctx = execjs.compile(jscode)
 result = ctx.call('func',10,20) # 执行函数，需要传参函数将参从第二个开始数依次排在$function 参数的后面
 # result = ctx.eval('func(22,33)')
 print(result)
-""".replace('$^^$jscode$^^$', jscode).strip()
+""".replace('$^^$jscode$^^$', jscode.strip()).strip()
         if 'js2py' in tp:
             pythoncode = """
 #coding=utf-8
@@ -615,7 +615,7 @@ $^^$jscode$^^$
 import js2py
 js = js2py.eval_js(jscode) # eval_js模式会自动将js代码执行后最后一个 var赋值的参数返回出来。
 print(js)
-""".replace('$^^$jscode$^^$', jscode).strip()
+""".replace('$^^$jscode$^^$', jscode.strip()).strip()
         txt2.delete(0.,tkinter.END)
         txt2.insert(0.,pythoncode)
 
@@ -678,7 +678,7 @@ print(js)
     temp_fr1_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
     txt1 = Text(temp_fr1,height=1,width=1,font=ft)
-    btn_create_python_code = Button(temp_fr1_1,text='<生成代码> 生成python[]代码',command=translate_js)
+    btn_create_python_code = Button(temp_fr1_1,text='<生成代码> 生成python[]代码 <Alt+c>',command=translate_js)
     btn_create_python_code.pack(fill=tkinter.X,side=tkinter.LEFT)
     btn_translate_js = Button(temp_fr1_1,text='<翻译代码> 将js翻译成python[js2py]代码',command=translate_js_js2py)
     btn_translate_js.pack(fill=tkinter.X,side=tkinter.LEFT)
@@ -687,7 +687,7 @@ print(js)
     temp_fr2_1 = Frame(temp_fr2)
     temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    btn2 = Button(temp_fr2_1, text='[执行代码]', command=exec_javascript)
+    btn2 = Button(temp_fr2_1, text='[执行代码] <Alt+v>', command=exec_javascript)
     btn2.pack(side=tkinter.LEFT)
     txt2 = Text(temp_fr2,height=1,width=1,font=ft)
     txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
