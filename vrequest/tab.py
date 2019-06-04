@@ -260,7 +260,7 @@ def send_request():
 
 
 def save_config():
-    toggle = tkinter.messagebox.askokcancel('是否保存','确定保存当前全部配置信息吗？')
+    toggle = tkinter.messagebox.askokcancel('是否保存','确定保存当前全部[请求配置]信息吗？')
     @save
     def _save_config():
         for tad_id in nb.tabs():

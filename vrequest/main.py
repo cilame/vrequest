@@ -55,12 +55,13 @@ else:
 
 # === 创建/删除/帮助 ===
 # 绑定右键菜单
-bind_menu(create_new_reqtab,'创建新的标签')
+bind_menu(create_new_reqtab,'创建请求标签')
 bind_menu(delete_curr_tab,  '删除当前标签')
 bind_menu(change_tab_name,  '改当前标签名')
 bind_menu(save_config,      '保存配置快照')
-bind_menu(send_request,     '发送请求任务')
+bind_menu(create_js_parse,  '创建js解析标签')
 bind_menu(create_helper,    '帮助文档标签')
+
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(create_new_reqtab, 'q')
 bind_ctl_key(delete_curr_tab,   'w')

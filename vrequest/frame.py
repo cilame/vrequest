@@ -49,6 +49,19 @@ def request_window(setting=None):
         elif method == 'GET':
             temp_fr2.pack_forget()
 
+    def test_code(*a):
+        from .tab import create_test_code
+        create_test_code()
+
+    def scrapy_code(*a):
+        from .tab import create_scrapy_code
+        create_scrapy_code()
+
+
+    def send_req(*a):
+        from .tab import send_request
+        send_request()
+
     temp_fr0 = Frame(fr)
     methods = ('GET','POST')
     cbx = Combobox(temp_fr0,width=10,state='readonly')
@@ -57,7 +70,14 @@ def request_window(setting=None):
     cbx.pack(side=tkinter.RIGHT)
     cbx.bind('<<ComboboxSelected>>', change_method)
     temp_fr0.pack(fill=tkinter.X)
-
+    btn1 = Button(temp_fr0, text='发送请求[Ctrl+r]', command=send_req)
+    btn1.pack(side=tkinter.RIGHT)
+    lab1 = Label(temp_fr0, text='请尽量发送请求后生成代码，那样会有更多功能：')
+    lab1.pack(side=tkinter.LEFT)
+    btn6 = Button(temp_fr0, text='生成[requests]代码[Alt+c]', command=test_code)
+    btn6.pack(side=tkinter.LEFT)
+    btn7 = Button(temp_fr0, text='生成[scrapy]代码[Alt+s]', command=scrapy_code)
+    btn7.pack(side=tkinter.LEFT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -120,6 +140,10 @@ def response_window(setting=None):
     doc0 = '''列表解析路径方式
 冒号后面配置的的内容为 xpath
 <xpath:>
+*组合功能！
+如果先使用了自动解析 xpath 功能后解析到路径
+那么使用该功能时会自动弹出选择窗口
+选择窗中的内容为自动解析xpath中解析出的 xpath
 '''
 
     doc1 = '''纯文字内容解析
@@ -142,6 +166,16 @@ eg.:
 <auto_list_json:>
 '''
 
+    doc4 = '''生成scrapy代码
+如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
+则会包含相应的代码
+'''
+
+    doc5 = '''生成requests代码
+如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
+则会包含相应的代码
+'''
+
     def document(*a):
         method = cbx.get()
         if methods.index(method) == 0:
@@ -152,18 +186,74 @@ eg.:
             insert_txt(tx3,doc2)
         if methods.index(method) == 3:
             insert_txt(tx3,doc3)
+        if methods.index(method) == 4:
+            insert_txt(tx3,doc4)
+        if methods.index(method) == 5:
+            insert_txt(tx3,doc5)
+        switch_show(onlyshow=True)
 
     fr = Frame()
     ft = Font(family='Consolas',size=10)
+    def switch_show(*a, onlyshow=False):
+        try:
+            temp_fold_fr2.pack_info()
+            packed = True
+        except:
+            packed = False
+        if packed:
+            if not onlyshow:
+                temp_fold_fr2.pack_forget()
+        else:
+            temp_fold_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+
+    def html_pure_text(*a):
+        from .tab import get_html_pure_text
+        get_html_pure_text()
+
+    def xpath_elements(*a):
+        from .tab import get_xpath_elements
+        get_xpath_elements()
+
+    def auto_xpath(*a):
+        from .tab import get_auto_xpath
+        get_auto_xpath()
+
+    def auto_json(*a):
+        from .tab import get_auto_json
+        get_auto_json()
+
+    def test_code(*a):
+        from .tab import create_test_code
+        create_test_code()
+
+    def scrapy_code(*a):
+        from .tab import create_scrapy_code
+        create_scrapy_code()
 
     temp_fr0 = Frame(fr)
-    methods = ('(Alt+x) 列表路径解析说明','(Alt+d) 纯文字内容说明','(Alt+f) 用内容查找路径说明','(Alt+z) 用内容解析数据说明')
-    cbx = Combobox(temp_fr0,width=22,state='readonly')
+    lab1 = Label(temp_fr0, text='功能说明：')
+    lab1.pack(side=tkinter.LEFT)
+    methods = ('(Alt+x) 解析xpath','(Alt+d) 获取纯文字','(Alt+f) 自动xpath','(Alt+z) 自动json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
+    cbx = Combobox(temp_fr0,width=18,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
-    cbx.pack(side=tkinter.RIGHT)
+    cbx.pack(side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', document)
     temp_fr0.pack(fill=tkinter.X)
+    btn3 = Button(temp_fr0, text='自动xpath', command=auto_xpath)
+    btn3.pack(side=tkinter.LEFT)
+    btn4 = Button(temp_fr0, text='解析xpath', command=xpath_elements)
+    btn4.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='获取纯文字', command=html_pure_text)
+    btn2.pack(side=tkinter.LEFT)
+    btn5 = Button(temp_fr0, text='自动json', command=auto_json)
+    btn5.pack(side=tkinter.LEFT)
+    btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
+    btn1.pack(side=tkinter.RIGHT)
+    btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
+    btn6.pack(side=tkinter.RIGHT)
+    btn7 = Button(temp_fr0, text='生成[scrapy]代码', command=scrapy_code)
+    btn7.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -186,11 +276,11 @@ eg.:
     temp_fold_fold_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
     temp_fold_fold_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
     temp_fold_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
-    temp_fold_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    # temp_fold_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
     temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
 
     temp_fr2 = Frame(fr,highlightthickness=lin)
-    lb4 = Label (temp_fr2,text='解析内容')
+    lb4 = Label (temp_fr2,text='解析内容[Esc 开启/关闭解析显示]')
     tx4 = Text  (temp_fr2,height=1,width=1,font=ft)
     lb4.pack(side=tkinter.TOP)
     tx4.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
@@ -325,6 +415,13 @@ sys.stdout = stdhooker('stdout',style='normal')
 def code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
+
+    def _execute_code(*a):
+        from .tab import execute_code
+        execute_code()
+
+    btn1 = Button(fr, text='执行代码 [Alt+v]', command=_execute_code)
+    btn1.pack(side=tkinter.TOP)
     tx = Text(fr,height=1,width=1,font=ft)
     cs = setting.get('code_string')
     if cs:
@@ -333,7 +430,7 @@ def code_window(setting=None):
     tx.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
     temp_fr2 = Frame(fr,highlightthickness=lin)
-    lb = Label (temp_fr2,text='代码执行')
+    lb = Label (temp_fr2,text='执行结果[Esc 显示/隐藏执行结果]')
     cd = Text  (temp_fr2,height=1,width=1,font=ft)
     lb.pack(side=tkinter.TOP)
     cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
@@ -383,54 +480,27 @@ def scrapy_code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
 
-    home = os.environ.get('HOME')
-    home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
-    filename = '.vscrapy'
-    scrapypath = os.path.join(home,filename)
-    scriptpath = os.path.join(scrapypath, 'v/spiders/')
-    script = os.path.join(scriptpath, 'v.py')
-
-    def pprint(*a):
-        __org_stdout__.write(str(a)+'\n')
-        __org_stdout__.flush()
-    temp_fr0 = Frame(fr)
-    va = tkinter.IntVar()
-    rb = Checkbutton(temp_fr0,text='是否输收集数据，输出文件以及目标地址(默认桌面)：',variable=va)
-    rb.deselect()
-    et = Entry (temp_fr0,width=60)
-    rb.pack(side=tkinter.LEFT)
-    et.pack(side=tkinter.LEFT)
-    ltime = '%04d%02d%02d-%02d%02d%02d' % time.localtime()[:6]
-    dtopfile = os.path.join('file:///' + os.path.expanduser("~"),'Desktop\\v{}.json'.format(ltime))
-    et.insert(0,dtopfile)
-    cbx = Combobox(temp_fr0,width=22,state='readonly')
-    cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
-    cbx.current(1)
-    cbx.pack(side=tkinter.RIGHT)
-    def open_test(*a):
-        cmd = 'start explorer {}'.format(scrapypath)
-        os.system(cmd)
-    bt1 = Button(temp_fr0,text='打开本地文件路径',command=open_test)
-    bt1.pack(side=tkinter.RIGHT)
+    def _execute_scrapy_code(*a):
+        from .tab import execute_scrapy_code
+        execute_scrapy_code()
 
     def save_project_in_desktop(*a):
         name = askstring('项目名称','请输入项目名称，尽量小写无空格。')
+        if not name: return
         desktop = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
         if not os.path.isdir(desktop):
             with open(script,'w',encoding='utf-8') as f:
                 f.write(tx.get(0.,tkinter.END))
             shutil.copytree(scrapypath, desktop)
             toggle = tkinter.messagebox.askokcancel('创建成功',
-                            '创建成功，是否打开项目目录地址并执行测试？\n\n'
-                            '（注意，工具内的代码和已经拷贝出去的项目代码已无关联）\n'
-                            '（这里提供一次测试项目的启动命令只是为了方便开发而已）\n'
-                            '（该工具快捷键执行的代码共用临时存储空间，存储不安全）\n'
-                            '（所以开发时尽量在拷贝出去的项目空间中正式实现。\n'
-                            '\n{}'.format(desktop))
+                            '创建成功\n\n'
+                            '注意！！！\n注意！！！\n注意！！！\n\n是否关闭当前工具并启动拷贝出的 shell 地址执行测试。\n'
+                            '如果是，启动第一次shell测试后，后续需要再执行新的测试时请输入:\nscrapy crawl v\n\n'
+                            '{}'.format(desktop))
             if not toggle:
                 return
-            cmd = 'start explorer {}'.format(desktop)
-            os.system(cmd)
+            # cmd = 'start explorer {}'.format(desktop) # 打开文件路径
+            # os.system(cmd)
             pyscript = os.path.join(os.path.split(sys.executable)[0],'Scripts')
             toggle = any([True for i in os.listdir(pyscript) if 'scrapy.exe' in i.lower()])
             if toggle:
@@ -450,10 +520,46 @@ def scrapy_code_window(setting=None):
                 einfo = 'cannot find scrapy'
                 tkinter.messagebox.showinfo('Error',einfo)
                 raise EnvironmentError(einfo)
+            exit()
         else:
             tkinter.messagebox.showwarning('文件夹已存在','文件夹已存在')
-    bt2 = Button(temp_fr0,text='拷贝项目文件到桌面并以之启动测试',command=save_project_in_desktop)
-    bt2.pack(side=tkinter.RIGHT)
+
+    home = os.environ.get('HOME')
+    home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+    filename = '.vscrapy'
+    scrapypath = os.path.join(home,filename)
+    scriptpath = os.path.join(scrapypath, 'v/spiders/')
+    script = os.path.join(scriptpath, 'v.py')
+
+    def pprint(*a):
+        __org_stdout__.write(str(a)+'\n')
+        __org_stdout__.flush()
+    temp_fr0 = Frame(fr)
+    va = tkinter.IntVar()
+    rb = Checkbutton(temp_fr0,text='本地执行是否收集数据:',variable=va)
+    rb.deselect()
+    et = Entry (temp_fr0,width=60)
+    
+    ltime = '%04d%02d%02d-%02d%02d%02d' % time.localtime()[:6]
+    dtopfile = os.path.join('file:///' + os.path.expanduser("~"),'Desktop\\v{}.json'.format(ltime))
+    et.insert(0,dtopfile)
+    bt2 = Button(temp_fr0,text='拷贝项目文件到桌面',command=save_project_in_desktop)
+    bt2.pack(side=tkinter.LEFT)
+    btn1 = Button(temp_fr0, text='执行本地代码 [Alt+w]', command=_execute_scrapy_code)
+    btn1.pack(side=tkinter.LEFT)
+    cbx = Combobox(temp_fr0,width=10,state='readonly')
+    cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
+    cbx.current(1)
+    cbx.pack(side=tkinter.RIGHT)
+    lab1 = Label(temp_fr0, text='本地日志等级:')
+    lab1.pack(side=tkinter.RIGHT)
+    def open_test(*a):
+        cmd = 'start explorer {}'.format(scrapypath)
+        os.system(cmd)
+    bt1 = Button(temp_fr0,text='打开本地文件路径',command=open_test)
+    bt1.pack(side=tkinter.RIGHT)
+    et.pack(side=tkinter.RIGHT)
+    rb.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr)
     temp_fr0.pack(fill=tkinter.X)
@@ -522,13 +628,12 @@ vrequest：
 若需要执行 scrapy 代码，需额外下载 scrapy。
 
 请求窗口快捷键：
-(Ctrl + q) 创建新的请求标签
 (Ctrl + r) 发送请求任务并保存
-*(Ctrl +j) 创建 js 代码执行窗口
 *(Alt + c) 生成请求代码(一般建议在请求后处理分析再生成代码，那样包含解析代码)
            HEADERS 窗口接受 “:” 或 “=” 分割
            BODY    窗口接受 “:” 或 “=” 分割
                    若是BODY窗口需要传字符串可以在字符串前后加英文双引号
+*(Alt + s) 生成 scrapy 请求代码，格式化结构同上
 
 响应窗口快捷键：
 *(Alt + r) 打开一个空的响应标签(不常用)
@@ -548,6 +653,8 @@ scrapy 代码窗口快捷键：
 (Alt + w) scrapy 代码执行
 
 通用快捷键：
+(Ctrl + q) 创建新的请求标签
+(Ctrl + j) 创建 js 代码执行窗口
 (Ctrl + e) 修改当前标签名字
 (Ctrl + w) 关闭当前标签
 (Ctrl + h) 创建帮助标签
@@ -588,7 +695,7 @@ def exec_js_window(setting=None):
 
     def change_module(*a):
         tp = cbx.get().strip()
-        btn_create_python_code['text'] = re.sub(r'\[[^\[\]]*\]',tp,btn_create_python_code['text'])
+        btn_create_python_code['text'] = re.sub(r'\[[^\[\]+]*\]',tp,btn_create_python_code['text'])
 
     def translate_js():
         tp = cbx.get().strip()
@@ -602,7 +709,7 @@ $^^$jscode$^^$
 
 import execjs
 ctx = execjs.compile(jscode)
-result = ctx.call('func',10,20) # 执行函数，需要传参函数将参从第二个开始数依次排在$function 参数的后面
+result = ctx.call('func',10,20) # 执行函数，需要传参函数将参从第二个开始依次排在方法名后面
 # result = ctx.eval('func(22,33)')
 print(result)
 """.replace('$^^$jscode$^^$', jscode.strip()).strip()
@@ -644,6 +751,11 @@ print(js)
         p.stdout.close()
         shutil.rmtree(td)
 
+    def _exec_javascript(*a):
+        from .tab import show_code_log
+        show_code_log()
+        exec_javascript()
+
     # 查看常用的js解析器的引入状态
     support_modules = ['js2py', 'execjs']
     def get_js_import_stat(support_modules):
@@ -671,25 +783,30 @@ print(js)
     cbx.pack(fill=tkinter.X,side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', change_module)
 
+    btn_create_python_code = Button(temp_fr0,text='生成python[]代码 [Alt+c]',command=translate_js)
+    btn_create_python_code.pack(side=tkinter.LEFT)
+    btn_translate_js = Button(temp_fr0,text='翻译成[js2py]代码',command=translate_js_js2py)
+    btn_translate_js.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=_exec_javascript)
+    btn2.pack(side=tkinter.RIGHT)
+
+
     temp_fr0 = Frame(fr)
     temp_fr0.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-
     temp_fr1 = Frame(temp_fr0)
     temp_fr1_1 = Frame(temp_fr1)
-    temp_fr1_1.pack(fill=tkinter.X,side=tkinter.TOP)
+    temp_fr1_1.pack(side=tkinter.TOP)
     temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
     txt1 = Text(temp_fr1,height=1,width=1,font=ft)
-    btn_create_python_code = Button(temp_fr1_1,text='<生成代码> 生成python[]代码 <Alt+c>',command=translate_js)
-    btn_create_python_code.pack(fill=tkinter.X,side=tkinter.LEFT)
-    btn_translate_js = Button(temp_fr1_1,text='<翻译代码> 将js翻译成python[js2py]代码',command=translate_js_js2py)
-    btn_translate_js.pack(fill=tkinter.X,side=tkinter.LEFT)
+    lab1 = Label(temp_fr1_1,text='js代码')
+    lab1.pack(side=tkinter.TOP)
     txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
     temp_fr2 = Frame(temp_fr0)
     temp_fr2_1 = Frame(temp_fr2)
     temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    btn2 = Button(temp_fr2_1, text='[执行代码] <Alt+v>', command=exec_javascript)
-    btn2.pack(side=tkinter.LEFT)
+    lab1 = Label(temp_fr2_1,text='python代码')
+    lab1.pack(side=tkinter.TOP)
     txt2 = Text(temp_fr2,height=1,width=1,font=ft)
     txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
 
