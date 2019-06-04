@@ -756,6 +756,23 @@ print(js)
         show_code_log()
         exec_javascript()
 
+    def js_beautify(*a):
+        try:
+            import jsbeautifier
+            jscode = txt1.get(0.,tkinter.END)
+            btjscode = jsbeautifier.beautify(jscode)
+            txt1.delete(0.,tkinter.END)
+            txt1.insert(0.,btjscode)
+        except ImportError as e:
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+        except:
+            einfo = traceback.format_exc() + \
+            '\n\njs代码美化在一些极端的 eval 函数美化时会出现一些问题' + \
+            '\n所以出现错误时可以考虑检查代码的 eval 函数的处理'
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,einfo)
+
     # 查看常用的js解析器的引入状态
     support_modules = ['js2py', 'execjs']
     def get_js_import_stat(support_modules):
@@ -783,6 +800,8 @@ print(js)
     cbx.pack(fill=tkinter.X,side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', change_module)
 
+    btn_js_beautify = Button(temp_fr0,text='js代码美化',command=js_beautify)
+    btn_js_beautify.pack(side=tkinter.LEFT)
     btn_create_python_code = Button(temp_fr0,text='生成python[]代码 [Alt+c]',command=translate_js)
     btn_create_python_code.pack(side=tkinter.LEFT)
     btn_translate_js = Button(temp_fr0,text='翻译成[js2py]代码',command=translate_js_js2py)
