@@ -1,5 +1,7 @@
 import os
 
+from . import __version__
+
 from .root import (
     root,
     config,
@@ -55,12 +57,12 @@ else:
 
 # === 创建/删除/帮助 ===
 # 绑定右键菜单
-bind_menu(create_new_reqtab,'创建请求标签')
-bind_menu(delete_curr_tab,  '删除当前标签')
-bind_menu(change_tab_name,  '改当前标签名')
-bind_menu(save_config,      '保存配置快照')
-bind_menu(create_js_parse,  '创建js解析标签')
-bind_menu(create_helper,    '帮助文档标签')
+bind_menu(create_new_reqtab,'创建请求标签 [Ctrl+q]')
+bind_menu(delete_curr_tab,  '删除当前标签 [Ctrl+w]')
+bind_menu(change_tab_name,  '改当前标签名 [Ctrl+e]')
+bind_menu(save_config,      '保存配置快照 [Ctrl+s]')
+bind_menu(create_js_parse,  '创建 js解析页 [Ctrl+j]')
+bind_menu(create_helper,    '帮助文档标签 [Ctrl+q]')
 
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(create_new_reqtab, 'q')
@@ -86,7 +88,7 @@ bind_alt_key(execute_scrapy_code,   'w') # 用自动生成的环境执行scrapy�
 
 
 def execute():
-    root.title('vrequest')
+    root.title('vrequest [{}]'.format(__version__))
     ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
     root.iconbitmap(ico)
     root.geometry(config.get('siz') or '600x675+200+200')

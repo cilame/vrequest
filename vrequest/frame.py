@@ -141,7 +141,7 @@ def response_window(setting=None):
 冒号后面配置的的内容为 xpath
 <xpath:>
 *组合功能！
-如果先使用了自动解析 xpath 功能后解析到路径
+如果先使用了 “分析xpath” 功能后解析到路径
 那么使用该功能时会自动弹出选择窗口
 选择窗中的内容为自动解析xpath中解析出的 xpath
 '''
@@ -151,8 +151,11 @@ def response_window(setting=None):
 <normal_content://html>
 '''
 
-    doc2 = '''根据字符串自动解析 xpath 路径
+    doc2 = '''根据字符串自动分析 xpath 路径
 一般用于列表形式的路径
+通常来说这个功能针对简单的网页结构还勉强有用，并非一定能够解析
+所以一些比较复杂的网页或许还是需要考虑自省分析xpath。
+
 冒号后面配置需要处理的字符串
 多个字符串可以通过空格分隔
 eg.:
@@ -162,18 +165,18 @@ eg.:
 '''
 
     doc3 = '''简单分析json数据内容
-找出最长的list进行初步的迭代分析
+找出最长的list进行初步的迭代分析，并给出分析结果在输出框
 <auto_list_json:>
 '''
 
     doc4 = '''生成scrapy代码
 如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
-则会包含相应的代码
+则会在生成代码中包含相应的代码
 '''
 
     doc5 = '''生成requests代码
 如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
-则会包含相应的代码
+则会在生成代码中包含相应的代码
 '''
 
     def document(*a):
@@ -233,14 +236,14 @@ eg.:
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
-    methods = ('(Alt+x) 解析xpath','(Alt+d) 获取纯文字','(Alt+f) 自动xpath','(Alt+z) 自动json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
+    methods = ('(Alt+x) 解析xpath','(Alt+d) 获取纯文字','(Alt+f) 分析xpath','(Alt+z) 自动json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
     cbx = Combobox(temp_fr0,width=18,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
     cbx.pack(side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', document)
     temp_fr0.pack(fill=tkinter.X)
-    btn3 = Button(temp_fr0, text='自动xpath', command=auto_xpath)
+    btn3 = Button(temp_fr0, text='分析xpath', command=auto_xpath)
     btn3.pack(side=tkinter.LEFT)
     btn4 = Button(temp_fr0, text='解析xpath', command=xpath_elements)
     btn4.pack(side=tkinter.LEFT)
@@ -323,18 +326,17 @@ eg.:
                 content = content.decode('utf-8')
                 typ = 'utf-8'
             except:
-                content = content.decode('gbk')
-                typ = 'gbk'
+                try:
+                    content = content.decode('gbk')
+                    typ = 'gbk'
+                except:
+                    content = content.decode('utf-8',errors='ignore')
+                    typ = 'utf-8 ignore'
             insert_txt(tx3, '解析格式：{}'.format(typ))
             return typ,content
         else:
-            try:
-                content = content.decode('utf-8',errors='ignore')
-                typ = 'utf-8 ignore'
-                insert_txt(tx3, '解析格式：{}'.format(typ))
-                return typ,content
-            except:
-                raise TypeError('type:{} is not in [str,bytes]'.format(type(content)))
+            einfo = 'type:{} is not in type:[bytes]'.format(type(content))
+            raise TypeError(einfo)
 
     def quote_val(url):
         import urllib
@@ -359,7 +361,10 @@ eg.:
                 tp,content = format_content(s.content)
                 insert_txt(tx1, content)
         except:
-            insert_txt(tx1, format_content(traceback.format_exc()))
+            einfo = traceback.format_exc()
+            tkinter.messagebox.showinfo('Error',einfo)
+            raise
+            # insert_txt(tx1, traceback.format_exc())
 
     frame_setting[fr]['fr_parse_type'] = tp
     return fr
@@ -531,12 +536,22 @@ def scrapy_code_window(setting=None):
     scriptpath = os.path.join(scrapypath, 'v/spiders/')
     script = os.path.join(scriptpath, 'v.py')
 
+    def local_collection(*a):
+        def _show(*a, stat='show'):
+            try:
+                if stat == 'show': et.pack(side=tkinter.RIGHT)
+                if stat == 'hide': et.pack_forget()
+            except:
+                pass
+        _show(stat='show') if va.get() else _show(stat='hide')
+
+
     def pprint(*a):
         __org_stdout__.write(str(a)+'\n')
         __org_stdout__.flush()
     temp_fr0 = Frame(fr)
     va = tkinter.IntVar()
-    rb = Checkbutton(temp_fr0,text='本地执行是否收集数据:',variable=va)
+    rb = Checkbutton(temp_fr0,text='本地执行是否收集数据:',variable=va,command=local_collection)
     rb.deselect()
     et = Entry (temp_fr0,width=60)
     
@@ -558,7 +573,6 @@ def scrapy_code_window(setting=None):
         os.system(cmd)
     bt1 = Button(temp_fr0,text='打开本地文件路径',command=open_test)
     bt1.pack(side=tkinter.RIGHT)
-    et.pack(side=tkinter.RIGHT)
     rb.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr)

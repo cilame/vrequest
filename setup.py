@@ -1,8 +1,9 @@
 from setuptools import setup
+import vrequest
  
 setup(
     name = "vrequest",
-    version = "1.4.9",
+    version = vrequest.__version__,
     keywords = "vrequest",
     author = "cilame",
     author_email = "opaquism@hotmail.com",
