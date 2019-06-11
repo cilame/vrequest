@@ -626,18 +626,22 @@ def get_auto_xpath(*a):
                     sx = re.findall('<auto_list_xpath:(.*)>', i)[0].strip()
                     toggle = False
         tx4 = setting.get('fr_parse_info')
-
         # 通过字符串自动分析列表文件路径的函数
         strs = re.split('\s+',sx)
         p = []
         idx = 0
         for xp,strs in get_xpath_by_str(strs,txt.get(0.,tkinter.END)):
             idx += 1
-            p.append('[ xpath ]: {}'.format(xp))
+            q = []
+            q.append('[ xpath ]: {}'.format(xp))
             for j,c in strs:
-                p.append('    [ content ]: {} {}'.format(j,c))
-        p.append('[ count ]: {}'.format(idx))
-        content = '\n'.join(p)
+                q.append('    [ content ]: {} {}'.format(j,c))
+            p.append(q)
+        q = []
+        for i in sorted(p,key=lambda i:len(i[0])):
+            q.extend(i)
+        q.append('[ count ]: {}'.format(idx))
+        content = '\n'.join(q)
         tx4.delete(0.,tkinter.END)
         tx4.insert(0.,content)
         if toggle:

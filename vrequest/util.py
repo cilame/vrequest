@@ -308,11 +308,13 @@ def format_response(r_setting,c_set,c_content):
                 xp = xp if xp else '//html'
                 indent = 4
                 try:
+                    skey = lambda i:-(int(re.findall(r'# \[cnt:(\d+)\]',i)[0]) if re.findall(r'# \[cnt:(\d+)\]',i) else (float('inf') if i.startswith('d = {}') else -1))
+                    ax = sorted(auto_xpath(xp,c_content),key=skey)
                     func = lambda i:i.replace('\n',' ').strip()
                     p = []
                     p.append("tree = etree.HTML(content)")
                     p.append("for x in tree.xpath('{}'):".format(xp))
-                    p.extend([' '*indent+func(i) for i in auto_xpath(xp,c_content)])
+                    p.extend([' '*indent+func(i) for i in ax])
                     func_code ='\n'.join(p)
                 except:
                     traceback.print_exc()
@@ -504,6 +506,8 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                 xp = xp if xp else '//html'
                 indent = 4
                 try:
+                    skey = lambda i:-(int(re.findall(r'# \[cnt:(\d+)\]',i)[0]) if re.findall(r'# \[cnt:(\d+)\]',i) else (float('inf') if i.startswith('d = {}') else -1))
+                    ax = sorted(auto_xpath(xp,c_content),key=skey)
                     func = lambda i:re.sub(r'( +# \[cnt:\d+\])',r'.extract()\1',i) \
                                       .replace(' or [None])[0]',' or [none])[0]') \
                                       .replace('\n',' ') \
@@ -519,7 +523,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                     p.append("class none:pass")
                     p.append("none.extract = lambda:None")
                     p.append("for x in response.xpath('{}'):".format(xp))
-                    p.extend([' '*indent+func2(i) for i in auto_xpath(xp,c_content)])
+                    p.extend([' '*indent+func2(i) for i in ax])
                     func_code ='\n'.join(p)
                 except:
                     traceback.print_exc()
