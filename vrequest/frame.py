@@ -1048,6 +1048,8 @@ def encode_window(setting=None):
     def _creat_code(*a):
         import pprint
         txt.delete(0.,tkinter.END)
+        salt = ss.get().strip() if va.get() else ''
+        text = ee.get().strip()
         compare_str = et_.get().strip()
         code = '''
 import hmac
@@ -1056,8 +1058,8 @@ import difflib
 allow = \
 $allow
 
-salt = '' # 字符串/byte类型  盐（默认空）
-text = '' # 字符串/byte类型  需要被加密的数据
+salt = '$salt' # 字符串/byte类型  盐（默认空）
+text = '$text' # 字符串/byte类型  需要被加密的数据
 upper = True
 
 
@@ -1100,6 +1102,8 @@ compare_encode(salt, text, compare_str)
         '''.strip()
         code = code.replace('$allow', pprint.pformat(allow))
         code = code.replace('$compare_str', compare_str)
+        code = code.replace('$salt', salt)
+        code = code.replace('$text', text)
         print(code)
 
 
