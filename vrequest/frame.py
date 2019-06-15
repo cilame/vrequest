@@ -18,7 +18,10 @@ from tkinter import scrolledtext
 from tkinter.font import Font
 from tkinter.simpledialog import askstring
 
-from .root import DEFAULTS_HEADERS
+try:
+    from .root import DEFAULTS_HEADERS
+except:
+    from root import DEFAULTS_HEADERS
 
 Text = scrolledtext.ScrolledText
 #Text = tkinter.Text
@@ -972,9 +975,9 @@ def encode_window(setting=None):
     ss = Entry(f11)
     va = tkinter.IntVar()
     rb = Checkbutton(f11,text='加盐',variable=va,command=func)
-    rb.pack(side=tkinter.LEFT)
+    rb.pack(side=tkinter.LEFT,padx=10)
 
-    Label(f1,text='加密文本').pack(side=tkinter.LEFT)
+    Label(f1,text='加密文本').pack(side=tkinter.LEFT,padx=10)
     ee = Entry(f1)
     ee.pack(side=tkinter.LEFT)
 
@@ -1000,7 +1003,7 @@ def encode_window(setting=None):
 
     lb_ = Label(f1_,text='compare(对比字符串)')
     lb_.pack(side=tkinter.LEFT,padx=10,pady=pady)
-    et_ = Entry(f1_,width=50)
+    et_ = Entry(f1_,width=30)
     et_.pack(side=tkinter.LEFT,padx=padx,pady=pady)
 
     import difflib
@@ -1042,10 +1045,76 @@ def encode_window(setting=None):
         if not cnt:
             print('not match.')
 
+    def _creat_code(*a):
+        import pprint
+        txt.delete(0.,tkinter.END)
+        compare_str = et_.get().strip()
+        code = '''
+import hmac
+import difflib
+
+allow = \
+$allow
+
+salt = '' # 字符串/byte类型  盐（默认空）
+text = '' # 字符串/byte类型  需要被加密的数据
+upper = True
+
+
+def encode_all(salt, text):
+    salt = salt.encode() if type(salt) == str else salt
+    text = text.encode() if type(text) == str else text
+    for name in allow:
+        v = hmac.new(salt,text,name).hexdigest()
+        v = v.upper() if upper else v.lower()
+        print('{:<10}{}'.format(name, v))
+
+
+def compare_encode(salt, text, compare_str):
+    salt = salt.encode() if type(salt) == str else salt
+    text = text.encode() if type(text) == str else text
+    it = []
+    for name in allow:
+        v = hmac.new(salt,text,name).hexdigest()
+        v = v.upper() if upper else v.lower()
+        a, b = v, compare_str
+        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+        q = s.find_longest_match(0, len(a), 0, len(b))
+        if q.size>0:
+            it.append([name, a, b, q.size])
+    # 因为这类加密的互异性很高，所以只获取前三个最长匹配的加密字符串对比查看
+    p = '-'
+    for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:3]:
+        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+        prefix = '[len:compare]:{:<5} {:<18}'.format(len(a), p + '[len:{}]:{}'.format(name, len(b)))
+        p = '-' if p == '+' else '+'
+        for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
+            if match.size:
+                v = a[match.a:match.a+match.size]
+                print('{} [match.size:{}]  {}'.format(prefix, match.size, v))
+
+
+encode_all(salt, text)
+compare_str = '$compare_str' # 需要被对比的字符串
+compare_encode(salt, text, compare_str)
+        '''.strip()
+        code = code.replace('$allow', pprint.pformat(allow))
+        code = code.replace('$compare_str', compare_str)
+        print(code)
+
+
     bt_ = Button(f1_,text='分析对比[忽略大小写]',command=_analysis_diff)
     bt_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
+    bt2_ = Button(f1_,text='测用代码',command=_creat_code)
+    bt2_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
 
     txt = Text(f2_,font=ft)
     txt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
     return fr
+
+
+if __name__ == '__main__':
+    # test
+    fr = encode_window()
+    fr.mainloop()
