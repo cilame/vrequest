@@ -30,6 +30,7 @@ from .tab import (
     execute_scrapy_code,
     create_js_parse,
     execute_js_code,
+    create_encoder,
 )
 from .combinekey import (
     bind_ctl_key,
@@ -63,6 +64,7 @@ bind_menu(change_tab_name,  '改当前标签名 [Ctrl+e]')
 bind_menu(save_config,      '保存配置快照 [Ctrl+s]')
 bind_menu(create_js_parse,  '创建 js解析页 [Ctrl+j]')
 bind_menu(create_helper,    '帮助文档标签 [Ctrl+q]')
+bind_menu(create_encoder,   '创建便捷加密编码窗口')
 
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(create_new_reqtab, 'q')

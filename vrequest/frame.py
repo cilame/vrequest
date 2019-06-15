@@ -883,3 +883,169 @@ var a = 123;
     frame_setting[fr]['import_stat'] = import_stat
     frame_setting[fr]['fr_temp2'] = temp_fr3 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
     return fr
+
+
+
+def encode_window(setting=None):
+    '''
+    处理简单的加密编码对比
+    '''
+    fr = tkinter.Toplevel()
+    fr.resizable(False, False)
+
+    f0 = Frame(fr)
+    f0.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    f0_ = Frame(fr)
+    f0_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    f1 = Frame(f0)
+    f2 = Frame(f0)
+    f1.pack(fill=tkinter.BOTH,expand=True)
+    f2.pack(fill=tkinter.BOTH,expand=True)
+
+    import hashlib
+    import hmac
+    algorithms = hashlib.algorithms_available
+
+    ipadx   = 0
+    ipady   = 0
+    padx    = 1
+    pady    = 1
+    width   = 60
+    sticky  = None#'NESW'
+    ft = Font(family='Consolas',size=10)
+
+    crow = 0
+    ls = []
+    di = {}
+    allow = ['blake2b',
+             'blake2s',
+             'md4',
+             'md5',
+             'ripemd160',
+             'sha',
+             'sha1',
+             'sha224',
+             'sha256',
+             'sha384',
+             'sha3_224',
+             'sha3_256',
+             'sha3_384',
+             'sha3_512',
+             'sha512',
+             'whirlpool']
+    for idx,name in enumerate(sorted(algorithms)):
+        if name not in allow: continue
+        l,e = Label(f2,text=name,font=ft),Entry(f2,width=width,font=ft)
+        di[name] = e
+        l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+        e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+
+    def func(*a):
+        def _show(*a, stat='show'):
+            try:
+                if stat == 'show': ss.pack(side=tkinter.LEFT)
+                if stat == 'hide': ss.pack_forget()
+            except:
+                pass
+        _show(stat='show') if va.get() else _show(stat='hide')
+
+    f11 = Frame(f1)
+    f11.pack(fill=tkinter.X)
+
+    def _switch_case(*a):
+        for name,ge in di.items():
+            try:
+                v = ge.get().upper() if ca.get() else ge.get().lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+    ca = tkinter.IntVar()
+    rb = Checkbutton(f11,text='是否大写',variable=ca,command=_switch_case)
+    rb.pack(side=tkinter.RIGHT)
+    rb.deselect()
+
+    ss = Entry(f11)
+    va = tkinter.IntVar()
+    rb = Checkbutton(f11,text='加盐',variable=va,command=func)
+    rb.pack(side=tkinter.LEFT)
+
+    Label(f1,text='加密文本').pack(side=tkinter.LEFT)
+    ee = Entry(f1)
+    ee.pack(side=tkinter.LEFT)
+
+    def _encode_all(*a):
+        salt = ss.get().encode() if va.get() else b''
+        text = ee.get().encode()
+        for name,ge in di.items():
+            try:
+                v = hmac.new(salt,text,name).hexdigest()
+                v = v.upper() if ca.get() else v.lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+    Button(f1,text='加密全部',command=_encode_all).pack(side=tkinter.RIGHT)
+
+    f1_ = Frame(f0_)
+    f1_.pack(fill=tkinter.BOTH)
+    f2_ = Frame(f0_)
+    f2_.pack(fill=tkinter.BOTH,expand=True)
+
+    lb_ = Label(f1_,text='compare(对比字符串)')
+    lb_.pack(side=tkinter.LEFT,padx=10,pady=pady)
+    et_ = Entry(f1_,width=50)
+    et_.pack(side=tkinter.LEFT,padx=padx,pady=pady)
+
+    import difflib
+    def _diff_log(a, b):
+        d = difflib.Differ()
+        s = d.compare(a.splitlines(), b.splitlines())
+        for i in s:
+            print(i)
+
+    def print(*a):
+        txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+
+    def _analysis_diff(*a):
+        txt.delete(0.,tkinter.END)
+        it = []
+        for name,ge in di.items():
+            try:
+                a, b = et_.get(), ge.get()
+                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+                q = s.find_longest_match(0, len(a), 0, len(b))
+                if q.size>0:
+                    it.append([name, a, b, q.size])
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+        cnt = 0
+        for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:5]:
+            cnt += 1
+            s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+            print('max_match_len:{}'.format(max_match))
+            print('len[compare]:{}'.format(len(a), ))
+            print('len[{}]:{}'.format(name, len(b)))
+            for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
+                if match.size:
+                    v = a[match.a:match.a+match.size]
+                    print('    [match.size:{}]  {}'.format(match.size, v))
+            print('---------------')
+        if not cnt:
+            print('not match.')
+
+    bt_ = Button(f1_,text='分析对比[忽略大小写]',command=_analysis_diff)
+    bt_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
+
+    txt = Text(f2_,font=ft)
+    txt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+    return fr

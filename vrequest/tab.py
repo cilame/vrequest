@@ -25,6 +25,7 @@ from .frame import (
     helper_window,
     frame_setting,
     exec_js_window,
+    encode_window,
     __org_stdout__,
 )
 from .util import (
@@ -176,6 +177,8 @@ def create_helper():
 def create_js_parse(setting=None, prefix='js执行窗'):
     create_new_tab(setting, prefix, exec_js_window)
 
+def create_encoder(setting=None):
+    encode_window()
 
 def set_request_config(name,setting):
     method  = setting.get('fr_method').get()
