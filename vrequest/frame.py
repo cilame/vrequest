@@ -1,6 +1,7 @@
 
 import requests
 
+import io
 import os
 import re
 import sys
@@ -12,6 +13,7 @@ import tempfile
 import traceback
 import tkinter
 import inspect
+import zipfile
 import urllib.parse as ps
 import tkinter.messagebox
 from tkinter import ttk
@@ -959,8 +961,153 @@ def encode_window(setting=None):
         if name in base64enc:
             l,e = Label(f2,text=name,font=ft),Entry(f2,width=width,font=ft)
             bs[name] = e
-            l.grid(row=idx+1,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
-            e.grid(row=idx+1,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+
+    def _enkey(bstring, byte_ack):
+        ahk = hmac.new(b'vilame',byte_ack,'md5').hexdigest()
+        idx, lhk, ret = byte_ack[0] if byte_ack else 0, len(ahk), []
+        for i in bstring:
+            ret.append(i ^ ord(ahk[idx%lhk]))
+            idx += 1
+        return bytes(ret)
+
+    def zip_b_encode(string,b_encode=base64.b64encode,ack='',default_filename='v'):
+        byte_ack = ack.encode()
+        bstring = string.encode()
+        bstring = _enkey(bstring, byte_ack)
+        bfile = io.BytesIO()
+        zfile = zipfile.ZipFile(bfile,'w',zipfile.ZIP_DEFLATED)
+        zfile.writestr(default_filename,bstring)
+        zfile.close()
+        ret = b_encode(bfile.getvalue()).decode()
+        bfile.close()
+        return ret
+
+    def unzip_b_decode(string,b_decode=base64.b64decode,ack='',default_filename='v'):
+        byte_ack = ack.encode()
+        bfile = io.BytesIO(b_decode(string.encode()))
+        zfile = zipfile.ZipFile(bfile,'r',zipfile.ZIP_DEFLATED)
+        bstring = zfile.open(default_filename,'r').read()
+        bstring = _enkey(bstring, byte_ack)
+        return bstring.decode()
+
+    def _my_encode(*a):
+        txt.delete(0.,tkinter.END)
+        estr = ent23.get().strip()
+        back = ent22.get().strip() if aa.get() else ''
+        name = cbx.get()
+        if name == 'b16': _encode = base64.b16encode
+        if name == 'b32': _encode = base64.b32encode
+        if name == 'b64': _encode = base64.b64encode
+        if name == 'b85': _encode = base64.b85encode
+        if name == 'urlsafe_b64': _encode = base64.urlsafe_b64encode
+        s = zip_b_encode(estr,_encode,back)
+        print(s)
+
+    def _my_decode(*a):
+        txt.delete(0.,tkinter.END)
+        dstr = ent23.get().strip()
+        back = ent22.get().strip() if aa.get() else ''
+        name = cbx.get()
+        if name == 'b16': _decode = base64.b16decode
+        if name == 'b32': _decode = base64.b32decode
+        if name == 'b64': _decode = base64.b64decode
+        if name == 'b85': _decode = base64.b85decode
+        if name == 'urlsafe_b64': _decode = base64.urlsafe_b64decode
+        try:
+            s = unzip_b_decode(dstr,_decode,back)
+            print('--- string ---')
+            print(s)
+            print('---  repr  ---')
+            print(repr(s))
+        except:
+            print('密码或解密文本错误.')
+
+    def _my_code(*a):
+        txt.delete(0.,tkinter.END)
+        code = '''
+import io
+import zipfile
+import base64
+import hmac
+
+def _enkey(bstring, byte_ack):
+    # 使用了md5算法对ack进一步处理，然后经过简单的循环亦或算法，
+    # 安全性上只能保证个人使用
+    ahk = hmac.new(b'vilame',byte_ack,'md5').hexdigest()
+    idx, lhk, ret = byte_ack[0] if byte_ack else 0, len(ahk), []
+    for i in bstring:
+        ret.append(i ^ ord(ahk[idx%lhk]))
+        idx += 1
+    return bytes(ret)
+
+def zip_b_encode(string,b_encode=base64.b64encode,ack='',default_filename='v'):
+    byte_ack = ack.encode()
+    bstring = string.encode()
+    bstring = _enkey(bstring, byte_ack)
+    bfile = io.BytesIO()
+    zfile = zipfile.ZipFile(bfile,'w',zipfile.ZIP_DEFLATED)
+    zfile.writestr(default_filename,bstring)
+    zfile.close()
+    ret = b_encode(bfile.getvalue()).decode()
+    bfile.close()
+    return ret
+
+def unzip_b_decode(string,b_decode=base64.b64decode,ack='',default_filename='v'):
+    byte_ack = ack.encode()
+    bfile = io.BytesIO(b_decode(string.encode()))
+    zfile = zipfile.ZipFile(bfile,'r',zipfile.ZIP_DEFLATED)
+    bstring = zfile.open(default_filename,'r').read()
+    bstring = _enkey(bstring, byte_ack)
+    return bstring.decode()
+
+string = '测试的原始数据'
+secret_key = '测试密码'
+# 由于用到的zip压缩算法，所以一旦数据长度非常长的时候，压缩就越发明显了
+a =   zip_b_encode(string, ack=secret_key)
+b = unzip_b_decode(a,      ack=secret_key)
+print('原始：',string)
+print('加密：',a)
+print('解密：',b)
+'''.strip()
+        print(code)
+
+    f21 = Frame(f2)
+    f22 = Frame(f2)
+    f23 = Frame(f2)
+    f21.grid(row=idx+1,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
+    f22.grid(row=idx+2,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
+    f23.grid(row=idx+3,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
+
+    Button(f21, text='以下算法为个人私用。应对 python 压缩的、无依赖库的、可带密码的、字符串加解密。[点击显示算法]', command=_my_code).pack()
+    # Button(f22, text='函数代码').pack(side=tkinter.RIGHT)
+    # Label(f22, text='密码',width=4).pack(side=tkinter.LEFT,padx=5)
+    ent22 = Entry(f22,width=10)
+    def _switch_ack(*a):
+        def _show(*a, stat='show'):
+            try:
+                if stat == 'show': ent22.pack(side=tkinter.LEFT)
+                if stat == 'hide': ent22.pack_forget()
+            except:
+                pass
+        _show(stat='show') if aa.get() else _show(stat='hide')
+    aa = tkinter.IntVar()
+    ab = Checkbutton(f22,text='密码',variable=aa,command=_switch_ack)
+    ab.pack(side=tkinter.LEFT)
+    ab.deselect()
+
+    cbx = Combobox(f22,width=4,state='readonly')
+    cbx['values'] = base64enc = ['b16','b32','b64','b85',]
+    cbx.current(2)
+    cbx.pack(side=tkinter.RIGHT)
+    Label(f22, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    Button(f22, text='解密',command=_my_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f22, text='加密',command=_my_encode,width=5).pack(side=tkinter.RIGHT)
+
+    ent23 = Entry(f23)
+    ent23.pack(side=tkinter.RIGHT,fill=tkinter.X,expand=True)
+    Label(f23, text='加密/解密文本输入窗').pack(side=tkinter.RIGHT,padx=10)
 
     def func(*a):
         def _show(*a, stat='show'):
