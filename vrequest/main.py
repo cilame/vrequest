@@ -63,7 +63,7 @@ bind_menu(delete_curr_tab,  '删除当前标签 [Ctrl+w]')
 bind_menu(change_tab_name,  '改当前标签名 [Ctrl+e]')
 bind_menu(save_config,      '保存配置快照 [Ctrl+s]')
 bind_menu(create_js_parse,  '创建 js解析页 [Ctrl+j]')
-bind_menu(create_helper,    '帮助文档标签 [Ctrl+q]')
+bind_menu(create_helper,    '帮助文档标签 [Ctrl+h]')
 bind_menu(create_encoder,   '创建便捷加密编码窗口')
 
 # 绑定 Ctrl + key 的组合键

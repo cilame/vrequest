@@ -7,6 +7,7 @@ import sys
 import json
 import time
 import shutil
+import base64
 import tempfile
 import traceback
 import tkinter
@@ -922,28 +923,44 @@ def encode_window(setting=None):
     crow = 0
     ls = []
     di = {}
-    allow = ['blake2b',
-             'blake2s',
-             'md4',
-             'md5',
-             'ripemd160',
-             'sha',
-             'sha1',
-             'sha224',
-             'sha256',
-             'sha384',
-             'sha3_224',
-             'sha3_256',
-             'sha3_384',
-             'sha3_512',
-             'sha512',
-             'whirlpool']
-    for idx,name in enumerate(sorted(algorithms)):
-        if name not in allow: continue
-        l,e = Label(f2,text=name,font=ft),Entry(f2,width=width,font=ft)
-        di[name] = e
-        l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
-        e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+    allow = [
+        'blake2b',
+        'blake2s',
+        'md4',
+        'md5',
+        'ripemd160',
+        'sha',
+        'sha1',
+        'sha224',
+        'sha256',
+        'sha384',
+        'sha3_224',
+        'sha3_256',
+        'sha3_384',
+        'sha3_512',
+        'sha512',
+        'whirlpool'
+    ]
+    base64enc = [
+        'b16',
+        'b32',
+        'b64',
+        'b85',
+        'urlsafe_b64',
+    ]
+    bs = {}
+    for idx,name in enumerate(sorted(algorithms)+(base64enc)):
+        if name in allow:
+            hlen = len(hmac.new(b'',b'',name).hexdigest())
+            l,e = Label(f2,text=name+'[len:{}]'.format(str(hlen)),font=ft),Entry(f2,width=width,font=ft)
+            di[name] = e
+            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+        if name in base64enc:
+            l,e = Label(f2,text=name,font=ft),Entry(f2,width=width,font=ft)
+            bs[name] = e
+            l.grid(row=idx+1,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            e.grid(row=idx+1,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
 
     def func(*a):
         def _show(*a, stat='show'):
@@ -967,10 +984,27 @@ def encode_window(setting=None):
                 import traceback; traceback.print_exc()
                 print('error',name)
 
+    def _swich_encd(*a):
+        s = en.get().strip()
+        if s == 'utf-8':
+            en.delete(0,tkinter.END)
+            en.insert(0,'gbk')
+        elif s == 'gbk':
+            en.delete(0,tkinter.END)
+            en.insert(0,'utf-8')
+        else:
+            en.delete(0,tkinter.END)
+            en.insert(0,'utf-8')
+
     ca = tkinter.IntVar()
-    rb = Checkbutton(f11,text='是否大写',variable=ca,command=_switch_case)
+    rb = Checkbutton(f11,text='hash编码是否大写',variable=ca,command=_switch_case)
     rb.pack(side=tkinter.RIGHT)
     rb.deselect()
+
+    en = Entry(f11, width=6, font=ft)
+    en.insert(0,'utf-8')
+    en.pack(side=tkinter.RIGHT)
+    Button(f11,text='编码方式',command=_swich_encd).pack(side=tkinter.RIGHT,padx=2)
 
     ss = Entry(f11)
     va = tkinter.IntVar()
@@ -982,8 +1016,9 @@ def encode_window(setting=None):
     ee.pack(side=tkinter.LEFT)
 
     def _encode_all(*a):
-        salt = ss.get().encode() if va.get() else b''
-        text = ee.get().encode()
+        encd = en.get().strip()
+        salt = ss.get().encode(encd) if va.get() else b''
+        text = ee.get().encode(encd)
         for name,ge in di.items():
             try:
                 v = hmac.new(salt,text,name).hexdigest()
@@ -993,8 +1028,49 @@ def encode_window(setting=None):
             except:
                 import traceback; traceback.print_exc()
                 print('error',name)
+    
+    def _b_encode(*a):
+        encd = en.get().strip()
+        text = ee.get().encode(encd).strip()
+        for name,ge in bs.items():
+            try:
+                if name == 'b16': _encode = base64.b16encode
+                if name == 'b32': _encode = base64.b32encode
+                if name == 'b64': _encode = base64.b64encode
+                if name == 'b85': _encode = base64.b85encode
+                if name == 'urlsafe_b64': _encode = base64.urlsafe_b64encode
+                ge.delete(0,tkinter.END)
+                ge.insert(0,_encode(text))
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+                txt.see(tkinter.END)
 
-    Button(f1,text='加密全部',command=_encode_all).pack(side=tkinter.RIGHT)
+
+    def _b_decode(*a):
+        encd = en.get().strip()
+        text = ee.get().encode(encd).strip()
+        if not text:return 
+        for name,ge in bs.items():
+            try:
+                if name == 'b16': _decode = base64.b16decode
+                if name == 'b32': _decode = base64.b32decode
+                if name == 'b64': _decode = base64.b64decode
+                if name == 'b85': _decode = base64.b85decode
+                if name == 'urlsafe_b64': _decode = base64.urlsafe_b64decode
+                ge.delete(0,tkinter.END)
+                d = _decode(text)
+                ge.insert(0,d.decode(encd))
+                print('[success:{}]'.format(name),d.decode(encd))
+            except:
+                import traceback; traceback.print_exc()
+                print('[error:{}]'.format(name),repr(d) if 'd' in locals() else '')
+                txt.see(tkinter.END)
+        print('---- end ----')
+
+    Button(f1, text='hash编码',command=_encode_all).pack(side=tkinter.RIGHT)
+    Button(f1, text='base64解码',command=_b_decode).pack(side=tkinter.RIGHT)
+    Button(f1, text='base64编码',command=_b_encode).pack(side=tkinter.RIGHT)
 
     f1_ = Frame(f0_)
     f1_.pack(fill=tkinter.BOTH)
@@ -1015,11 +1091,12 @@ def encode_window(setting=None):
 
     def print(*a):
         txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+        # txt.see(tkinter.END)
 
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
         it = []
-        for name,ge in di.items():
+        for name,ge in list(di.items()) + list(bs.items()):
             try:
                 a, b = et_.get(), ge.get()
                 s = difflib.SequenceMatcher(None, a.upper(), b.upper())
@@ -1037,10 +1114,13 @@ def encode_window(setting=None):
             print('max_match_len:{}'.format(max_match))
             print('len[compare]:{}'.format(len(a), ))
             print('len[{}]:{}'.format(name, len(b)))
+            matchcnt = 0
             for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
                 if match.size:
                     v = a[match.a:match.a+match.size]
+                    matchcnt += match.size
                     print('    [match.size:{}]  {}'.format(match.size, v))
+            print('    [match.count:{}]'.format(matchcnt))
             print('---------------')
         if not cnt:
             print('not match.')
@@ -1119,6 +1199,10 @@ compare_encode(salt, text, compare_str)
 
 
 if __name__ == '__main__':
-    # test
+    # test frame
     fr = encode_window()
+
+    sys.stdout = __org_stdout__
+    fr.bind('<Escape>',lambda *a:fr.master.quit())
+    fr.master.withdraw()
     fr.mainloop()
