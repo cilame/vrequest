@@ -1170,6 +1170,7 @@ def encode_window(setting=None):
     crow = 0
     ls = []
     di = {}
+    dh = {}
     allow = [
         'blake2b',
         'blake2s',
@@ -1196,8 +1197,14 @@ def encode_window(setting=None):
         'urlsafe_b64',
     ]
     bs = {}
-    for idx,name in enumerate(sorted(algorithms)+(base64enc)):
-        if name in allow:
+    for idx,name in enumerate(sorted(algorithms)+sorted(algorithms)+(base64enc)):
+        if name in allow and idx < len(algorithms):
+            hlen = len(hmac.new(b'',b'',name).hexdigest())
+            l,e = Label(f2,text='[*]'+name+'[len:{}]'.format(str(hlen)),font=ft),Entry(f2,width=width,font=ft)
+            dh[name] = e
+            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+        if name in allow and idx >= len(algorithms):
             hlen = len(hmac.new(b'',b'',name).hexdigest())
             l,e = Label(f2,text='[hmac]'+name+'[len:{}]'.format(str(hlen)),font=ft),Entry(f2,width=width,font=ft)
             di[name] = e
@@ -1559,6 +1566,14 @@ if __name__ == '__main__':
             except:
                 import traceback; traceback.print_exc()
                 print('error',name)
+        for name,ge in dh.items():
+            try:
+                v = ge.get().upper() if ca.get() else ge.get().lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
 
     def _swich_encd(*a):
         s = en.get().strip()
@@ -1598,6 +1613,20 @@ if __name__ == '__main__':
         for name,ge in di.items():
             try:
                 v = hmac.new(salt,text,name).hexdigest()
+                v = v.upper() if ca.get() else v.lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+    def _encode_hash(*a):
+        encd = en.get().strip()
+        salt = ss.get().encode(encd) if va.get() else b''
+        text = ee.get().encode(encd)
+        for name,ge in dh.items():
+            try:
+                v = hashlib.new(name,text).hexdigest()
                 v = v.upper() if ca.get() else v.lower()
                 ge.delete(0,tkinter.END)
                 ge.insert(0,v)
@@ -1646,7 +1675,8 @@ if __name__ == '__main__':
 
     Button(f1, text='base64解码',command=_b_decode).pack(side=tkinter.RIGHT)
     Button(f1, text='base64编码',command=_b_encode).pack(side=tkinter.RIGHT)
-    Button(f1, text='hmac编码',command=_encode_all).pack(side=tkinter.RIGHT)
+    Button(f1, text='hmac',command=_encode_all,width=5).pack(side=tkinter.RIGHT)
+    Button(f1, text='hash',command=_encode_hash,width=5).pack(side=tkinter.RIGHT)
 
     f1_ = Frame(f0_)
     f1_.pack(fill=tkinter.BOTH)
@@ -1672,13 +1702,23 @@ if __name__ == '__main__':
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
         it = []
-        for name,ge in list(di.items()) + list(bs.items()):
+        for name,ge in list(dh.items()) + list(bs.items()):
             try:
                 a, b = et_.get(), ge.get()
                 s = difflib.SequenceMatcher(None, a.upper(), b.upper())
                 q = s.find_longest_match(0, len(a), 0, len(b))
                 if q.size>0:
                     it.append([name, a, b, q.size])
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+        for name,ge in list(di.items()):
+            try:
+                a, b = et_.get(), ge.get()
+                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+                q = s.find_longest_match(0, len(a), 0, len(b))
+                if q.size>0:
+                    it.append(['[hmac]'+name, a, b, q.size])
             except:
                 import traceback; traceback.print_exc()
                 print('error',name)
