@@ -1379,7 +1379,7 @@ def encode_window(setting=None):
     def print(*a):
         # import pprint
         # pprint.pprint(enb_names)
-        name = enb.select().replace('.!toplevel.','')
+        name = enb.select().rsplit('.')[-1]
         if enb_names[name] == 'hash':
             txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '加密':
