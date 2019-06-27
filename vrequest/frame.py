@@ -1146,10 +1146,20 @@ def encode_window(setting=None):
     fr = tkinter.Toplevel()
     fr.resizable(False, False)
 
-    f0 = Frame(fr)
+
+    enb = ttk.Notebook(fr)
+    enb_names = {} 
+
+    _fr = Frame(fr)
+    enb.add(_fr, text='hash')
+    enb.pack()
+    enb_names[_fr._name] = 'hash'
+
+
+    f0 = Frame(_fr)
     f0.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
 
-    f0_ = Frame(fr)
+    f0_ = Frame(_fr)
     f0_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
 
     f1 = Frame(f0)
@@ -1216,9 +1226,297 @@ def encode_window(setting=None):
             l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
             e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
 
-    def _my_encode(*a):
-        estr = txt.get(0.,tkinter.END).strip('\n')
+    def func(*a):
+        def _show(*a, stat='show'):
+            try:
+                if stat == 'show': ss.pack(side=tkinter.LEFT)
+                if stat == 'hide': ss.pack_forget()
+            except:
+                pass
+        _show(stat='show') if va.get() else _show(stat='hide')
+
+    f11 = Frame(f1)
+    f11.pack(fill=tkinter.X)
+
+    def _switch_case(*a):
+        for name,ge in di.items():
+            try:
+                v = ge.get().upper() if ca.get() else ge.get().lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+        for name,ge in dh.items():
+            try:
+                v = ge.get().upper() if ca.get() else ge.get().lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+    def _swich_encd(*a):
+        s = en.get().strip()
+        if s == 'utf-8':
+            en.delete(0,tkinter.END)
+            en.insert(0,'gbk')
+        elif s == 'gbk':
+            en.delete(0,tkinter.END)
+            en.insert(0,'utf-8')
+        else:
+            en.delete(0,tkinter.END)
+            en.insert(0,'utf-8')
+
+    ca = tkinter.IntVar()
+    rb = Checkbutton(f11,text='hash编码是否大写',variable=ca,command=_switch_case)
+    rb.pack(side=tkinter.RIGHT)
+    rb.deselect()
+
+    en = Entry(f11, width=6, font=ft)
+    en.insert(0,'utf-8')
+    en.pack(side=tkinter.RIGHT)
+    Button(f11,text='编码方式',command=_swich_encd).pack(side=tkinter.RIGHT,padx=2)
+
+    ss = Entry(f11)
+    va = tkinter.IntVar()
+    rb = Checkbutton(f11,text='添加密盐参数',variable=va,command=func)
+    rb.pack(side=tkinter.LEFT,padx=10)
+
+    Label(f1,text='加密或编解码文本').pack(side=tkinter.LEFT,padx=10)
+    ee = Entry(f1)
+    ee.pack(side=tkinter.LEFT)
+
+    def _encode_all(*a):
+        encd = en.get().strip()
+        salt = ss.get().encode(encd) if va.get() else b''
+        text = ee.get().encode(encd)
+        for name,ge in di.items():
+            try:
+                v = hmac.new(salt,text,name).hexdigest()
+                v = v.upper() if ca.get() else v.lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+    def _encode_hash(*a):
+        encd = en.get().strip()
+        salt = ss.get().encode(encd) if va.get() else b''
+        text = ee.get().encode(encd)
+        for name,ge in dh.items():
+            try:
+                v = hashlib.new(name,text).hexdigest()
+                v = v.upper() if ca.get() else v.lower()
+                ge.delete(0,tkinter.END)
+                ge.insert(0,v)
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+    
+    def _b_encode(*a):
+        encd = en.get().strip()
+        text = ee.get().encode(encd).strip()
+        for name,ge in bs.items():
+            try:
+                if name == 'b16': _encode = base64.b16encode
+                if name == 'b32': _encode = base64.b32encode
+                if name == 'b64': _encode = base64.b64encode
+                if name == 'b85': _encode = base64.b85encode
+                if name == 'urlsafe_b64': _encode = base64.urlsafe_b64encode
+                ge.delete(0,tkinter.END)
+                ge.insert(0,_encode(text))
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+                txt.see(tkinter.END)
+
+
+    def _b_decode(*a):
+        encd = en.get().strip()
+        text = ee.get().encode(encd).strip()
+        if not text:return 
+        for name,ge in bs.items():
+            try:
+                if name == 'b16': _decode = base64.b16decode
+                if name == 'b32': _decode = base64.b32decode
+                if name == 'b64': _decode = base64.b64decode
+                if name == 'b85': _decode = base64.b85decode
+                if name == 'urlsafe_b64': _decode = base64.urlsafe_b64decode
+                ge.delete(0,tkinter.END)
+                d = _decode(text)
+                ge.insert(0,d.decode(encd))
+                print('[success:{}]'.format(name),d.decode(encd))
+            except:
+                import traceback; traceback.print_exc()
+                print('[error:{}]'.format(name),repr(d) if 'd' in locals() else '')
+                txt.see(tkinter.END)
+        print('---- end ----')
+
+    Button(f1, text='base64解码',command=_b_decode).pack(side=tkinter.RIGHT)
+    Button(f1, text='base64编码',command=_b_encode).pack(side=tkinter.RIGHT)
+    Button(f1, text='hmac',command=_encode_all,width=5).pack(side=tkinter.RIGHT)
+    Button(f1, text='hash',command=_encode_hash,width=5).pack(side=tkinter.RIGHT)
+
+    f1_ = Frame(f0_)
+    f1_.pack(fill=tkinter.BOTH)
+    f2_ = Frame(f0_)
+    f2_.pack(fill=tkinter.BOTH,expand=True)
+
+    lb_ = Label(f1_,text='compare(对比字符串)')
+    lb_.pack(side=tkinter.LEFT,padx=10,pady=pady)
+    et_ = Entry(f1_,width=30)
+    et_.pack(side=tkinter.LEFT,padx=padx,pady=pady)
+
+    import difflib
+    def _diff_log(a, b):
+        d = difflib.Differ()
+        s = d.compare(a.splitlines(), b.splitlines())
+        for i in s:
+            print(i)
+
+    def print(*a):
+        # import pprint
+        # pprint.pprint(enb_names)
+        name = enb.select().replace('.!toplevel.','')
+        if enb_names[name] == 'hash':
+            txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+        elif enb_names[name] == '加密':
+            ftxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+
+    def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
+        it = []
+        for name,ge in list(dh.items()) + list(bs.items()):
+            try:
+                a, b = et_.get(), ge.get()
+                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+                q = s.find_longest_match(0, len(a), 0, len(b))
+                if q.size>0:
+                    it.append([name, a, b, q.size])
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+        for name,ge in list(di.items()):
+            try:
+                a, b = et_.get(), ge.get()
+                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+                q = s.find_longest_match(0, len(a), 0, len(b))
+                if q.size>0:
+                    it.append(['[hmac]'+name, a, b, q.size])
+            except:
+                import traceback; traceback.print_exc()
+                print('error',name)
+
+        cnt = 0
+        for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:5]:
+            cnt += 1
+            s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+            print('max_match_len:{}'.format(max_match))
+            print('len[compare]:{}'.format(len(a), ))
+            print('len[{}]:{}'.format(name, len(b)))
+            matchcnt = 0
+            for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
+                if match.size:
+                    v = a[match.a:match.a+match.size]
+                    matchcnt += match.size
+                    print('    [match.size:{}]  {}'.format(match.size, v))
+            print('    [match.count:{}]'.format(matchcnt))
+            print('---------------')
+        if not cnt:
+            print('not match.')
+
+    def _creat_code(*a):
+        import pprint
+        txt.delete(0.,tkinter.END)
+        salt = ss.get().strip() if va.get() else ''
+        text = ee.get().strip()
+        compare_str = et_.get().strip()
+        code = '''
+import hmac
+import difflib
+
+allow = \
+$allow
+
+salt = '$salt' # 字符串/byte类型  盐（默认空）
+text = '$text' # 字符串/byte类型  需要被加密的数据
+upper = True
+
+
+def encode_all(salt, text):
+    salt = salt.encode() if type(salt) == str else salt
+    text = text.encode() if type(text) == str else text
+    for name in allow:
+        v = hmac.new(salt,text,name).hexdigest()
+        v = v.upper() if upper else v.lower()
+        print('{:<10}{}'.format(name, v))
+
+
+def compare_encode(salt, text, compare_str):
+    salt = salt.encode() if type(salt) == str else salt
+    text = text.encode() if type(text) == str else text
+    it = []
+    for name in allow:
+        v = hmac.new(salt,text,name).hexdigest()
+        v = v.upper() if upper else v.lower()
+        a, b = v, compare_str
+        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+        q = s.find_longest_match(0, len(a), 0, len(b))
+        if q.size>0:
+            it.append([name, a, b, q.size])
+    # 因为这类加密的互异性很高，所以只获取前三个最长匹配的加密字符串对比查看
+    p = '-'
+    for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:3]:
+        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
+        prefix = '[len:compare]:{:<5} {:<18}'.format(len(a), p + '[len:{}]:{}'.format(name, len(b)))
+        p = '-' if p == '+' else '+'
+        for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
+            if match.size:
+                v = a[match.a:match.a+match.size]
+                print('{} [match.size:{}]  {}'.format(prefix, match.size, v))
+
+
+encode_all(salt, text)
+compare_str = '$compare_str' # 需要被对比的字符串
+compare_encode(salt, text, compare_str)
+        '''.strip()
+        code = code.replace('$allow', pprint.pformat(allow))
+        code = code.replace('$compare_str', compare_str)
+        code = code.replace('$salt', salt)
+        code = code.replace('$text', text)
+        print(code)
+
+
+    bt_ = Button(f1_,text='分析对比[忽略大小写]',command=_analysis_diff)
+    bt_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
+    bt2_ = Button(f1_,text='测用代码',command=_creat_code)
+    bt2_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
+
+    txt = Text(f2_,font=ft)
+    txt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+
+
+
+
+
+
+    _fr0 = Frame(fr)
+    enb.add(_fr0, text='加密')
+    enb.pack()
+    enb_names[_fr0._name] = '加密'
+
+    ff0 = Frame(_fr0)
+    ff0.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    ff0_ = Frame(_fr0)
+    ff0_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    def _my_encode(*a):
+        estr = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
         _ack = ent22.get().strip() if aa.get() else ''
         base = cbx.get()
         c = crypter(_ack, base=base)
@@ -1226,19 +1524,19 @@ def encode_window(setting=None):
 
 
     def _my_decode(*a):
-        dstr = txt.get(0.,tkinter.END).strip('\n')
+        dstr = ftxt.get(0.,tkinter.END).strip('\n')
         _ack = ent22.get().strip() if aa.get() else ''
         base = cbx.get()
         c = crypter(_ack, base=base)
         try:
             s = c.zdecrypt(dstr)
-            txt.delete(0.,tkinter.END)
+            ftxt.delete(0.,tkinter.END)
             print(s)
         except:
             tkinter.messagebox.showinfo('Error','密码或解密文本错误.\n\n'+traceback.format_exc())
 
     def _my_code(*a):
-        txt.delete(0.,tkinter.END)
+        ftxt.delete(0.,tkinter.END)
         code = '''
 import hmac
 import zlib
@@ -1501,24 +1799,18 @@ if __name__ == '__main__':
     v = c.zbase_enc(data); print(v)
     v = c.zbase_dec(v); print(v)
 
-    print('压缩数据后再进行加密，兼顾了加密和压缩两项功能')
+    print('压缩数据后再进行加密，兼顾了加密和压缩两项功能，工具内的加密就使用这个')
     v = c.zencrypt(data); print(v)
     v = c.zdecrypt(v); print(v)
 '''.strip()
         print(code)
 
-    f21 = Frame(f2)
-    f22 = Frame(f2)
-    # f23 = Frame(f2)
-    f21.grid(row=idx+1,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
-    f22.grid(row=idx+2,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
-    # f23.grid(row=idx+3,column=0,columnspan=2,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky='NESW')
+    f21 = Frame(ff0)
+    f22 = Frame(ff0)
+    f21.pack(side=tkinter.TOP,fill=tkinter.X)
+    f22.pack(side=tkinter.TOP,fill=tkinter.X)
 
-    Button(f21, text='以下算法为个人私用。应对 python 压缩的、无外部依赖库的、可带密码的、字符串加解密。[点击显示算法]', command=_my_code).pack()
-    # za = tkinter.IntVar()
-    # zp = Checkbutton(f22,text='压缩',variable=za)
-    # zp.pack(side=tkinter.LEFT)
-    # zp.select()
+    Label(f21, text='以下算法为个人私用。应对 python 压缩的、无外部依赖库的、可带密码的、字符串加解密。').pack(fill=tkinter.X,expand=True)
     ent22 = Entry(f22,width=10)
     def _switch_ack(*a):
         def _show(*a, stat='show'):
@@ -1538,278 +1830,17 @@ if __name__ == '__main__':
     cbx.current(2)
     cbx.pack(side=tkinter.RIGHT)
     Label(f22, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    Button(f22, text='[算法]',command=_my_code,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='解密',command=_my_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='加密',command=_my_encode,width=5).pack(side=tkinter.RIGHT)
+    Label(ff0_, text='使用以下文本框进行加解密 [仅忽略文本前后换行符]').pack(side=tkinter.TOP,padx=10)
+    ftxt = Text(ff0_,font=ft)
+    ftxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
-    # ent23 = Entry(f23)
-    # ent23.pack(side=tkinter.RIGHT,fill=tkinter.X,expand=True)
-    Label(f22, text='使用右边的文本框进行加解密[忽略文本前后换行]').pack(side=tkinter.RIGHT,padx=10)
-
-    def func(*a):
-        def _show(*a, stat='show'):
-            try:
-                if stat == 'show': ss.pack(side=tkinter.LEFT)
-                if stat == 'hide': ss.pack_forget()
-            except:
-                pass
-        _show(stat='show') if va.get() else _show(stat='hide')
-
-    f11 = Frame(f1)
-    f11.pack(fill=tkinter.X)
-
-    def _switch_case(*a):
-        for name,ge in di.items():
-            try:
-                v = ge.get().upper() if ca.get() else ge.get().lower()
-                ge.delete(0,tkinter.END)
-                ge.insert(0,v)
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-        for name,ge in dh.items():
-            try:
-                v = ge.get().upper() if ca.get() else ge.get().lower()
-                ge.delete(0,tkinter.END)
-                ge.insert(0,v)
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-
-    def _swich_encd(*a):
-        s = en.get().strip()
-        if s == 'utf-8':
-            en.delete(0,tkinter.END)
-            en.insert(0,'gbk')
-        elif s == 'gbk':
-            en.delete(0,tkinter.END)
-            en.insert(0,'utf-8')
-        else:
-            en.delete(0,tkinter.END)
-            en.insert(0,'utf-8')
-
-    ca = tkinter.IntVar()
-    rb = Checkbutton(f11,text='hash编码是否大写',variable=ca,command=_switch_case)
-    rb.pack(side=tkinter.RIGHT)
-    rb.deselect()
-
-    en = Entry(f11, width=6, font=ft)
-    en.insert(0,'utf-8')
-    en.pack(side=tkinter.RIGHT)
-    Button(f11,text='编码方式',command=_swich_encd).pack(side=tkinter.RIGHT,padx=2)
-
-    ss = Entry(f11)
-    va = tkinter.IntVar()
-    rb = Checkbutton(f11,text='添加密盐参数',variable=va,command=func)
-    rb.pack(side=tkinter.LEFT,padx=10)
-
-    Label(f1,text='加密或编解码文本').pack(side=tkinter.LEFT,padx=10)
-    ee = Entry(f1)
-    ee.pack(side=tkinter.LEFT)
-
-    def _encode_all(*a):
-        encd = en.get().strip()
-        salt = ss.get().encode(encd) if va.get() else b''
-        text = ee.get().encode(encd)
-        for name,ge in di.items():
-            try:
-                v = hmac.new(salt,text,name).hexdigest()
-                v = v.upper() if ca.get() else v.lower()
-                ge.delete(0,tkinter.END)
-                ge.insert(0,v)
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-
-    def _encode_hash(*a):
-        encd = en.get().strip()
-        salt = ss.get().encode(encd) if va.get() else b''
-        text = ee.get().encode(encd)
-        for name,ge in dh.items():
-            try:
-                v = hashlib.new(name,text).hexdigest()
-                v = v.upper() if ca.get() else v.lower()
-                ge.delete(0,tkinter.END)
-                ge.insert(0,v)
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-    
-    def _b_encode(*a):
-        encd = en.get().strip()
-        text = ee.get().encode(encd).strip()
-        for name,ge in bs.items():
-            try:
-                if name == 'b16': _encode = base64.b16encode
-                if name == 'b32': _encode = base64.b32encode
-                if name == 'b64': _encode = base64.b64encode
-                if name == 'b85': _encode = base64.b85encode
-                if name == 'urlsafe_b64': _encode = base64.urlsafe_b64encode
-                ge.delete(0,tkinter.END)
-                ge.insert(0,_encode(text))
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-                txt.see(tkinter.END)
+    # 这里后续需要考虑增加各种各样的加密解密以及代码的记录
+    # 光是aes就有5种加解密方式
 
 
-    def _b_decode(*a):
-        encd = en.get().strip()
-        text = ee.get().encode(encd).strip()
-        if not text:return 
-        for name,ge in bs.items():
-            try:
-                if name == 'b16': _decode = base64.b16decode
-                if name == 'b32': _decode = base64.b32decode
-                if name == 'b64': _decode = base64.b64decode
-                if name == 'b85': _decode = base64.b85decode
-                if name == 'urlsafe_b64': _decode = base64.urlsafe_b64decode
-                ge.delete(0,tkinter.END)
-                d = _decode(text)
-                ge.insert(0,d.decode(encd))
-                print('[success:{}]'.format(name),d.decode(encd))
-            except:
-                import traceback; traceback.print_exc()
-                print('[error:{}]'.format(name),repr(d) if 'd' in locals() else '')
-                txt.see(tkinter.END)
-        print('---- end ----')
-
-    Button(f1, text='base64解码',command=_b_decode).pack(side=tkinter.RIGHT)
-    Button(f1, text='base64编码',command=_b_encode).pack(side=tkinter.RIGHT)
-    Button(f1, text='hmac',command=_encode_all,width=5).pack(side=tkinter.RIGHT)
-    Button(f1, text='hash',command=_encode_hash,width=5).pack(side=tkinter.RIGHT)
-
-    f1_ = Frame(f0_)
-    f1_.pack(fill=tkinter.BOTH)
-    f2_ = Frame(f0_)
-    f2_.pack(fill=tkinter.BOTH,expand=True)
-
-    lb_ = Label(f1_,text='compare(对比字符串)')
-    lb_.pack(side=tkinter.LEFT,padx=10,pady=pady)
-    et_ = Entry(f1_,width=30)
-    et_.pack(side=tkinter.LEFT,padx=padx,pady=pady)
-
-    import difflib
-    def _diff_log(a, b):
-        d = difflib.Differ()
-        s = d.compare(a.splitlines(), b.splitlines())
-        for i in s:
-            print(i)
-
-    def print(*a):
-        txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
-        # txt.see(tkinter.END)
-
-    def _analysis_diff(*a):
-        txt.delete(0.,tkinter.END)
-        it = []
-        for name,ge in list(dh.items()) + list(bs.items()):
-            try:
-                a, b = et_.get(), ge.get()
-                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
-                q = s.find_longest_match(0, len(a), 0, len(b))
-                if q.size>0:
-                    it.append([name, a, b, q.size])
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-        for name,ge in list(di.items()):
-            try:
-                a, b = et_.get(), ge.get()
-                s = difflib.SequenceMatcher(None, a.upper(), b.upper())
-                q = s.find_longest_match(0, len(a), 0, len(b))
-                if q.size>0:
-                    it.append(['[hmac]'+name, a, b, q.size])
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-
-        cnt = 0
-        for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:5]:
-            cnt += 1
-            s = difflib.SequenceMatcher(None, a.upper(), b.upper())
-            print('max_match_len:{}'.format(max_match))
-            print('len[compare]:{}'.format(len(a), ))
-            print('len[{}]:{}'.format(name, len(b)))
-            matchcnt = 0
-            for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
-                if match.size:
-                    v = a[match.a:match.a+match.size]
-                    matchcnt += match.size
-                    print('    [match.size:{}]  {}'.format(match.size, v))
-            print('    [match.count:{}]'.format(matchcnt))
-            print('---------------')
-        if not cnt:
-            print('not match.')
-
-    def _creat_code(*a):
-        import pprint
-        txt.delete(0.,tkinter.END)
-        salt = ss.get().strip() if va.get() else ''
-        text = ee.get().strip()
-        compare_str = et_.get().strip()
-        code = '''
-import hmac
-import difflib
-
-allow = \
-$allow
-
-salt = '$salt' # 字符串/byte类型  盐（默认空）
-text = '$text' # 字符串/byte类型  需要被加密的数据
-upper = True
-
-
-def encode_all(salt, text):
-    salt = salt.encode() if type(salt) == str else salt
-    text = text.encode() if type(text) == str else text
-    for name in allow:
-        v = hmac.new(salt,text,name).hexdigest()
-        v = v.upper() if upper else v.lower()
-        print('{:<10}{}'.format(name, v))
-
-
-def compare_encode(salt, text, compare_str):
-    salt = salt.encode() if type(salt) == str else salt
-    text = text.encode() if type(text) == str else text
-    it = []
-    for name in allow:
-        v = hmac.new(salt,text,name).hexdigest()
-        v = v.upper() if upper else v.lower()
-        a, b = v, compare_str
-        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
-        q = s.find_longest_match(0, len(a), 0, len(b))
-        if q.size>0:
-            it.append([name, a, b, q.size])
-    # 因为这类加密的互异性很高，所以只获取前三个最长匹配的加密字符串对比查看
-    p = '-'
-    for name,a,b,max_match in sorted(it,key=lambda max_match:-max_match[3])[:3]:
-        s = difflib.SequenceMatcher(None, a.upper(), b.upper())
-        prefix = '[len:compare]:{:<5} {:<18}'.format(len(a), p + '[len:{}]:{}'.format(name, len(b)))
-        p = '-' if p == '+' else '+'
-        for match in sorted(s.get_matching_blocks(),key=lambda i:-i.size):
-            if match.size:
-                v = a[match.a:match.a+match.size]
-                print('{} [match.size:{}]  {}'.format(prefix, match.size, v))
-
-
-encode_all(salt, text)
-compare_str = '$compare_str' # 需要被对比的字符串
-compare_encode(salt, text, compare_str)
-        '''.strip()
-        code = code.replace('$allow', pprint.pformat(allow))
-        code = code.replace('$compare_str', compare_str)
-        code = code.replace('$salt', salt)
-        code = code.replace('$text', text)
-        print(code)
-
-
-    bt_ = Button(f1_,text='分析对比[忽略大小写]',command=_analysis_diff)
-    bt_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
-    bt2_ = Button(f1_,text='测用代码',command=_creat_code)
-    bt2_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
-
-    txt = Text(f2_,font=ft)
-    txt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
     return fr
 
