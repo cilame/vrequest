@@ -26,9 +26,9 @@ from tkinter.simpledialog import askstring
 from binascii import a2b_hex, b2a_hex
 
 try:
-    from .root import DEFAULTS_HEADERS
+    from .root import DEFAULTS_HEADERS,root
 except:
-    from root import DEFAULTS_HEADERS
+    from root import DEFAULTS_HEADERS,root
 
 Text = scrolledtext.ScrolledText
 #Text = tkinter.Text
@@ -1812,7 +1812,6 @@ if __name__ == '__main__':
     f21.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(f21, text='     以下算法为个人私用。应对 python 压缩的、无外部依赖库的、可带密码的、字符串加解密。').pack(fill=tkinter.X,expand=True)
 
-
     f22 = Frame(ff0)
     f22.pack(side=tkinter.TOP,fill=tkinter.X)
     ent22 = Entry(f22,width=10)
@@ -1841,6 +1840,22 @@ if __name__ == '__main__':
     ftxt = Text(ff0_,font=ft)
     ftxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
+    def change_cbit_1(*content):
+        if content:
+            encd = fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            cbit1['text'] = str(blen)+'bit'
+            return True
+    def change_cbit_2(*content):
+        if content:
+            encd = fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            cbit2['text'] = str(blen)+'bit'
+            return True
+
+    change_cbit1 = root.register(change_cbit_1)
+    change_cbit2 = root.register(change_cbit_2)
+
     # 这里后续需要考虑增加各种各样的加密解密以及代码的记录
     # 光是aes就有5种加解密方式
     f23 = Frame(ff0)
@@ -1849,8 +1864,11 @@ if __name__ == '__main__':
     f24 = Frame(ff0)
     f24.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(f24, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
-    ent23 = Entry(f24,width=17)
+    ent23 = Entry(f24,width=17,validate='key',validatecommand=(change_cbit1, '%P'))
     ent23.pack(side=tkinter.LEFT)
+    ent23.bind('<Key>', change_cbit1)
+    cbit1 = Label(f24, text='0:bit',width=6)
+    cbit1.pack(side=tkinter.LEFT,padx=6)
     cbx1 = Combobox(f24,width=4,state='readonly')
     cbx1['values'] = ['b16','b32','b64','b85']
     cbx1.current(2)
@@ -1867,6 +1885,8 @@ if __name__ == '__main__':
         else:
             fent1.delete(0,tkinter.END)
             fent1.insert(0,'utf-8')
+        change_cbit_1(ent23.get().strip())
+        change_cbit_2(ent24.get().strip())
     fent1 = Entry(f24,width=5)
     fent1.insert(0,'utf-8')
     fent1.pack(side=tkinter.RIGHT)
@@ -1876,12 +1896,14 @@ if __name__ == '__main__':
     cbx2.current(0)
     cbx2.pack(side=tkinter.RIGHT)
     Label(f24, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
-
     f25 = Frame(ff0)
     f25.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(f25, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
-    ent24 = Entry(f25,width=17)
+    ent24 = Entry(f25,width=17,validate='key',validatecommand=(change_cbit2, '%P'))
     ent24.pack(side=tkinter.LEFT)
+    
+    cbit2 = Label(f25, text='128:bit',width=6)
+    cbit2.pack(side=tkinter.LEFT,padx=6)
     ent24.insert(0,'1234567890123456')
     Label(f25, text='当模式为 ctr/ecb 时，这里不使用iv',).pack(side=tkinter.LEFT,padx=6)
 
