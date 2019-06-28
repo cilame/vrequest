@@ -536,21 +536,6 @@ class AESModeOfOperationCTR(AESStreamModeOfOperation):
         # AES-CTR is symetric
         return self.encrypt(crypttext)
 
-
-# Simple lookup table for each mode
-AESModesOfOperation = dict(
-    ctr = AESModeOfOperationCTR,
-    cbc = AESModeOfOperationCBC,
-    cfb = AESModeOfOperationCFB,
-    ecb = AESModeOfOperationECB,
-    ofb = AESModeOfOperationOFB,
-)
-
-
-
-
-
-
 def to_bufferable(binary):
     if isinstance(binary, bytes):
         return binary
@@ -566,12 +551,9 @@ def append_PKCS7_padding(data):
 def strip_PKCS7_padding(data):
     if len(data) % 16 != 0:
         raise ValueError("invalid length")
-
     pad = _get_byte(data[-1])
-
     if pad > 16:
         raise ValueError("invalid padding byte")
-
     return data[:-pad]
 
 
@@ -600,28 +582,23 @@ def _block_can_consume(self, size):
 def _block_final_encrypt(self, data, padding = PADDING_DEFAULT):
     if padding == PADDING_DEFAULT:
         data = append_PKCS7_padding(data)
-
     elif padding == PADDING_NONE:
         if len(data) != 16:
             raise Exception('invalid data length for final block')
     else:
         raise Exception('invalid padding option')
-
     if len(data) == 32:
         return self.encrypt(data[:16]) + self.encrypt(data[16:])
-
     return self.encrypt(data)
 
 
 def _block_final_decrypt(self, data, padding = PADDING_DEFAULT):
     if padding == PADDING_DEFAULT:
         return strip_PKCS7_padding(self.decrypt(data))
-
     if padding == PADDING_NONE:
         if len(data) != 16:
             raise Exception('invalid data length for final block')
         return self.decrypt(data)
-
     raise Exception('invalid padding option')
 
 AESBlockModeOfOperation._can_consume = _block_can_consume
@@ -658,7 +635,6 @@ AESSegmentModeOfOperation._final_encrypt = _segment_final_encrypt
 AESSegmentModeOfOperation._final_decrypt = _segment_final_decrypt
 
 
-
 # OFB and CTR are stream ciphers
 
 def _stream_can_consume(self, size):
@@ -679,7 +655,6 @@ def _stream_final_decrypt(self, data, padding = PADDING_DEFAULT):
 AESStreamModeOfOperation._can_consume = _stream_can_consume
 AESStreamModeOfOperation._final_encrypt = _stream_final_encrypt
 AESStreamModeOfOperation._final_decrypt = _stream_final_decrypt
-
 
 
 class BlockFeeder(object):
@@ -705,20 +680,21 @@ class BlockFeeder(object):
         if self._buffer is None:
             raise ValueError('already finished feeder')
 
+        self._buffer += to_bufferable(data)
+
         # Finalize; process the spare bytes we were keeping
-        if data is None:
+        if data is None or len(self._buffer) < 16:
             result = self._final(self._buffer, self._padding)
             self._buffer = None
             return result
 
-        self._buffer += to_bufferable(data)
 
         # We keep 16 bytes around so we can determine padding
         result = to_bufferable(b'')
         while len(self._buffer) >= 0:
             can_consume = self._mode._can_consume(len(self._buffer) - 16)
             if can_consume == 0: 
-                result = self._final(self._buffer, self._padding)
+                result += self._final(self._buffer, self._padding)
                 break
             result += self._feed(self._buffer[:can_consume])
             self._buffer = self._buffer[can_consume:]
@@ -727,25 +703,35 @@ class BlockFeeder(object):
 
 
 class Encrypter(BlockFeeder):
-    'Accepts bytes of plaintext and returns encrypted ciphertext.'
-
     def __init__(self, mode, padding = PADDING_DEFAULT):
         BlockFeeder.__init__(self, mode, mode.encrypt, mode._final_encrypt, padding)
 
 
 class Decrypter(BlockFeeder):
-    'Accepts bytes of ciphertext and returns decrypted plaintext.'
-
     def __init__(self, mode, padding = PADDING_DEFAULT):
         BlockFeeder.__init__(self, mode, mode.decrypt, mode._final_decrypt, padding)
 
 
+
+
+
+# Simple lookup table for each mode
+AESModesOfOperation = dict(
+    ctr = AESModeOfOperationCTR,
+    cbc = AESModeOfOperationCBC,
+    cfb = AESModeOfOperationCFB,
+    ecb = AESModeOfOperationECB,
+    ofb = AESModeOfOperationOFB,
+)
+
 if __name__ == '__main__':
-    # 还在测试，很多地方存在bug。
+    # 测试代码，和网上的一些在线处理有些不太一样的部分。
+    # 并且这里目前只支持 PADDING_PKCS7 ，None处理时会遇到一些 block size 异常问题
+    # 所以为了更好更通用的处理，这里就放弃将 padding 处理暴露出去。
     import base64, traceback
     key  = '1234567890123456'.encode()
     iv   = '1234567890123456'.encode()
-    data = '12345678901234561'.encode()
+    data = '123456789012345'.encode()
 
     TEST_NONE_PAD = False
     def test():

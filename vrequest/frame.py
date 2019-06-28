@@ -1799,18 +1799,22 @@ if __name__ == '__main__':
     v = c.zbase_enc(data); print(v)
     v = c.zbase_dec(v); print(v)
 
-    print('压缩数据后再进行加密，兼顾了加密和压缩两项功能，工具内的加密就使用这个')
+    print('压缩数据后再进行加密，兼顾了加密和压缩两项功能，工具内的加密就使用这个算法。')
     v = c.zencrypt(data); print(v)
     v = c.zdecrypt(v); print(v)
 '''.strip()
         print(code)
 
+    f20 = Frame(ff0)
+    f20.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f20, text='                                     加解密算法').pack(fill=tkinter.X,expand=True)
     f21 = Frame(ff0)
-    f22 = Frame(ff0)
     f21.pack(side=tkinter.TOP,fill=tkinter.X)
-    f22.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f21, text='     以下算法为个人私用。应对 python 压缩的、无外部依赖库的、可带密码的、字符串加解密。').pack(fill=tkinter.X,expand=True)
 
-    Label(f21, text='以下算法为个人私用。应对 python 压缩的、无外部依赖库的、可带密码的、字符串加解密。').pack(fill=tkinter.X,expand=True)
+
+    f22 = Frame(ff0)
+    f22.pack(side=tkinter.TOP,fill=tkinter.X)
     ent22 = Entry(f22,width=10)
     def _switch_ack(*a):
         def _show(*a, stat='show'):
@@ -1833,14 +1837,127 @@ if __name__ == '__main__':
     Button(f22, text='[算法]',command=_my_code,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='解密',command=_my_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='加密',command=_my_encode,width=5).pack(side=tkinter.RIGHT)
-    Label(ff0_, text='使用以下文本框进行加解密 [仅忽略文本前后换行符]').pack(side=tkinter.TOP,padx=10)
+    Label(ff0_, text='使用以下文本框进行加解密 [仅忽略文本前后换行符,空格不忽略]，注意不要传入过长数据。').pack(side=tkinter.TOP,padx=10)
     ftxt = Text(ff0_,font=ft)
     ftxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
     # 这里后续需要考虑增加各种各样的加密解密以及代码的记录
     # 光是aes就有5种加解密方式
+    f23 = Frame(ff0)
+    f23.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f23, text='     以下算法为 AES 加解密算法 [密码长度需注意:128bit,192bit,256bit] [iv长度需注意:128bit]。').pack(fill=tkinter.X,expand=True)
+    f24 = Frame(ff0)
+    f24.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f24, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
+    ent23 = Entry(f24,width=17)
+    ent23.pack(side=tkinter.LEFT)
+    cbx1 = Combobox(f24,width=4,state='readonly')
+    cbx1['values'] = ['b16','b32','b64','b85']
+    cbx1.current(2)
+    cbx1.pack(side=tkinter.RIGHT)
+    Label(f24, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    def _swich_encd1(*a):
+        s = fent1.get().strip()
+        if s == 'utf-8':
+            fent1.delete(0,tkinter.END)
+            fent1.insert(0,'gbk')
+        elif s == 'gbk':
+            fent1.delete(0,tkinter.END)
+            fent1.insert(0,'utf-8')
+        else:
+            fent1.delete(0,tkinter.END)
+            fent1.insert(0,'utf-8')
+    fent1 = Entry(f24,width=5)
+    fent1.insert(0,'utf-8')
+    fent1.pack(side=tkinter.RIGHT)
+    Button(f24, text='密码/iv/数据编码格式',command=_swich_encd1).pack(side=tkinter.RIGHT)
+    cbx2 = Combobox(f24,width=4,state='readonly')
+    cbx2['values'] = ['cbc','cfb','ofb','ctr','ecb',]
+    cbx2.current(0)
+    cbx2.pack(side=tkinter.RIGHT)
+    Label(f24, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
 
+    f25 = Frame(ff0)
+    f25.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f25, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
+    ent24 = Entry(f25,width=17)
+    ent24.pack(side=tkinter.LEFT)
+    ent24.insert(0,'1234567890123456')
+    Label(f25, text='当模式为 ctr/ecb 时，这里不使用iv',).pack(side=tkinter.LEFT,padx=6)
 
+    def _aes_encode(*a):
+        encd = fent1.get().strip()
+        mode = cbx2.get().strip()
+        eout = cbx1.get().strip()
+        key  = ent23.get().strip().encode(encd)
+        iv   = ent24.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyaes
+        except:
+            # 请勿在本脚本测试时安装了 pyaes，pyaes的源码部分有问题
+            import pyaes
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        Encrypter = pyaes.Encrypter
+        AESModesOfOperation = pyaes.AESModesOfOperation
+
+        try:
+            if mode in ('ctr','ecb'):
+                enc = Encrypter(AESModesOfOperation[mode](key))
+            else:
+                enc = Encrypter(AESModesOfOperation[mode](key, iv))
+            en = _encode(enc.feed(data)).decode(encd)
+            print(en)
+        except:
+            print(traceback.format_exc())
+
+    def _aes_decode(*a):
+        encd = fent1.get().strip()
+        mode = cbx2.get().strip()
+        eout = cbx1.get().strip()
+        key  = ent23.get().strip().encode(encd)
+        iv   = ent24.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyaes
+        except:
+            # 请勿在本脚本测试时安装了 pyaes，pyaes的源码部分有问题
+            import pyaes
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        Decrypter = pyaes.Decrypter
+        AESModesOfOperation = pyaes.AESModesOfOperation
+
+        try:
+            if mode in ('ctr','ecb'):
+                dec = Decrypter(AESModesOfOperation[mode](key))
+            else:
+                dec = Decrypter(AESModesOfOperation[mode](key, iv))
+            dc = dec.feed(_decode(data)).decode(encd)
+            print(dc)
+        except:
+            print(traceback.format_exc())
+
+    def _aes_code(*a):
+        try:
+            from . import pyaes
+        except:
+            import pyaes
+        ftxt.delete(0.,tkinter.END)
+        with open(pyaes.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f25, text='[算法]',command=_aes_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f25, text='解密',command=_aes_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f25, text='加密',command=_aes_encode,width=5).pack(side=tkinter.RIGHT)
 
     return fr
 
