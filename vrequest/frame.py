@@ -688,6 +688,13 @@ scrapy 代码窗口快捷键：
 https://github.com/cilame/vrequest
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
+
+    def create_req_window(*a):
+        from .tab import create_new_reqtab
+        create_new_reqtab()
+
+    btn = Button(fr,text='创建请求窗口/[右键创建请求窗口]', command=create_req_window)
+    btn.pack()
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)
     lb1.pack()
     temp_fr1.pack()
