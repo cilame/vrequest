@@ -563,7 +563,8 @@ def strip_PKCS7_padding(data):
 
 
 
-
+# 默认使用的加密方式，从目前来看，这里只是一种继承的关系，这里的处理只是对不同的加密方式的常用环境进行一种说明
+# 后续考虑到通用，去歧义化处理，后面会有函数对所有的加密类型进行包装，统一使用 PADDING_PKCS7 的处理方式
 
 PADDING_NONE       = 'none'
 PADDING_DEFAULT    = 'default'
@@ -572,13 +573,11 @@ PADDING_DEFAULT    = 'default'
 # PADDING_CIPHERTEXT_STEALING
 # PADDING_PKCS7
 
+# ecb和cbc默认使用
 # ECB and CBC are block-only ciphers
-
 def _block_can_consume(self, size):
     if size >= 16: return 16
     return 0
-
-# After padding, we may have more than one block
 def _block_final_encrypt(self, data, padding = PADDING_DEFAULT):
     if padding == PADDING_DEFAULT:
         data = append_PKCS7_padding(data)
@@ -590,8 +589,6 @@ def _block_final_encrypt(self, data, padding = PADDING_DEFAULT):
     if len(data) == 32:
         return self.encrypt(data[:16]) + self.encrypt(data[16:])
     return self.encrypt(data)
-
-
 def _block_final_decrypt(self, data, padding = PADDING_DEFAULT):
     if padding == PADDING_DEFAULT:
         return strip_PKCS7_padding(self.decrypt(data))
@@ -605,10 +602,7 @@ AESBlockModeOfOperation._can_consume = _block_can_consume
 AESBlockModeOfOperation._final_encrypt = _block_final_encrypt
 AESBlockModeOfOperation._final_decrypt = _block_final_decrypt
 
-
-
 # CFB is a segment cipher
-
 def _segment_can_consume(self, size):
     return self.segment_bytes * int(size // self.segment_bytes)
 
@@ -636,7 +630,6 @@ AESSegmentModeOfOperation._final_decrypt = _segment_final_decrypt
 
 
 # OFB and CTR are stream ciphers
-
 def _stream_can_consume(self, size):
     return size
 
@@ -655,6 +648,29 @@ def _stream_final_decrypt(self, data, padding = PADDING_DEFAULT):
 AESStreamModeOfOperation._can_consume = _stream_can_consume
 AESStreamModeOfOperation._final_encrypt = _stream_final_encrypt
 AESStreamModeOfOperation._final_decrypt = _stream_final_decrypt
+
+
+
+
+
+
+# 全部加密都使用 PADDING_PKCS7 的处理方式
+AESModesOfOperation = dict(
+    ctr = AESModeOfOperationCTR,
+    cbc = AESModeOfOperationCBC,
+    cfb = AESModeOfOperationCFB,
+    ecb = AESModeOfOperationECB,
+    ofb = AESModeOfOperationOFB,
+)
+
+for _,a in AESModesOfOperation.items():
+    a._can_consume = _block_can_consume
+    a._final_encrypt = _block_final_encrypt
+    a._final_decrypt = _block_final_decrypt
+
+
+
+
 
 
 class BlockFeeder(object):
@@ -715,14 +731,7 @@ class Decrypter(BlockFeeder):
 
 
 
-# Simple lookup table for each mode
-AESModesOfOperation = dict(
-    ctr = AESModeOfOperationCTR,
-    cbc = AESModeOfOperationCBC,
-    cfb = AESModeOfOperationCFB,
-    ecb = AESModeOfOperationECB,
-    ofb = AESModeOfOperationOFB,
-)
+
 
 if __name__ == '__main__':
     # 测试代码，和网上的一些在线处理有些不太一样的部分。
@@ -731,7 +740,7 @@ if __name__ == '__main__':
     import base64, traceback
     key  = '1234567890123456'.encode()
     iv   = '1234567890123456'.encode()
-    data = '123456789012345'.encode()
+    data = '1234567890123456'.encode()
 
     TEST_NONE_PAD = False
     def test():
@@ -745,14 +754,19 @@ if __name__ == '__main__':
         # ctr
         print('---- {} ----'.format('ctr'))
         try:
-            enc = Encrypter(ctr(key))
+            cnum = int.from_bytes(iv,'big') # 常见的 ctr 加密在这里需要非常的注意
+            cnt = Counter(cnum)
+            enc = Encrypter(ctr(key, cnt))
             edata = base64.b64encode(enc.feed(data)).decode(); print(edata)
-            dec = Decrypter(ctr(key))
+            cnt = Counter(cnum)
+            dec = Decrypter(ctr(key, cnt))
             ddata = dec.feed(base64.b64decode(edata.encode()));print(ddata.decode())
             if TEST_NONE_PAD:
-                enc = Encrypter(ctr(key), padding='none')
+                cnt = Counter(cnum)
+                enc = Encrypter(ctr(key, cnt), padding='none')
                 edata = base64.b64encode(enc.feed(data)).decode(); print(edata)
-                dec = Decrypter(ctr(key), padding='none')
+                cnt = Counter(cnum)
+                dec = Decrypter(ctr(key, cnt), padding='none')
                 ddata = dec.feed(base64.b64decode(edata.encode()));print(ddata.decode())
         except:
             traceback.print_exc()

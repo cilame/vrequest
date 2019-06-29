@@ -1925,10 +1925,13 @@ if __name__ == '__main__':
         if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
         if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
         Encrypter = pyaes.Encrypter
+        Counter = pyaes.Counter
         AESModesOfOperation = pyaes.AESModesOfOperation
 
         try:
-            if mode in ('ctr','ecb'):
+            if mode in 'ctr':
+                enc = Encrypter(AESModesOfOperation[mode](key, Counter(int.from_bytes(iv, 'big'))))
+            elif mode == 'ecb':
                 enc = Encrypter(AESModesOfOperation[mode](key))
             else:
                 enc = Encrypter(AESModesOfOperation[mode](key, iv))
@@ -1955,10 +1958,13 @@ if __name__ == '__main__':
         if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
         if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
         Decrypter = pyaes.Decrypter
+        Counter = pyaes.Counter
         AESModesOfOperation = pyaes.AESModesOfOperation
 
         try:
-            if mode in ('ctr','ecb'):
+            if mode in 'ctr':
+                dec = Decrypter(AESModesOfOperation[mode](key, Counter(int.from_bytes(iv, 'big'))))
+            elif mode == 'ecb':
                 dec = Decrypter(AESModesOfOperation[mode](key))
             else:
                 dec = Decrypter(AESModesOfOperation[mode](key, iv))
