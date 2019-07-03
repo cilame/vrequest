@@ -2004,5 +2004,6 @@ if __name__ == '__main__':
 
     sys.stdout = __org_stdout__
     fr.bind('<Escape>',lambda *a:fr.master.quit())
+    fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
     fr.master.withdraw()
     fr.mainloop()

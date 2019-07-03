@@ -97,6 +97,7 @@ def execute():
         fr = encode_window()
         fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
         fr.bind('<Escape>',lambda *a:fr.master.quit())
+        fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
         fr.master.withdraw()
         fr.mainloop()
         return
