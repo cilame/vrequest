@@ -25,10 +25,13 @@ C:\Users\zhoulin08>pip install git+https://github.com/cilame/vrequest.git
 ```bash
 # 在安装该函数库后就有一个命令行工具，直接在命令行输入 vv 或者 vrequest 都可以打开该GUI工具
 # eg.
-C:\Users\vvvvvvv>vv
+C:\Users\zhoulin08>vv
 # 并且功能描述都有写在帮助页，直接按照帮助页中的各种快捷键处理方式就可以
 # 0 该工具大部分都是快捷键操作
 # 1 可以将请求过的数据记录在本地，并且可以更新配置
 #   哪怕关掉工具也能很方便的恢复请求的配置状态，方便使用
 # 2 快速生成请求代码，让请求更加方便实现。
+# ps.
+C:\Users\zhoulin08>vv e
+# 在输入参数中加上e则会直接打开便捷加密窗口，不用再工具里右键打开
 ```

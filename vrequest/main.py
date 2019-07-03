@@ -1,4 +1,5 @@
 import os
+import sys
 
 from . import __version__
 
@@ -90,6 +91,16 @@ bind_alt_key(execute_scrapy_code,   'w') # 用自动生成的环境执行scrapy�
 
 
 def execute():
+    argv = sys.argv
+    if 'e' in argv:
+        from .frame import encode_window
+        fr = encode_window()
+        fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
+        fr.bind('<Escape>',lambda *a:fr.master.quit())
+        fr.master.withdraw()
+        fr.mainloop()
+        return
+
     root.title('vrequest [{}]'.format(__version__))
     ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
     root.iconbitmap(ico)

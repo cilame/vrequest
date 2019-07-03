@@ -2000,6 +2000,7 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     # test frame
     fr = encode_window()
+    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
 
     sys.stdout = __org_stdout__
     fr.bind('<Escape>',lambda *a:fr.master.quit())
