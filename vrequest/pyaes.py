@@ -1,4 +1,6 @@
 # mod by: https://github.com/ricmoo/pyaes
+# 直接执行本脚本便可进行测试 测试代码在 if __name__ == '__main__': 之后，
+# 也相当于提供了一个简单的各种模式的 aes 加密使用样例。
 
 
 # The MIT License (MIT)

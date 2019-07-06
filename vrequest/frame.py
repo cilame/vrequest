@@ -1151,6 +1151,7 @@ def encode_window(setting=None):
     处理简单的加密编码对比
     '''
     fr = tkinter.Toplevel()
+    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
     fr.resizable(False, False)
 
 
@@ -1843,7 +1844,12 @@ if __name__ == '__main__':
     Button(f22, text='[算法]',command=_my_code,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='解密',command=_my_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f22, text='加密',command=_my_encode,width=5).pack(side=tkinter.RIGHT)
-    Label(ff0_, text='使用以下文本框进行加解密 [仅忽略文本前后换行符,空格不忽略]，注意不要传入过长数据。').pack(side=tkinter.TOP,padx=10)
+    txttitlefr = Frame(ff0_)
+    txttitlefr.pack(side=tkinter.TOP)
+    Label(txttitlefr, text='使用以下文本框进行加解密 [仅忽略文本前后换行符,空格不忽略]，显示限制字符数：').pack(side=tkinter.LEFT,padx=10)
+    entlimit = Entry(txttitlefr, width=10)
+    entlimit.pack(side=tkinter.LEFT)
+    entlimit.insert(0,'10000')
     ftxt = Text(ff0_,font=ft)
     ftxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
 
@@ -1912,7 +1918,7 @@ if __name__ == '__main__':
     cbit2 = Label(f25, text='128:bit',width=6)
     cbit2.pack(side=tkinter.LEFT,padx=6)
     ent24.insert(0,'1234567890123456')
-    Label(f25, text='当模式为 ctr/ecb 时，这里不使用iv',).pack(side=tkinter.LEFT,padx=6)
+    Label(f25, text='当模式为 ctr/ecb 时，iv无效',).pack(side=tkinter.LEFT,padx=6)
 
     def _aes_encode(*a):
         encd = fent1.get().strip()
@@ -1921,6 +1927,7 @@ if __name__ == '__main__':
         key  = ent23.get().strip().encode(encd)
         iv   = ent24.get().strip().encode(encd)
         data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limitnum = int(entlimit.get().strip())
         ftxt.delete(0.,tkinter.END)
         try:
             from . import pyaes
@@ -1943,7 +1950,14 @@ if __name__ == '__main__':
             else:
                 enc = Encrypter(AESModesOfOperation[mode](key, iv))
             en = _encode(enc.feed(data)).decode(encd)
-            print(en)
+            if len(en) > limitnum:
+                print('警告！')
+                print('加密数据长度({})过长（超过{}字符，超过的部分不显示）'.format(len(en),limitnum))
+                print('因为 tkinter 性能瓶颈，不宜在 tkinter 窗口展示，请使用算法在别的IDE内实现')
+                print('---------------------------------------------------')
+                print(en[:limitnum])
+            else:
+                print(en)
         except:
             print(traceback.format_exc())
 
@@ -1993,6 +2007,166 @@ if __name__ == '__main__':
     Button(f25, text='[算法]',command=_aes_code,width=5).pack(side=tkinter.RIGHT)
     Button(f25, text='解密',command=_aes_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f25, text='加密',command=_aes_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+    # 这部分是后续增加的纯 python 的des解密
+    def change_cbit_3(*content):
+        if content:
+            encd = fent2.get().strip()
+            blen = len(content[0].encode(encd))*8
+            cbit3['text'] = str(blen)+'bit'
+            return True
+    def change_cbit_4(*content):
+        if content:
+            encd = fent2.get().strip()
+            blen = len(content[0].encode(encd))*8
+            cbit4['text'] = str(blen)+'bit'
+            return True
+
+    change_cbit3 = root.register(change_cbit_3)
+    change_cbit4 = root.register(change_cbit_4)
+
+    f23 = Frame(ff0)
+    f23.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f23, text='     以下算法为 DES/3DES 加解密算法 [密码长度:64bit(DES),128bit(3DES),192bit(3DES)] [iv长度:64bit]。').pack(fill=tkinter.X,expand=True)
+    f24 = Frame(ff0)
+    f24.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f24, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
+    ent25 = Entry(f24,width=17,validate='key',validatecommand=(change_cbit3, '%P'))
+    ent25.pack(side=tkinter.LEFT)
+    ent25.bind('<Key>', change_cbit3)
+    cbit3 = Label(f24, text='0:bit',width=6)
+    cbit3.pack(side=tkinter.LEFT,padx=6)
+    cbx3 = Combobox(f24,width=4,state='readonly')
+    cbx3['values'] = ['b16','b32','b64','b85']
+    cbx3.current(2)
+    cbx3.pack(side=tkinter.RIGHT)
+    Label(f24, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    def _swich_encd1(*a):
+        s = fent2.get().strip()
+        if s == 'utf-8':
+            fent2.delete(0,tkinter.END)
+            fent2.insert(0,'gbk')
+        elif s == 'gbk':
+            fent2.delete(0,tkinter.END)
+            fent2.insert(0,'utf-8')
+        else:
+            fent2.delete(0,tkinter.END)
+            fent2.insert(0,'utf-8')
+        change_cbit_3(ent25.get().strip())
+        change_cbit_4(ent26.get().strip())
+    fent2 = Entry(f24,width=5)
+    fent2.insert(0,'utf-8')
+    fent2.pack(side=tkinter.RIGHT)
+    Button(f24, text='密码/iv/数据编码格式',command=_swich_encd1).pack(side=tkinter.RIGHT)
+    cbx4 = Combobox(f24,width=4,state='readonly')
+    cbx4['values'] = ['cbc','ecb',]
+    cbx4.current(0)
+    cbx4.pack(side=tkinter.RIGHT)
+    Label(f24, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
+    f25 = Frame(ff0)
+    f25.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f25, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
+    ent26 = Entry(f25,width=17,validate='key',validatecommand=(change_cbit4, '%P'))
+    ent26.pack(side=tkinter.LEFT)
+    
+    cbit4 = Label(f25, text='128:bit',width=6)
+    cbit4.pack(side=tkinter.LEFT,padx=6)
+    ent26.insert(0,'12345678')
+    Label(f25, text='当模式为 ctr/ecb 时，iv无效',).pack(side=tkinter.LEFT,padx=6)
+
+    def _des_encode(*a):
+        encd = fent2.get().strip()
+        mode = cbx4.get().strip()
+        eout = cbx3.get().strip()
+        key  = ent25.get().strip().encode(encd)
+        iv   = ent26.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limitnum = int(entlimit.get().strip())
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pydes
+        except:
+            # 请勿在本脚本测试时安装了 pyaes，pyaes的源码部分有问题
+            import pydes
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        if len(key) not in [8,16,24]:
+            print('error. len(key) must in [64bit,128bit,192bit]. now is {}.'.format(len(key)*8))
+            return
+        try:
+            if mode in 'ecb': mode = pydes.ECB
+            elif mode == 'cbc': mode = pydes.CBC
+            else:
+                print('error mode:{}, mode must in [ecb cbc]'.format(mode))
+            if len(key) == 8:
+                d = pydes.des(key, mode, iv, padmode=pydes.PAD_PKCS5)
+            else:
+                d = pydes.triple_des(key, mode, iv, padmode=pydes.PAD_PKCS5)
+            en = _encode(d.encrypt(data)).decode(encd)
+            if len(en) > limitnum:
+                print('警告！')
+                print('加密数据长度({})过长（超过{}字符，超过的部分不显示）'.format(len(en),limitnum))
+                print('因为 tkinter 性能瓶颈，不宜在 tkinter 窗口展示，请使用算法在别的IDE内实现')
+                print('---------------------------------------------------')
+                print(en[:limitnum])
+            else:
+                print(en)
+        except:
+            print(traceback.format_exc())
+
+    def _des_decode(*a):
+        encd = fent2.get().strip()
+        mode = cbx4.get().strip()
+        eout = cbx3.get().strip()
+        key  = ent25.get().strip().encode(encd)
+        iv   = ent26.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pydes
+        except:
+            # 请勿在本脚本测试时安装了 pyaes，pyaes的源码部分有问题
+            import pydes
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        if len(key) not in [8,16,24]:
+            print('error. len(key) must in [64bit,128bit,192bit]. now is {}.'.format(len(key)*8))
+            return
+        try:
+            if mode in 'ecb': mode = pydes.ECB
+            elif mode == 'cbc': mode = pydes.CBC
+            else:
+                print('error mode:{}, mode must in [ecb cbc]'.format(mode))
+            if len(key) == 8:
+                d = pydes.des(key, mode, iv, padmode=pydes.PAD_PKCS5)
+            else:
+                d = pydes.triple_des(key, mode, iv, padmode=pydes.PAD_PKCS5)
+            dc = d.decrypt(_decode(data)).decode(encd)
+            print(dc)
+        except:
+            print(traceback.format_exc())
+
+    def _des_code(*a):
+        try:
+            from . import pydes
+        except:
+            import pydes
+        ftxt.delete(0.,tkinter.END)
+        with open(pydes.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f25, text='[算法]',command=_des_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f25, text='解密',command=_des_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f25, text='加密',command=_des_encode,width=5).pack(side=tkinter.RIGHT)
+
 
     return fr
 
