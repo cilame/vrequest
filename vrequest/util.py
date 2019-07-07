@@ -455,13 +455,47 @@ class VSpider(scrapy.Spider):
 
 
 def format_scrapy_request(method,c_url,c_headers,c_body):
-    pas = (
-        "print('============================== start ==============================')\n"
-        "        print('status:',response.status)\n"
-        "        print('response length: {}'.format(len(response.body)))\n"
-        "        print('response content[:1000]:\\n {}'.format(response.body[:1000]))\n"
-        "        print('==============================  end  ==============================')"
-    )
+    pas = r'''print('\n'*2)
+        def header_fprint(headers_dict):
+            maxklen = len(repr(max(headers_dict,key=len)))
+            for keystring in sorted(headers_dict):
+                valuestring = headers_dict[keystring]
+                if 'cookie' in keystring.lower():
+                    vlist = sorted(valuestring.split('; '))
+                    for idx,value in enumerate(vlist):
+                        lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
+                                  ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
+                        if idx == len(vlist)-1: lstring += '),'
+                        print(lstring)
+                else:
+                    print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
+
+        # 请求信息
+        print('===========')
+        print('| request |')
+        print('===========')
+        print('request method: {}'.format(response.request.method))
+        print('request url: {}'.format(response.url))
+        print('------------------- request headers ---------------------')
+        reqhead = response.request.headers.to_unicode_dict()
+        header_fprint(reqhead)
+        print('------------------- request body ------------------------')
+        print(response.request.body)
+        print('\n'*2)
+
+        # 返回信息
+        print('============')
+        print('| response |')
+        print('============')
+        print('status:',response.status)
+        print('response length: {}'.format(len(response.body)))
+        print('------------------- response headers --------------------')
+        reshead = response.headers.to_unicode_dict()
+        header_fprint(reshead)
+        print('------------------- response body[:1000] ----------------')
+        print('response content[:1000]:\n {}'.format(response.body[:1000]))
+        print('=========================================================')
+        print('\n'*2)'''
     return format_scrapy_req(method,c_url,c_headers,c_body).replace('$plus',pas)
 
 
