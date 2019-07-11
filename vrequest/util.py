@@ -278,8 +278,55 @@ post_info()
     return _format.strip()
 
 
+
+def del_plus(string):
+    pas = r'''
+    print('\n'*2)
+    def header_fprint(headers_dict):
+        maxklen = len(repr(max(headers_dict,key=len)))
+        for keystring in sorted(headers_dict):
+            valuestring = headers_dict[keystring]
+            if 'cookie' in keystring.lower():
+                vlist = sorted(valuestring.split('; '))
+                for idx,value in enumerate(vlist):
+                    lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
+                              ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
+                    if idx == len(vlist)-1: lstring += '),'
+                    print(lstring)
+            else:
+                print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
+
+    # 请求信息
+    print('===========')
+    print('| request |')
+    print('===========')
+    print('request method: {}'.format(s.request.method))
+    print('request url: {}'.format(s.url))
+    print('------------------- request headers ---------------------')
+    reqhead = s.request.headers
+    header_fprint(reqhead)
+    print('------------------- request body ------------------------')
+    print(s.request.body)
+    print('\n'*2)
+
+    # 返回信息
+    print('============')
+    print('| response |')
+    print('============')
+    print('status:',s.status_code)
+    print('response length: {}'.format(len(s.content)))
+    print('------------------- response headers --------------------')
+    reshead = s.headers
+    header_fprint(reshead)
+    print('------------------- response content[:1000] ----------------')
+    print('response content[:1000]:\n {}'.format(s.content[:1000]))
+    print('=========================================================')
+    print('\n'*2)'''
+    return string.replace('$plus',pas).strip()
+
+
 def format_request(method,c_url,c_headers,c_body):
-    return format_req(method,c_url,c_headers,c_body).replace('$plus','')
+    return del_plus(format_req(method,c_url,c_headers,c_body))
 
 
 def format_response(r_setting,c_set,c_content):
@@ -334,8 +381,8 @@ def format_response(r_setting,c_set,c_content):
                     func_code = ''
         func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
         _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
-    _format = _format if '$plus' not in _format else _format.replace('$plus','')
-    return _format.strip()
+    # _format = _format if '$plus' not in _format else _format.replace('$plus','')
+    return del_plus(_format)
 
 
 
@@ -493,7 +540,7 @@ def format_scrapy_request(method,c_url,c_headers,c_body):
         reshead = response.headers.to_unicode_dict()
         header_fprint(reshead)
         print('------------------- response body[:1000] ----------------')
-        print('response content[:1000]:\n {}'.format(response.body[:1000]))
+        print('response body[:1000]:\n {}'.format(response.body[:1000]))
         print('=========================================================')
         print('\n'*2)'''
     return format_scrapy_req(method,c_url,c_headers,c_body).replace('$plus',pas)
