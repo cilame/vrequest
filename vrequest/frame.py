@@ -490,6 +490,104 @@ def code_window(setting=None):
     return fr
 
 
+
+
+
+
+
+post_verification_model = r"""
+    '''
+    # [后验证代码模板]
+    # 只需在正常请求前加上下面两段便可处理重验证的操作
+    # 该重验证包含了，原始请求的重新提交以及验证次数的接口暴露
+    # 并且加了这一段验证代码之后你只需要对验证更新的部分修改即可。
+
+    # 使用时只需要修改两处
+    # 1. 修改后验证请求的信息的请求信息
+    # 2. 修改后验证的更新请求配置的信息（通常更新cookie，已有基本模板）
+    def parse(self, response):
+        def revalidate(response):
+            times = response.meta.get('_revalidate_times') or 0
+            # 重验次数，为了测试，这里使用的条件是，重验次数少于2则直接重验
+            # 几乎就等于无条件重验证两次，在实际情况下请注意验证条件的编写
+            if times >= 2:
+                return True
+
+        if not revalidate(response):
+            # ============ 请修改此处的验证请求信息 =============
+            # 这里只需要传入重验证需要请求的信息即可，会自动重验证和重新请求本次验证失败的请求
+            rurl     = 'https://www.baidu.com/'
+            rheaders = {}
+            rbody    = None # body为None则验证请求为get,否则为post
+            yield self.revalidate_pack(response, rurl, rheaders, rbody)
+            return
+
+        # 后续是正常的解析操作
+    '''
+    def revalidate_pack(self, response, rurl=None, rheaders=None, rbody=None):
+        def mk_revalidate_request(_plusmeta):
+            method = 'GET' if rbody is None else 'POST'
+            meta = {}
+            meta['_plusmeta'] = _plusmeta
+            r = Request(
+                    rurl,
+                    method   = method,
+                    headers  = rheaders,
+                    body     = rbody,
+                    callback = self.revalidate_parse,
+                    meta     = meta,
+                    dont_filter = True,
+                )
+            return r
+        _plusmeta = dict(
+            url     = response.request.url,
+            headers = response.request.headers.to_unicode_dict(),
+            body    = response.request.body.decode(),
+            method  = response.request.method,
+            meta    = response.request.meta,
+            cbname  = response.request.callback.__name__,
+        )
+        return mk_revalidate_request(_plusmeta)
+
+    def revalidate_parse(self, response):
+        '''
+        验证请求结束，返回验证信息则更新一些信息，重新对原来未验证的请求进行验证
+        有时是通过 set-cookie 来实现更新 cookie 的操作，所以这里的 cookie 需要考虑更新的操作。
+        可以通过 response.headers.to_unicode_dict() 将返回的headers里面的 key value 转换成字符串
+        这样操作会少一些处理 bytes 类型的麻烦。
+        '''
+        def update(_plusmeta):
+            # ============ 请修改此处的验证跟新 =============
+            # 一般的后验证通常会在这里对 _plusmeta 中的 cookie 更新，由于to_unicode_dict函数的关系
+            # 所有的key都是小写，所以不用担心大小写问题，这里给了一个简单的小模板，如需更多功能请自行修改
+            # 这里也可以更新一些 self 的参数，将验证进行持久化
+            newcookie = response.headers.to_unicode_dict().get('set-cookie')
+            if newcookie:
+                _plusmeta['headers']['cookie'] = newcookie
+
+            _plusmeta['meta']['_revalidate_times'] = (_plusmeta['meta'].get('_revalidate_times') or 0) + 1
+            return _plusmeta
+
+        _plusmeta = update(response.meta['_plusmeta'])
+        url     = _plusmeta['url']
+        method  = _plusmeta['method']
+        headers = _plusmeta['headers']
+        body    = _plusmeta['body']
+        meta    = _plusmeta['meta']
+        cbname  = _plusmeta['cbname']
+        r = Request(
+                url,
+                method   = method,
+                headers  = headers,
+                body     = body,
+                callback = getattr(self, cbname),
+                meta     = meta,
+                dont_filter = True,
+            )
+        yield r
+"""
+
+
 # 生成代码临时放在这里
 def scrapy_code_window(setting=None):
     fr = Frame()
@@ -507,6 +605,9 @@ def scrapy_code_window(setting=None):
             with open(script,'w',encoding='utf-8') as f:
                 f.write(tx.get(0.,tkinter.END))
             shutil.copytree(scrapypath, desktop)
+            if hva.get():
+                with open(desktop + '\\v\\spiders\\v.py','a',encoding='utf-8') as f:
+                    f.write('\n'*10 + post_verification_model)
             toggle = tkinter.messagebox.askokcancel('创建成功',
                             '创建成功\n\n'
                             '注意！！！\n注意！！！\n注意！！！\n\n是否关闭当前工具并启动拷贝出的 shell 地址执行测试。\n'
@@ -530,7 +631,7 @@ def scrapy_code_window(setting=None):
                     cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
                     os.system(cmd)
                 os.chdir(cwd)
-                cwd = os.getcwd()             
+                cwd = os.getcwd()
             else:
                 einfo = 'cannot find scrapy'
                 tkinter.messagebox.showinfo('Error',einfo)
@@ -572,6 +673,10 @@ def scrapy_code_window(setting=None):
     bt2.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行本地代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
+    hva = tkinter.IntVar()
+    hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)
+    hrb.deselect()
+    hrb.pack(side=tkinter.LEFT)
     cbx = Combobox(temp_fr0,width=10,state='readonly')
     cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
     cbx.current(1)
@@ -1838,7 +1943,7 @@ if __name__ == '__main__':
 
     cbx = Combobox(f22,width=4,state='readonly')
     cbx['values'] = base64enc = ['b16','b32','b64','b85',]
-    cbx.current(2)
+    cbx.current(3)
     cbx.pack(side=tkinter.RIGHT)
     Label(f22, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
     Button(f22, text='[算法]',command=_my_code,width=5).pack(side=tkinter.RIGHT)
