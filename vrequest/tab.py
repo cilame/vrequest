@@ -710,4 +710,5 @@ def create_temp_idle():
     if not os.path.isfile(tempfile):
         with open(tempfile, 'w', encoding='utf-8') as f:
             f.write('# -*- coding: utf-8 -*-')
-    os.system('{} {} {}'.format(pythonexe, idlepyw, tempfile))
+    cmd = '{} {} {}'.format(pythonexe, idlepyw, tempfile)
+    os.popen(cmd)

@@ -858,8 +858,15 @@ $^^$jscode$^^$
 '''
 
 import js2py
-js = js2py.eval_js(jscode) # eval_js模式会自动将js代码执行后最后一个 var赋值的参数返回出来。
-print(js)
+# js = js2py.eval_js(jscode) 
+# 这里的 js 是代码执行后最后一个 var 赋值的参数返回出来。
+# print(js) # 这种模式有弊端，每次都要解析一遍。
+
+# 请尽量使用下面的方式，这样可以直接用 . 调用内部函数或参数
+js = js2py.EvalJs()
+js.execute(jscode)
+print(js.a)
+print(js.func)
 """.replace('$^^$jscode$^^$', jscode.strip()).strip()
         txt2.delete(0.,tkinter.END)
         txt2.insert(0.,pythoncode)
