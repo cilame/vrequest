@@ -2,6 +2,7 @@ from lxml import etree
 
 import re
 import os
+import sys
 import json
 import shutil
 import pprint
@@ -16,6 +17,7 @@ from .root import (
     root,
     config,
     save,
+    home,
 )
 from .frame import (
     request_window,
@@ -698,3 +700,14 @@ def get_auto_json(*a):
 
 def execute_js_code():
     pass
+
+
+def create_temp_idle():
+    pythonexe = sys.executable
+    pypath = os.path.split(pythonexe)[0]
+    idlepyw = os.path.join(pypath,'Lib/idlelib/idle.pyw')
+    tempfile = os.path.join(home, '.vrequest.py')
+    if not os.path.isfile(tempfile):
+        with open(tempfile, 'w', encoding='utf-8') as f:
+            f.write('# -*- coding: utf-8 -*-')
+    os.system('{} {} {}'.format(pythonexe, idlepyw, tempfile))

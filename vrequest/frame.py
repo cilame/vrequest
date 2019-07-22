@@ -788,6 +788,7 @@ scrapy 代码窗口快捷键：
 (Ctrl + w) 关闭当前标签
 (Ctrl + h) 创建帮助标签
 (Ctrl + s) 保存当前全部请求配置(只能保存请求配置)
+(Alt  + `) 用IDLE固定打开一个文件,方便长脚本测试
 
 开源代码：
 https://github.com/cilame/vrequest
@@ -2272,7 +2273,42 @@ if __name__ == '__main__':
     Button(f25, text='解密',command=_des_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f25, text='加密',command=_des_encode,width=5).pack(side=tkinter.RIGHT)
 
+    f100 = Frame(ff0)
+    f100.pack(side=tkinter.TOP,fill=tkinter.X)
+    f101 = Frame(f100)
+    f102 = Frame(f100)
+    f101.pack(side=tkinter.TOP,fill=tkinter.X)
+    f102.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f101, text='     以下算法纯 python 解密 jsfuck。').pack(fill=tkinter.X,expand=True)
+    def _jsfuck_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyjsfuck
+        except:
+            import pyjsfuck
+        try:
+            f = pyjsfuck.unjsfuck(data, debuglevel=1, logger=print)
+            print()
+            print('[ result ]:')
+            print(f)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
 
+    def _jsfuck_code(*a):
+        try:
+            from . import pyjsfuck
+        except:
+            import pyjsfuck
+        ftxt.delete(0.,tkinter.END)
+        with open(pyjsfuck.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f102, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f102, text='解密',command=_jsfuck_decode,width=5).pack(side=tkinter.RIGHT)
     return fr
 
 

@@ -52,9 +52,11 @@ config = {
 }
 
 
+home = None
+
 # 用来配置一些需要持久化的配置
 def get_config_from_homepath():
-    global config
+    global config, home
     defaults_conf = config.copy()
     try:
         home = os.environ.get('HOME')
@@ -75,7 +77,7 @@ get_config_from_homepath()
 
 # 用来持久化当前配置的情况，简单的快照，便于使用
 def set_config_from_homepath():
-    global config
+    global config, home
     defaults_conf = config
     try:
         home = os.environ.get('HOME')
