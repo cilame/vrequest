@@ -2406,7 +2406,7 @@ if __name__ == '__main__':
     cbx201.current(2)
     cbx201.pack(side=tkinter.RIGHT)
     Label(f202, text='密码',width=4).pack(side=tkinter.LEFT,padx=5)
-    k200 = Entry(f202, width=5)
+    k200 = Entry(f202, width=17)
     k200.pack(side=tkinter.LEFT)
     Button(f202, text='[算法]',command=_rc4_code,width=5).pack(side=tkinter.RIGHT)
     Button(f202, text='解密',command=_rc4_decode,width=5).pack(side=tkinter.RIGHT)
