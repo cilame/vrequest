@@ -1264,9 +1264,16 @@ def encode_window(setting=None):
     处理简单的加密编码对比
     '''
     fr = tkinter.Toplevel()
-    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
+    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口, 组合快捷键 Alt+` 快速打开IDLE')
     fr.resizable(False, False)
-
+    try:
+        try:
+            from .tab import create_temp_idle
+        except:
+            from tab import create_temp_idle
+        fr.bind('<Alt-`>',lambda *a:create_temp_idle())
+    except:
+        pass
 
     enb = ttk.Notebook(fr)
     enb_names = {} 
@@ -2316,16 +2323,114 @@ if __name__ == '__main__':
 
     Button(f102, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.RIGHT)
     Button(f102, text='解密',command=_jsfuck_decode,width=5).pack(side=tkinter.RIGHT)
+
+
+    f200 = Frame(ff0)
+    f200.pack(side=tkinter.TOP,fill=tkinter.X)
+    f201 = Frame(f200)
+    f202 = Frame(f200)
+    f201.pack(side=tkinter.TOP,fill=tkinter.X)
+    f202.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f201, text='     以下算法为 rc4 解密算法').pack(fill=tkinter.X,expand=True)
+
+    def _rc4_encode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        encd = k201.get().strip('\n')
+        key = k200.get().strip('\n').encode(encd)
+        data = data.encode(encd)
+        mode = cbx201.get().strip()
+        try:
+            from . import pyrc4
+        except:
+            import pyrc4
+        if mode == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if mode == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if mode == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if mode == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        try:
+            f = pyrc4.rc4(data, key, mode="encode", enfunc=_encode, defunc=_decode)
+            print(f.decode(encd))
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error encoding!!! check input data.')
+
+    def _rc4_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        encd = k201.get().strip('\n')
+        key = k200.get().strip('\n').encode(encd)
+        data = data.encode(encd)
+        mode = cbx201.get().strip()
+        try:
+            from . import pyrc4
+        except:
+            import pyrc4
+        if mode == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if mode == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if mode == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if mode == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        try:
+            f = pyrc4.rc4(data, key, mode="decode", enfunc=_encode, defunc=_decode)
+            print(f.decode(encd))
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rc4_code(*a):
+        try:
+            from . import pyrc4
+        except:
+            import pyrc4
+        ftxt.delete(0.,tkinter.END)
+        with open(pyrc4.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    def _swich_rc4_encd(*a):
+        s = k201.get().strip()
+        if s == 'utf-8':
+            k201.delete(0,tkinter.END)
+            k201.insert(0,'gbk')
+        elif s == 'gbk':
+            k201.delete(0,tkinter.END)
+            k201.insert(0,'utf-8')
+        else:
+            k201.delete(0,tkinter.END)
+            k201.insert(0,'utf-8')
+
+    cbx201 = Combobox(f202,width=4,state='readonly')
+    cbx201['values'] = ['b16','b32','b64','b85']
+    cbx201.current(2)
+    cbx201.pack(side=tkinter.RIGHT)
+    Label(f202, text='密码',width=4).pack(side=tkinter.LEFT,padx=5)
+    k200 = Entry(f202, width=5)
+    k200.pack(side=tkinter.LEFT)
+    Button(f202, text='[算法]',command=_rc4_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f202, text='解密',command=_rc4_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f202, text='加密',command=_rc4_encode,width=5).pack(side=tkinter.RIGHT)
+    k201 = Entry(f202, width=5)
+    k201.pack(side=tkinter.RIGHT)
+    k201.insert(0,'utf-8')
+    Button(f202, text='密码/数据编码格式',command=_swich_rc4_encd).pack(side=tkinter.RIGHT)
     return fr
+
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
     # test frame
     fr = encode_window()
     fr.title('命令行输入 vv e 则可快速打开便捷加密窗口')
-
     sys.stdout = __org_stdout__
-    fr.bind('<Escape>',lambda *a:fr.master.quit())
     fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
     fr.master.withdraw()
     fr.mainloop()
