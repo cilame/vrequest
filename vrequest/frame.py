@@ -2000,7 +2000,7 @@ if __name__ == '__main__':
     ent23 = Entry(f24,width=17,validate='key',validatecommand=(change_cbit1, '%P'))
     ent23.pack(side=tkinter.LEFT)
     ent23.bind('<Key>', change_cbit1)
-    cbit1 = Label(f24, text='0:bit',width=6)
+    cbit1 = Label(f24, text='0bit',width=6)
     cbit1.pack(side=tkinter.LEFT,padx=6)
     cbx1 = Combobox(f24,width=4,state='readonly')
     cbx1['values'] = ['b16','b32','b64','b85']
@@ -2038,7 +2038,7 @@ if __name__ == '__main__':
     cbit2 = Label(f25, text='128:bit',width=6)
     cbit2.pack(side=tkinter.LEFT,padx=6)
     ent24.insert(0,'1234567890123456')
-    Label(f25, text='当模式为 ctr/ecb 时，iv无效',).pack(side=tkinter.LEFT,padx=6)
+    Label(f25, text='ecb模式：iv无效；ctr模式：iv长度不限制',).pack(side=tkinter.LEFT,padx=6)
 
     def _aes_encode(*a):
         encd = fent1.get().strip()
@@ -2157,7 +2157,7 @@ if __name__ == '__main__':
     ent25 = Entry(f24,width=17,validate='key',validatecommand=(change_cbit3, '%P'))
     ent25.pack(side=tkinter.LEFT)
     ent25.bind('<Key>', change_cbit3)
-    cbit3 = Label(f24, text='0:bit',width=6)
+    cbit3 = Label(f24, text='0bit',width=6)
     cbit3.pack(side=tkinter.LEFT,padx=6)
     cbx3 = Combobox(f24,width=4,state='readonly')
     cbx3['values'] = ['b16','b32','b64','b85']
@@ -2195,7 +2195,7 @@ if __name__ == '__main__':
     cbit4 = Label(f25, text='128:bit',width=6)
     cbit4.pack(side=tkinter.LEFT,padx=6)
     ent26.insert(0,'12345678')
-    Label(f25, text='当模式为 ctr/ecb 时，iv无效',).pack(side=tkinter.LEFT,padx=6)
+    Label(f25, text='ecb模式：iv无效；ctr模式：iv长度不限制',).pack(side=tkinter.LEFT,padx=6)
 
     def _des_encode(*a):
         encd = fent2.get().strip()
@@ -2286,6 +2286,431 @@ if __name__ == '__main__':
     Button(f25, text='[算法]',command=_des_code,width=5).pack(side=tkinter.RIGHT)
     Button(f25, text='解密',command=_des_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f25, text='加密',command=_des_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+
+
+
+
+
+    # 这里是 blowfish 算法的部分
+    def f100_change_cbit_1(*content):
+        if content:
+            encd = f1001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f1001_cbit1['text'] = str(blen)+'bit'
+            return True
+    def f100_change_cbit_2(*content):
+        if content:
+            encd = f1001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f1002_cbit2['text'] = str(blen)+'bit'
+            return True
+
+    f100_change_cbit1 = root.register(f100_change_cbit_1)
+    f100_change_cbit2 = root.register(f100_change_cbit_2)
+    f1000 = Frame(ff0)
+    f1000.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f1000, text='     以下算法为 Blowfish 加解密算法 [密码长度区间:32-448bit] [iv长度需注意:64bit]。').pack(fill=tkinter.X,expand=True)
+    f1001 = Frame(ff0)
+    f1001.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f1001, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
+    f1001_ent1 = Entry(f1001,width=17,validate='key',validatecommand=(f100_change_cbit1, '%P'))
+    f1001_ent1.pack(side=tkinter.LEFT)
+    f1001_ent1.bind('<Key>', f100_change_cbit1)
+    f1001_cbit1 = Label(f1001, text='0bit',width=6)
+    f1001_cbit1.pack(side=tkinter.LEFT,padx=6)
+    f1001_mode1 = Combobox(f1001,width=4,state='readonly')
+    f1001_mode1['values'] = ['b16','b32','b64','b85']
+    f1001_mode1.current(2)
+    f1001_mode1.pack(side=tkinter.RIGHT)
+    Label(f1001, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    def _f100swich_encd1(*a):
+        s = f1001_fent1.get().strip()
+        if s == 'utf-8':
+            f1001_fent1.delete(0,tkinter.END)
+            f1001_fent1.insert(0,'gbk')
+        elif s == 'gbk':
+            f1001_fent1.delete(0,tkinter.END)
+            f1001_fent1.insert(0,'utf-8')
+        else:
+            f1001_fent1.delete(0,tkinter.END)
+            f1001_fent1.insert(0,'utf-8')
+        f100_change_cbit_1(f1001_ent1.get().strip())
+        f100_change_cbit_2(f1002_ent2.get().strip())
+    f1001_fent1 = Entry(f1001,width=5)
+    f1001_fent1.insert(0,'utf-8')
+    f1001_fent1.pack(side=tkinter.RIGHT)
+    Button(f1001, text='密码/iv/数据编码格式',command=_f100swich_encd1).pack(side=tkinter.RIGHT)
+    f1001_mode2 = Combobox(f1001,width=4,state='readonly')
+    f1001_mode2['values'] = ['ecb', 'ecb_cts', 'cbc', 'cbc_cts', 'pcbc', 'cfb', 'ofb', 'ctr']
+    f1001_mode2.current(0)
+    f1001_mode2.pack(side=tkinter.RIGHT)
+    Label(f1001, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
+    f1002 = Frame(ff0)
+    f1002.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f1002, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
+    f1002_ent2 = Entry(f1002,width=17,validate='key',validatecommand=(f100_change_cbit2, '%P'))
+    f1002_ent2.pack(side=tkinter.LEFT)
+    
+    f1002_cbit2 = Label(f1002, text='128:bit',width=6)
+    f1002_cbit2.pack(side=tkinter.LEFT,padx=6)
+    f1002_ent2.insert(0,'12345678')
+    Label(f1002, text='ecb模式：iv无效；ctr模式：iv长度不限制',).pack(side=tkinter.LEFT,padx=6)
+
+    def _blowfish_encode(*a):
+        encd = f1001_fent1.get().strip()
+        mode = f1001_mode2.get().strip()
+        eout = f1001_mode1.get().strip()
+        key  = f1001_ent1.get().strip().encode(encd)
+        iv   = f1002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limitnum = int(entlimit.get().strip())
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyblowfish
+        except:
+            import pyblowfish
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+
+        try:
+            en = pyblowfish.encrypt(key, data, iv, mode, enfunc=_encode).decode(encd)
+            if len(en) > limitnum:
+                print('警告！')
+                print('加密数据长度({})过长（超过{}字符，超过的部分不显示）'.format(len(en),limitnum))
+                print('因为 tkinter 性能瓶颈，不宜在 tkinter 窗口展示，请使用算法在别的IDE内实现')
+                print('---------------------------------------------------')
+                print(en[:limitnum])
+            else:
+                print(en)
+        except:
+            print(traceback.format_exc())
+
+    def _blowfish_decode(*a):
+        encd = f1001_fent1.get().strip()
+        mode = f1001_mode2.get().strip()
+        eout = f1001_mode1.get().strip()
+        key  = f1001_ent1.get().strip().encode(encd)
+        iv   = f1002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyblowfish
+        except:
+            import pyblowfish
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+
+        try:
+            dc = pyblowfish.decrypt(key, data, iv, mode, defunc=_decode).decode(encd)
+            print(dc)
+        except:
+            print(traceback.format_exc())
+
+    def _blowfish_code(*a):
+        try:
+            from . import pyblowfish
+        except:
+            import pyblowfish
+        ftxt.delete(0.,tkinter.END)
+        with open(pyblowfish.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f1002, text='[算法]',command=_blowfish_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f1002, text='解密',command=_blowfish_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f1002, text='加密',command=_blowfish_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+
+
+    # 这里是 serpent 算法的部分
+    def f200_change_cbit_1(*content):
+        if content:
+            encd = f2001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f2001_cbit1['text'] = str(blen)+'bit'
+            return True
+    def f200_change_cbit_2(*content):
+        if content:
+            encd = f2001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f2002_cbit2['text'] = str(blen)+'bit'
+            return True
+
+    f200_change_cbit1 = root.register(f200_change_cbit_1)
+    f200_change_cbit2 = root.register(f200_change_cbit_2)
+    f2000 = Frame(ff0)
+    f2000.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f2000, text='     以下算法为 Serpent 加解密算法 [密码长度区间:32-256bit] [iv长度需注意:128bit]。').pack(fill=tkinter.X,expand=True)
+    f2001 = Frame(ff0)
+    f2001.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f2001, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
+    f2001_ent1 = Entry(f2001,width=17,validate='key',validatecommand=(f200_change_cbit1, '%P'))
+    f2001_ent1.pack(side=tkinter.LEFT)
+    f2001_ent1.bind('<Key>', f200_change_cbit1)
+    f2001_cbit1 = Label(f2001, text='0bit',width=6)
+    f2001_cbit1.pack(side=tkinter.LEFT,padx=6)
+    f2001_mode1 = Combobox(f2001,width=4,state='readonly')
+    f2001_mode1['values'] = ['b16','b32','b64','b85']
+    f2001_mode1.current(2)
+    f2001_mode1.pack(side=tkinter.RIGHT)
+    Label(f2001, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    def _f200swich_encd1(*a):
+        s = f2001_fent1.get().strip()
+        if s == 'utf-8':
+            f2001_fent1.delete(0,tkinter.END)
+            f2001_fent1.insert(0,'gbk')
+        elif s == 'gbk':
+            f2001_fent1.delete(0,tkinter.END)
+            f2001_fent1.insert(0,'utf-8')
+        else:
+            f2001_fent1.delete(0,tkinter.END)
+            f2001_fent1.insert(0,'utf-8')
+        f200_change_cbit_1(f2001_ent1.get().strip())
+        f200_change_cbit_2(f2002_ent2.get().strip())
+    f2001_fent1 = Entry(f2001,width=5)
+    f2001_fent1.insert(0,'utf-8')
+    f2001_fent1.pack(side=tkinter.RIGHT)
+    Button(f2001, text='密码/iv/数据编码格式',command=_f200swich_encd1).pack(side=tkinter.RIGHT)
+    f2001_mode2 = Combobox(f2001,width=4,state='readonly')
+    f2001_mode2['values'] = ['cbc', 'ecb',]
+    f2001_mode2.current(0)
+    f2001_mode2.pack(side=tkinter.RIGHT)
+    Label(f2001, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
+    f2002 = Frame(ff0)
+    f2002.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f2002, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
+    f2002_ent2 = Entry(f2002,width=17,validate='key',validatecommand=(f200_change_cbit2, '%P'))
+    f2002_ent2.pack(side=tkinter.LEFT)
+    
+    f2002_cbit2 = Label(f2002, text='128:bit',width=6)
+    f2002_cbit2.pack(side=tkinter.LEFT,padx=6)
+    f2002_ent2.insert(0,'1234567890123456')
+    Label(f2002, text='ecb模式：iv无效；ctr模式：iv长度不限制',).pack(side=tkinter.LEFT,padx=6)
+
+    def _serpent_encode(*a):
+        encd = f2001_fent1.get().strip()
+        mode = f2001_mode2.get().strip()
+        eout = f2001_mode1.get().strip()
+        key  = f2001_ent1.get().strip().encode(encd)
+        iv   = f2002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limitnum = int(entlimit.get().strip())
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyserpent
+        except:
+            import pyserpent
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        try:
+            en = pyserpent.serpent_encrypt(key, data, iv=iv, mode=mode, enfunc=_encode).decode(encd)
+            if len(en) > limitnum:
+                print('警告！')
+                print('加密数据长度({})过长（超过{}字符，超过的部分不显示）'.format(len(en),limitnum))
+                print('因为 tkinter 性能瓶颈，不宜在 tkinter 窗口展示，请使用算法在别的IDE内实现')
+                print('---------------------------------------------------')
+                print(en[:limitnum])
+            else:
+                print(en)
+        except:
+            print(traceback.format_exc())
+
+    def _serpent_decode(*a):
+        encd = f2001_fent1.get().strip()
+        mode = f2001_mode2.get().strip()
+        eout = f2001_mode1.get().strip()
+        key  = f2001_ent1.get().strip().encode(encd)
+        iv   = f2002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyserpent
+        except:
+            import pyserpent
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+
+        try:
+            dc = pyserpent.serpent_decrypt(key, data, iv=iv, mode=mode, defunc=_decode).decode(encd)
+            print(dc)
+        except:
+            print(traceback.format_exc())
+
+    def _serpent_code(*a):
+        try:
+            from . import pyserpent
+        except:
+            import pyserpent
+        ftxt.delete(0.,tkinter.END)
+        with open(pyserpent.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f2002, text='[算法]',command=_serpent_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f2002, text='解密',command=_serpent_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f2002, text='加密',command=_serpent_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+
+
+
+    # 这里是 twofish 算法的部分
+    def f300_change_cbit_1(*content):
+        if content:
+            encd = f3001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f3001_cbit1['text'] = str(blen)+'bit'
+            return True
+    def f300_change_cbit_2(*content):
+        if content:
+            encd = f3001_fent1.get().strip()
+            blen = len(content[0].encode(encd))*8
+            f3002_cbit2['text'] = str(blen)+'bit'
+            return True
+
+    f300_change_cbit1 = root.register(f300_change_cbit_1)
+    f300_change_cbit2 = root.register(f300_change_cbit_2)
+    f3000 = Frame(ff0)
+    f3000.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f3000, text='     以下算法为 Twofish 加解密算法 [密码长度需注意:128bit,192bit,256bit] [iv长度需注意:128bit]。').pack(fill=tkinter.X,expand=True)
+    f3001 = Frame(ff0)
+    f3001.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f3001, text='密码',width=4).pack(side=tkinter.LEFT,padx=2)
+    f3001_ent1 = Entry(f3001,width=17,validate='key',validatecommand=(f300_change_cbit1, '%P'))
+    f3001_ent1.pack(side=tkinter.LEFT)
+    f3001_ent1.bind('<Key>', f300_change_cbit1)
+    f3001_cbit1 = Label(f3001, text='0bit',width=6)
+    f3001_cbit1.pack(side=tkinter.LEFT,padx=6)
+    f3001_mode1 = Combobox(f3001,width=4,state='readonly')
+    f3001_mode1['values'] = ['b16','b32','b64','b85']
+    f3001_mode1.current(2)
+    f3001_mode1.pack(side=tkinter.RIGHT)
+    Label(f3001, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
+    def _f300swich_encd1(*a):
+        s = f3001_fent1.get().strip()
+        if s == 'utf-8':
+            f3001_fent1.delete(0,tkinter.END)
+            f3001_fent1.insert(0,'gbk')
+        elif s == 'gbk':
+            f3001_fent1.delete(0,tkinter.END)
+            f3001_fent1.insert(0,'utf-8')
+        else:
+            f3001_fent1.delete(0,tkinter.END)
+            f3001_fent1.insert(0,'utf-8')
+        f300_change_cbit_1(f3001_ent1.get().strip())
+        f300_change_cbit_2(f3002_ent2.get().strip())
+    f3001_fent1 = Entry(f3001,width=5)
+    f3001_fent1.insert(0,'utf-8')
+    f3001_fent1.pack(side=tkinter.RIGHT)
+    Button(f3001, text='密码/iv/数据编码格式',command=_f300swich_encd1).pack(side=tkinter.RIGHT)
+    f3001_mode2 = Combobox(f3001,width=4,state='readonly')
+    f3001_mode2['values'] = ['cbc', 'ecb',]
+    f3001_mode2.current(0)
+    f3001_mode2.pack(side=tkinter.RIGHT)
+    Label(f3001, text='模式',width=4).pack(side=tkinter.RIGHT,padx=5)
+    f3002 = Frame(ff0)
+    f3002.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(f3002, text='iv',width=4).pack(side=tkinter.LEFT,padx=2)
+    f3002_ent2 = Entry(f3002,width=17,validate='key',validatecommand=(f300_change_cbit2, '%P'))
+    f3002_ent2.pack(side=tkinter.LEFT)
+    
+    f3002_cbit2 = Label(f3002, text='128:bit',width=6)
+    f3002_cbit2.pack(side=tkinter.LEFT,padx=6)
+    f3002_ent2.insert(0,'1234567890123456')
+    Label(f3002, text='ecb模式：iv无效；ctr模式：iv长度不限制',).pack(side=tkinter.LEFT,padx=6)
+
+    def _twofish_encode(*a):
+        encd = f3001_fent1.get().strip()
+        mode = f3001_mode2.get().strip()
+        eout = f3001_mode1.get().strip()
+        key  = f3001_ent1.get().strip().encode(encd)
+        iv   = f3002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limitnum = int(entlimit.get().strip())
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pytwofish
+        except:
+            import pytwofish
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+        try:
+            en = pytwofish.twofish_encrypt(key, data, iv=iv, mode=mode, enfunc=_encode).decode(encd)
+            if len(en) > limitnum:
+                print('警告！')
+                print('加密数据长度({})过长（超过{}字符，超过的部分不显示）'.format(len(en),limitnum))
+                print('因为 tkinter 性能瓶颈，不宜在 tkinter 窗口展示，请使用算法在别的IDE内实现')
+                print('---------------------------------------------------')
+                print(en[:limitnum])
+            else:
+                print(en)
+        except:
+            print(traceback.format_exc())
+
+    def _twofish_decode(*a):
+        encd = f3001_fent1.get().strip()
+        mode = f3001_mode2.get().strip()
+        eout = f3001_mode1.get().strip()
+        key  = f3001_ent1.get().strip().encode(encd)
+        iv   = f3002_ent2.get().strip().encode(encd)
+        data = ftxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pytwofish
+        except:
+            import pytwofish
+        if eout == 'b16':_encode = base64.b16encode; _decode = base64.b16decode
+        if eout == 'b32':_encode = base64.b32encode; _decode = base64.b32decode
+        if eout == 'b64':_encode = base64.b64encode; _decode = base64.b64decode
+        if eout == 'b85':_encode = base64.b85encode; _decode = base64.b85decode
+
+        try:
+            dc = pytwofish.twofish_decrypt(key, data, iv=iv, mode=mode, defunc=_decode).decode(encd)
+            print(dc)
+        except:
+            print(traceback.format_exc())
+
+    def _twofish_code(*a):
+        try:
+            from . import pytwofish
+        except:
+            import pytwofish
+        ftxt.delete(0.,tkinter.END)
+        with open(pytwofish.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(f3002, text='[算法]',command=_twofish_code,width=5).pack(side=tkinter.RIGHT)
+    Button(f3002, text='解密',command=_twofish_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(f3002, text='加密',command=_twofish_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+
+
+
+
+
 
     f100 = Frame(ff0)
     f100.pack(side=tkinter.TOP,fill=tkinter.X)
@@ -2416,9 +2841,6 @@ if __name__ == '__main__':
     k201.insert(0,'utf-8')
     Button(f202, text='密码/数据编码格式',command=_swich_rc4_encd).pack(side=tkinter.RIGHT)
     return fr
-
-
-
 
 
 
