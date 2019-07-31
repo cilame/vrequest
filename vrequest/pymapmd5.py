@@ -454,7 +454,7 @@ zh_name_heads = [
     'lbo', 'lc',  'lcm', 'ld',  'ldd', 'ldm', 'lf',  'lfy', 'lg',  'lgf', 'lgh', 'lgl', 'lgr', 'lgx', 'lgy', 
     'lgz', 'lh',  'lhm', 'lhx', 'lhy', 'lj',  'ljg', 'ljh', 'ljj', 'lk',  'll',  
     'lli', 'lly', 'lm',  'ln',  'lna', 'lp',  'lq',  'lr',  'ls',  'lsh', 'lsl', 'lsy', 'lsz', 'lt',  'ltt', 
-    'lw',  'lx',  'lxf', 'lxh', 'lxl', 'lxm', 'lxr', 'lxy', 'lxz', 'ly',  'lyh', 'lyl', 'lym', 'lyu', 'lyy', 
+    'lw',  'lx',  'lxf', 'lxh', 'lxl', 'lxm', 'lxr', 'lxy', 'lxz', 'ly',  'lyh', 'lyf', 'lyl', 'lym', 'lyy', 
     'lyz', 'lzq', 'mac', 'mal', 'mc',  'ml',  'mli', 'mxy', 'sw',  'sxy', 'wb',  'wbo', 'wc',  'wcm', 'wd',  
     'wdd', 'wdm', 'wf',  'wfl', 'wfy', 'wg',  'wgf', 'wgh', 'wgl', 'wgr', 'wgx', 'wgy', 'wgz', 'wh',  'whm', 
     'why', 'wj',  'wjf', 'wjg', 'wjh', 'wjj', 'wjp', 'wk',  'wl',  'wlh', 'wli', 'wlj', 'wll', 'wlu', 'wly', 
@@ -615,16 +615,18 @@ def map_month_day(onlynumber=False):
         yield i
 
 def map_namehead_times(
+        prefixlist=None,
         onlynumber=True, 
         plusfunc=lambda a, b: a + b  # 名字缩写与时间的加和方式，可以考虑增加下划线之类的
     ):
     # 拼音加日期组合
+    prefixlist = [''] if prefixlist is None else prefixlist
     a = list(map(str, range(1970, 2020)))
-    b = map_year_month_day(onlynumber)
+    b = map_month_day(onlynumber)
     c = map_year_month(onlynumber)
-    d = map_month_day(onlynumber)
+    d = map_year_month_day(onlynumber)
     for times in [a,b,c,d]:
-        for nhead,ttime in itertools.product(zh_name_heads, times):
+        for nhead,ttime in itertools.product(prefixlist, times):
             yield plusfunc(nhead, ttime)
 
 
@@ -643,7 +645,7 @@ if __name__ == '__main__':
     k = '4dmin'     # ~0.1s
     w = hashlib.md5(k.encode()).hexdigest()
     ctime = time.time()
-    for i in mk_map_passleet(zpasslist):
+    for i in itertools.chain(mk_map_passleet(zpasslist), map_namehead_times()):
         v = hashlib.md5(i.encode()).hexdigest()
         if v == w:
             print(v, i)
@@ -653,10 +655,10 @@ if __name__ == '__main__':
     # 通过姓名首字母拼接日期(日期包括月份日期中有零和没有零两种情况)进行密码遍历，最长会花大约一分钟
     k = 'mxy201611' # ~20s
     k = 'z2018123'  # ~4.2s
-    k = 'a2018123'  # ~0.4s
+    k = 'a20189'    # ~0.5s
     w = hashlib.md5(k.encode()).hexdigest()
     ctime = time.time()
-    for i in map_namehead_times():
+    for i in map_namehead_times(zh_name_heads):
         v = hashlib.md5(i.encode()).hexdigest()
         if v == w:
             print(v, i)
