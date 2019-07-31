@@ -1090,15 +1090,7 @@ def encode_window(setting=None):
         'sha512',
         'whirlpool'
     ]
-    base64enc = [
-        'b16',
-        'b32',
-        'b64',
-        'b85',
-        'urlsafe_b64',
-    ]
-    bs = {}
-    for idx,name in enumerate(sorted(algorithms)+sorted(algorithms)+(base64enc)):
+    for idx,name in enumerate(sorted(algorithms)+sorted(algorithms)):
         if name in allow and idx < len(algorithms):
             if name == 'md2': 
                 hlen = 32
@@ -1112,11 +1104,6 @@ def encode_window(setting=None):
             if name == 'md2': continue
             l,e = Label(f2,text='[hmac]'+name+'[len:{}]'.format(str(hlen)),font=ft),Entry(f2,width=width,font=ft)
             di[name] = e
-            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
-            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
-        if name in base64enc:
-            l,e = Label(f2,text=name,font=ft),Entry(f2,width=width,font=ft)
-            bs[name] = e
             l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
             e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
 
@@ -1213,47 +1200,6 @@ def encode_window(setting=None):
                 import traceback; traceback.print_exc()
                 print('error',name)
     
-    def _b_encode(*a):
-        encd = en.get().strip()
-        text = ee.get().encode(encd).strip()
-        for name,ge in bs.items():
-            try:
-                if name == 'b16': _encode = base64.b16encode
-                if name == 'b32': _encode = base64.b32encode
-                if name == 'b64': _encode = base64.b64encode
-                if name == 'b85': _encode = base64.b85encode
-                if name == 'urlsafe_b64': _encode = base64.urlsafe_b64encode
-                ge.delete(0,tkinter.END)
-                ge.insert(0,_encode(text))
-            except:
-                import traceback; traceback.print_exc()
-                print('error',name)
-                txt.see(tkinter.END)
-
-
-    def _b_decode(*a):
-        encd = en.get().strip()
-        text = ee.get().encode(encd).strip()
-        if not text:return 
-        for name,ge in bs.items():
-            try:
-                if name == 'b16': _decode = base64.b16decode
-                if name == 'b32': _decode = base64.b32decode
-                if name == 'b64': _decode = base64.b64decode
-                if name == 'b85': _decode = base64.b85decode
-                if name == 'urlsafe_b64': _decode = base64.urlsafe_b64decode
-                ge.delete(0,tkinter.END)
-                d = _decode(text)
-                ge.insert(0,d.decode(encd))
-                print('[success:{}]'.format(name),d.decode(encd))
-            except:
-                import traceback; traceback.print_exc()
-                print('[error:{}]'.format(name),repr(d) if 'd' in locals() else '')
-                txt.see(tkinter.END)
-        print('---- end ----')
-
-    Button(f1, text='base64解码',command=_b_decode).pack(side=tkinter.RIGHT)
-    Button(f1, text='base64编码',command=_b_encode).pack(side=tkinter.RIGHT)
     Button(f1, text='hmac',command=_encode_all,width=5).pack(side=tkinter.RIGHT)
     Button(f1, text='hash',command=_encode_hash,width=5).pack(side=tkinter.RIGHT)
 
@@ -1284,6 +1230,8 @@ def encode_window(setting=None):
             ftxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '依赖库加解密':
             ctxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+        elif enb_names[name] == '通用解密':
+            bbtxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
 
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
@@ -1388,7 +1336,6 @@ compare_encode(salt, text, compare_str)
         code = code.replace('$text', text)
         print(code)
 
-
     bt_ = Button(f1_,text='分析对比[忽略大小写]',command=_analysis_diff)
     bt_.pack(side=tkinter.LEFT,padx=padx,pady=pady,)
     bt2_ = Button(f1_,text='测用代码',command=_creat_code)
@@ -1396,6 +1343,226 @@ compare_encode(salt, text, compare_str)
 
     txt = Text(f2_,font=ft)
     txt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+
+
+
+
+    basehp = '''
+            通用加解密（请将需要加/解密的数据输入右侧窗口）
+    base加密：
+        [-] 这种类型只能对数字进行加解密
+        [*] 这种类型能对一般数据流进行加解密
+    注意：
+        使用全部加解密时，请尽量不要使用超过一千的字符串
+        否者entry窗口显示会有非常明显的卡顿
+        如果需要长字符串的加解密，请使用单独的加解密按钮实现
+        因为单独加解密统一使用右边的窗口输入和输出，不使用左边的 Entry组件
+'''.strip('\n')
+
+    _fr = Frame(fr)
+    enb.add(_fr, text='通用解密')
+    enb.pack()
+    enb_names[_fr._name] = '通用解密'
+
+    f3 = Frame(_fr)
+    f3.pack(side=tkinter.LEFT,fill=tkinter.BOTH)
+
+    f3_ = Frame(_fr)
+    f3_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    f4 = Frame(f3)
+    f5 = Frame(f3)
+    f4.pack(fill=tkinter.BOTH)
+    f5.pack(fill=tkinter.BOTH,expand=True)
+
+    base_algos = [
+        'base36', # 貌似仅用于数字映射
+        'base62', # 貌似仅用于数字映射
+        'base16',
+        'base32',
+        'base58',
+        'base64',
+        'urlsafe_b64',
+        'base85',
+        'base91',
+    ]
+    bs = {}
+    html_quote = [
+        'base_8',
+        'base_10',
+        'base_16',
+        'quote',
+        'escape',
+    ]
+    for idx,name in enumerate(base_algos+html_quote):
+        if name in base_algos:
+            t = '[*]' if name not in ('base36', 'base62') else '[-]'
+            l,e = Label(f5,text=t+name,font=ft),Entry(f5,width=width,font=ft)
+            b1,b2 = Button(f5,text='加',width=3), Button(f5,text='解',width=3)
+            b2.grid(row=idx,column=3,ipadx=0,ipady=0,padx=0,pady=0,sticky=sticky)
+            b1.grid(row=idx,column=2,ipadx=0,ipady=0,padx=0,pady=0,sticky=sticky)
+            bs[name] = e,b1,b2
+            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+        if name in html_quote:
+            l,e = Label(f5,text=name,font=ft),Entry(f5,width=width,font=ft)
+            b1,b2 = Button(f5,text='加',width=3), Button(f5,text='解',width=3)
+            b2.grid(row=idx,column=3,ipadx=0,ipady=0,padx=0,pady=0,sticky=sticky)
+            b1.grid(row=idx,column=2,ipadx=0,ipady=0,padx=0,pady=0,sticky=sticky)
+            bs[name] = e,b1,b2
+            e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+            l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
+
+    def _b_encode(*a):
+        encd = bben.get().strip()
+        text = bbtxt.get(0.,tkinter.END).strip('\n').encode(encd)
+        limit = 1000
+        if len(text) > limit:
+            print('error ! 由于Entry组件性能问题，全部加密解密模式只能在右侧窗口直接使用[单独加解进行]')
+            print('当前加密字符串的长度为{}，超过限制{}'.format(len(text), limit))
+            print('\n'*10)
+            bbtxt.see(tkinter.END)
+            return
+        try:
+            from . import pybase, pyplus
+        except:
+            import pybase, pyplus
+        for name,(ge,gb1,gb2) in bs.items():
+            ge.delete(0,tkinter.END)
+            try:
+                if name in base_algos:
+                    base_encode, base_decode = pybase.base_algos[name]
+                    ge.insert(0,base_encode(text))
+                if name in html_quote:
+                    plus_encode, plus_decode = pyplus.html_quote[name]
+                    ge.insert(0,plus_encode(text, encd))
+            except:
+                import traceback; traceback.print_exc()
+                ge.insert(0,'error.!')
+                if name in ('base36', 'base62'):
+                    ge.insert(tkinter.END,'{} can only parse int type.'.format(name))
+
+    def _b_decode(*a):
+        encd = bben.get().strip()
+        text = bbtxt.get(0.,tkinter.END).strip('\n').encode()
+        limit = 1000
+        if len(text) > limit:
+            print('error ! 由于Entry组件性能问题，全部加密解密模式只能在右侧窗口直接使用[单独加解进行]')
+            print('当前加密字符串的长度为{}，超过限制{}'.format(len(text), limit))
+            print('\n'*10)
+            bbtxt.see(tkinter.END)
+            return
+        try:
+            from . import pybase, pyplus
+        except:
+            import pybase, pyplus
+        for name,(ge,gb1,gb2) in bs.items():
+            ge.delete(0,tkinter.END)
+            try:
+                if name in base_algos:
+                    base_encode, base_decode = pybase.base_algos[name]
+                    ge.insert(0,base_decode(text).decode(encd))
+                if name in html_quote:
+                    plus_encode, plus_decode = pyplus.html_quote[name]
+                    ge.insert(0,plus_decode(text.decode(), encoding=encd))
+            except:
+                import traceback; traceback.print_exc()
+                ge.insert(0,'error')
+
+    def _pybase_code(*a):
+        try:
+            from . import pybase
+        except:
+            import pybase
+        ctxt.delete(0.,tkinter.END)
+        with open(pybase.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    def _pyplus_code(*a):
+        try:
+            from . import pyplus
+        except:
+            import pyplus
+        ctxt.delete(0.,tkinter.END)
+        with open(pyplus.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    def pack_button(name):
+        def do():
+            encd = bben.get().strip()
+            text = bbtxt.get(0.,tkinter.END).strip('\n').encode(encd)
+            bbtxt.delete(0.,tkinter.END)
+            try:
+                from . import pybase, pyplus
+            except:
+                import pybase, pyplus
+            if name in base_algos:
+                base_encode, base_decode = pybase.base_algos[name]
+                v = base_encode(text)
+                v = v.decode() if isinstance(v, bytes) else v
+                print(v)
+            if name in html_quote:
+                plus_encode, plus_decode = pyplus.html_quote[name]
+                print(plus_encode(text, encd))
+        def undo():
+            encd = bben.get().strip()
+            text = bbtxt.get(0.,tkinter.END).strip('\n').encode()
+            bbtxt.delete(0.,tkinter.END)
+            try:
+                from . import pybase, pyplus
+            except:
+                import pybase, pyplus
+            if name in base_algos:
+                base_encode, base_decode = pybase.base_algos[name]
+                print(base_decode(text).decode(encd))
+            if name in html_quote:
+                plus_encode, plus_decode = pyplus.html_quote[name]
+                print(plus_decode(text.decode(), encoding=encd))
+        class d:pass
+        d.do = do
+        d.undo = undo
+        return d
+
+    Label(f4,text=basehp,font=ft).pack(side=tkinter.TOP,padx=6)
+    Button(f4,text='杂项代码',width=8,command=_pyplus_code).pack(side=tkinter.RIGHT)
+    Button(f4,text='base算法',width=8,command=_pybase_code).pack(side=tkinter.RIGHT)
+    Button(f4,text='全部解密',width=8,command=_b_decode).pack(side=tkinter.RIGHT)
+    Button(f4,text='全部加密',width=8,command=_b_encode).pack(side=tkinter.RIGHT)
+    def _swich_bben(*a):
+        s = bben.get().strip()
+        if s == 'utf-8':
+            bben.delete(0,tkinter.END)
+            bben.insert(0,'gbk')
+        elif s == 'gbk':
+            bben.delete(0,tkinter.END)
+            bben.insert(0,'utf-8')
+        else:
+            bben.delete(0,tkinter.END)
+            bben.insert(0,'utf-8')
+    
+
+    f4_ = Frame(f3_)
+    f4_.pack(fill=tkinter.BOTH)
+    f5_ = Frame(f3_)
+    f5_.pack(fill=tkinter.BOTH,expand=True)
+    Button(f4_, text='编码',command=_swich_bben,width=6).pack(side=tkinter.LEFT)
+    bben = Entry(f4_,width=5)
+    bben.insert(0,'utf-8')
+    bben.pack(side=tkinter.LEFT)
+
+    bbtxt = Text(f5_,font=ft)
+    bbtxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+    for name,(ge,gb1,gb2) in bs.items():
+        d = pack_button(name)
+        gb1['command'] = d.do
+        gb2['command'] = d.undo
+
+
+
 
 
 
@@ -1691,7 +1858,7 @@ compare_encode(salt, text, compare_str)
     cbx3.current(2)
     cbx3.pack(side=tkinter.RIGHT)
     Label(f24, text='编码',width=4).pack(side=tkinter.RIGHT,padx=5)
-    def _swich_encd1(*a):
+    def _swich_encd2(*a):
         s = fent2.get().strip()
         if s == 'utf-8':
             fent2.delete(0,tkinter.END)
@@ -1707,7 +1874,7 @@ compare_encode(salt, text, compare_str)
     fent2 = Entry(f24,width=5)
     fent2.insert(0,'utf-8')
     fent2.pack(side=tkinter.RIGHT)
-    Button(f24, text='密码/iv/数据编码格式',command=_swich_encd1).pack(side=tkinter.RIGHT)
+    Button(f24, text='密码/iv/数据编码格式',command=_swich_encd2).pack(side=tkinter.RIGHT)
     cbx4 = Combobox(f24,width=4,state='readonly')
     cbx4['values'] = ['cbc','ecb',]
     cbx4.current(0)
