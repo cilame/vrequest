@@ -1191,7 +1191,7 @@ def encode_window(setting=None):
         for name,ge in dh.items():
             try:
                 if name == 'md2':
-                    v = pymd2.md2(b'')
+                    v = pymd2.md2(text)
                 else:
                     v = hashlib.new(name,text).hexdigest()
                 v = v.upper() if ca.get() else v.lower()
@@ -2682,7 +2682,7 @@ compare_encode(salt, text, compare_str)
     Label(fbx102, text='hash',width=4).pack(side=tkinter.RIGHT,padx=5)
     Button(fbx103, text='[算法]',command=_pymapmd5_code,width=5).pack(side=tkinter.RIGHT)
     Button(fbx103, text='快速爆破',command=_pymapmd5_decode,width=8).pack(side=tkinter.RIGHT)
-    Button(fbx103, text='自定义爆破',command=_pymapmd5_decode,width=10).pack(side=tkinter.RIGHT)
+    Button(fbx103, text='自定义爆破',command=_inputdict_map,width=10).pack(side=tkinter.RIGHT)
 
 
 
