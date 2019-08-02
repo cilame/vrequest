@@ -1233,11 +1233,13 @@ def encode_window(setting=None):
             ctxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '通用解密':
             bbtxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+        elif enb_names[name] == '杂项':
+            fsstxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
 
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
         it = []
-        for name,ge in list(dh.items()) + list(bs.items()):
+        for name,ge in list(dh.items()):
             try:
                 a, b = et_.get(), ge.get()
                 s = difflib.SequenceMatcher(None, a.upper(), b.upper())
@@ -1476,7 +1478,7 @@ compare_encode(salt, text, compare_str)
             from . import pybase
         except:
             import pybase
-        ctxt.delete(0.,tkinter.END)
+        bbtxt.delete(0.,tkinter.END)
         with open(pybase.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
@@ -1486,7 +1488,7 @@ compare_encode(salt, text, compare_str)
             from . import pyplus
         except:
             import pyplus
-        ctxt.delete(0.,tkinter.END)
+        bbtxt.delete(0.,tkinter.END)
         with open(pyplus.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
@@ -2881,6 +2883,286 @@ compare_encode(salt, text, compare_str)
     Button(f9002, text='[算法]',command=_pymultialgo_code,width=5).pack(side=tkinter.RIGHT)
     Button(f9002, text='解密',command=_pymultialgo_decode,width=5).pack(side=tkinter.RIGHT)
     Button(f9002, text='加密',command=_pymultialgo_encode,width=5).pack(side=tkinter.RIGHT)
+
+
+
+
+    sshelp = '''
+            一些关于素数的内容
+    以下一开始就在输入框的的内容均是测试内容
+    e=65537=0x10001 是常用的的 rsa 加密标准的通用初始值，
+    如果有需要自定义，请自行填入一个素数
+'''.strip('\n')
+    _fss1 = Frame(fr)
+    enb.add(_fss1, text='杂项')
+    enb.pack()
+    enb_names[_fss1._name] = '杂项'
+
+    fss1 = Frame(_fss1)
+    fss1.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+
+    fss1_ = Frame(_fss1)
+    fss1_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+    txttitlefss = Frame(fss1_)
+    txttitlefss.pack(side=tkinter.TOP)
+    Label(txttitlefss, text='使用以下文本框进行输出').pack(side=tkinter.LEFT,padx=10)
+    fssentlimit2 = Entry(txttitlefss, width=10)
+    fssentlimit2.pack(side=tkinter.LEFT)
+    fssentlimit2.insert(0,'10000')
+    fsstxt = Text(fss1_,font=ft)
+    fsstxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+    fss001 = Frame(fss1)
+    fss001.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss001, text=sshelp,font=ft).pack(fill=tkinter.X,expand=True)
+
+    def css002(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            num = int(ess002.get())
+            if num > 1030:
+                print('目前不支持生成超过 1030bit 位的素数。')
+                return
+            en = str(pyprime.get_prime(num))
+            print(en)
+        except:
+            print(traceback.format_exc())
+
+    fss002 = Frame(fss1)
+    fss002.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss002,text='bit位',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess002 = Entry(fss002,width=40)
+    ess002.pack(side=tkinter.LEFT)
+    ess002.insert(0, '30')
+    bss002 = Button(fss002,text='生成 n bit位素数',command=css002)
+    bss002.pack(side=tkinter.LEFT,padx=2)
+
+    def css002_1(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            num = int(ess002_1.get())
+            if pyprime.isprime_mr(num):
+                print('{} 是素数。'.format(num))
+            else:
+                print('{} 不是素数。'.format(num))
+        except:
+            print(traceback.format_exc())
+
+    fss002_1 = Frame(fss1)
+    fss002_1.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss002_1,text='数字',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess002_1 = Entry(fss002_1,width=40)
+    ess002_1.pack(side=tkinter.LEFT)
+    ess002_1.insert(0, '30')
+    bss002_1 = Button(fss002_1,text='素性检测',command=css002_1)
+    bss002_1.pack(side=tkinter.LEFT,padx=2)
+
+    def css003(*a):
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            print(hex(int(ess003.get()))[2:].upper())
+        except:
+            print(traceback.format_exc())
+
+    fss003 = Frame(fss1)
+    fss003.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss003,text='数字',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess003 = Entry(fss003,width=40)
+    ess003.pack(side=tkinter.LEFT)
+    ess003.insert(0, '123456789012345678901234567890')
+    bss003 = Button(fss003,text='数字转字符串',command=css003)
+    bss003.pack(side=tkinter.LEFT,padx=2)
+
+    def css004(*a):
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            print(int(ess004.get(),16))
+        except:
+            print(traceback.format_exc())
+
+    fss004 = Frame(fss1)
+    fss004.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss004,text='字符串',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess004 = Entry(fss004,width=40)
+    ess004.pack(side=tkinter.LEFT)
+    ess004.insert(0, '16704F4FAB27EC51A071C71C7')
+    bss004 = Button(fss004,text='字符串转数字',command=css004)
+    bss004.pack(side=tkinter.LEFT,padx=2)
+
+    def css005(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            num = int(ess005.get())
+            if not pyprime.isprime_mr(num):
+                print('e 必须是一个素数。')
+                return
+            num2 = int(ess005_2.get())
+            if num2 > 2050:
+                print('当前的密钥 n bit长度不能超过2050.')
+                return
+            e,d,n = pyprime.create_rsa_key(num2, num)
+            ess006.delete(0,tkinter.END)
+            ess006.insert(0,str(n))
+            ess007.delete(0,tkinter.END)
+            ess007.insert(0,str(d))
+            print('e:',e)
+            print('d:',d)
+            print('n:',n)
+            print()
+            print('密钥n bit位长度：',len(bin(n)[2:]))
+            print('e,n 就是公钥')
+            print('d,n 就是私钥')
+        except:
+            print(traceback.format_exc())
+
+    fss005 = Frame(fss1)
+    fss005.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss005,text='e',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess005 = Entry(fss005,width=40)
+    ess005.pack(side=tkinter.LEFT)
+    ess005.insert(0,'65537')
+    bss005 = Button(fss005,text='生成rsa密钥对，密钥n的bit位：',command=css005)
+    bss005.pack(side=tkinter.LEFT,padx=2)
+    ess005_2 = Entry(fss005,width=5)
+    ess005_2.pack(side=tkinter.LEFT)
+    ess005_2.insert(0,'1024')
+
+    def css006(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        try:
+            dataint = int(fsstxt.get(0.,tkinter.END))
+            fsstxt.delete(0.,tkinter.END)
+            e = int(ess005.get())
+            n = int(ess006.get())
+            print(pow(dataint, e, n))
+        except:
+            print(traceback.format_exc())
+
+    fss006 = Frame(fss1)
+    fss006.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss006,text='n',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess006 = Entry(fss006,width=40)
+    ess006.pack(side=tkinter.LEFT)
+    bss006 = Button(fss006,text='使用e,n对右侧数字进行rsa加密',command=css006)
+    bss006.pack(side=tkinter.LEFT,padx=2)
+
+    def css007(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        try:
+            dataint = int(fsstxt.get(0.,tkinter.END))
+            fsstxt.delete(0.,tkinter.END)
+            d = int(ess007.get())
+            n = int(ess006.get())
+            print(pow(dataint, d, n))
+        except:
+            print(traceback.format_exc())
+
+    fss007 = Frame(fss1)
+    fss007.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss007,text='d',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess007 = Entry(fss007,width=40)
+    ess007.pack(side=tkinter.LEFT)
+    bss007 = Button(fss007,text='使用d,n对右侧数字进行rsa解密',command=css007)
+    bss007.pack(side=tkinter.LEFT,padx=2)
+
+    def css009(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            num = int(ess009.get())
+            plist = pyprime.prime_list_rho(num)
+            print(plist)
+            r = 1
+            for i in plist:
+                r *= i
+            print('原始数据：',num)
+            print('验算结果：',str(r))
+
+        except:
+            print(traceback.format_exc())
+
+    fss009 = Frame(fss1)
+    fss009.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss009,text='数字',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess009 = Entry(fss009,width=40)
+    ess009.pack(side=tkinter.LEFT)
+    bss009 = Button(fss009,text='质因数分解',command=css009)
+    bss009.pack(side=tkinter.LEFT,padx=2)
+
+    def css008(*a):
+        try:
+            from . import pywiener_attack
+        except:
+            import pywiener_attack
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            e = int(ess005.get())
+            n = int(ess006.get())
+            v = str(pywiener_attack.wiener_attack(e, n))
+            if v.startswith('Error'):
+                print('使用的e参数：',e)
+                print('使用的n参数：',n)
+                print('wiener attack 算法攻击未成功。')
+            else:
+                print('使用的e参数：',e)
+                print('使用的n参数：',n)
+                print('wiener attack 算法攻击成功。')
+                print('算出的 d 参数为：',v)
+        except:
+            print(traceback.format_exc())
+
+    fss008 = Frame(fss1)
+    fss008.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss008,text='当e很大，且d很小，这时可通过 wiener-attack 算法用e,n解密出d',font=ft).pack(side=tkinter.LEFT)
+    bss008 = Button(fss008,text='使用e,n进行解密',command=css008)
+    bss008.pack(side=tkinter.RIGHT,padx=2)
+
+
+    def _pyprime_code(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        with open(pyprime.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    def _pywiener_attck_code(*a):
+        try:
+            from . import pywiener_attack
+        except:
+            import pywiener_attack
+        fsstxt.delete(0.,tkinter.END)
+        with open(pywiener_attack.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    fss0010 = Frame(fss1)
+    fss0010.pack(side=tkinter.TOP,fill=tkinter.X)
+    bss0010 = Button(fss0010,text='素数与rsa相关算法',command=_pyprime_code)
+    bss0010.pack(side=tkinter.RIGHT,padx=2)
+    bss0010_2 = Button(fss0010,text='wiener-attack算法',command=_pywiener_attck_code)
+    bss0010_2.pack(side=tkinter.RIGHT,padx=2)
     return fr
 
 
