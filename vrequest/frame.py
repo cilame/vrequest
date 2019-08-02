@@ -3122,10 +3122,12 @@ compare_encode(salt, text, compare_str)
             if v.startswith('Error'):
                 print('使用的e参数：',e)
                 print('使用的n参数：',n)
+                print()
                 print('wiener attack 算法攻击未成功。')
             else:
                 print('使用的e参数：',e)
                 print('使用的n参数：',n)
+                print()
                 print('wiener attack 算法攻击成功。')
                 print('算出的 d 参数为：',v)
         except:
@@ -3134,9 +3136,8 @@ compare_encode(salt, text, compare_str)
     fss008 = Frame(fss1)
     fss008.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(fss008,text='当e很大，且d很小，这时可通过 wiener-attack 算法用e,n解密出d',font=ft).pack(side=tkinter.LEFT)
-    bss008 = Button(fss008,text='使用e,n进行解密',command=css008)
+    bss008 = Button(fss008,text='使用e,n进行算法攻击',command=css008)
     bss008.pack(side=tkinter.RIGHT,padx=2)
-
 
     def _pyprime_code(*a):
         try:
@@ -3163,6 +3164,101 @@ compare_encode(salt, text, compare_str)
     bss0010.pack(side=tkinter.RIGHT,padx=2)
     bss0010_2 = Button(fss0010,text='wiener-attack算法',command=_pywiener_attck_code)
     bss0010_2.pack(side=tkinter.RIGHT,padx=2)
+
+
+    sshelp = '''
+            关于二维码的加解密
+    使用解密时，需要将图片打开，解密功能会自动将桌面截图，
+    然后定位到二维码进行解密。不过由于桌面截图过大的原因，
+    这种比较便捷的方式需要将图片尽量展示在桌面左上角，这样可以提高识别率。
+    若要对右侧文本数据解密，注意将窗口移动直至二维码在桌面大概的左上角。不然仍会失败。
+    當然，你可以选择使用脚本进行自定义的处理。
+'''.strip('\n')
+
+    fss0011 = Frame(fss1)
+    fss0011.pack(side=tkinter.TOP,fill=tkinter.X)        
+    Label(fss0011, text=sshelp,font=ft).pack(fill=tkinter.X,expand=True)
+    def css0012(*a):
+        try:
+            from . import pypyzbar
+        except:
+            import pypyzbar
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            screenshot_bit = pypyzbar.screenshot()
+            pixbytes, w, h = pypyzbar.create_png_pixel_tobytes(screenshot_bit)
+            deco = pypyzbar.decode((pixbytes, w, h))
+            if deco:
+                print('发现{}个二维码并解密：'.format(len(deco)))
+                for i in deco:
+                    print(i.data)
+            else:
+                print('未定位到二维码。')
+        except:
+            print(traceback.format_exc())
+
+    def css0013(*a):
+        try:
+            from . import pyqrcode
+        except:
+            import pyqrcode
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            enctxt = ess0012.get().strip()
+            encdlv = cbx_0013.get().strip()
+            if encdlv ==  '7%': encdlv = pyqrcode.ERROR_CORRECT_L
+            if encdlv == '15%': encdlv = pyqrcode.ERROR_CORRECT_M
+            if encdlv == '25%': encdlv = pyqrcode.ERROR_CORRECT_Q
+            if encdlv == '30%': encdlv = pyqrcode.ERROR_CORRECT_H
+            s = pyqrcode.QRCode(error_correction=encdlv)
+            s.add_data(enctxt)
+            for i in s.get_matrix():
+                black = '██'
+                white = '  '
+                v = ''.join([black if j else white for j in i])
+                print(v)
+        except:
+            print(traceback.format_exc())
+
+    fss0012 = Frame(fss1)
+    fss0012.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss0012,text='加密',font=ft,width=6).pack(side=tkinter.LEFT)
+    ess0012 = Entry(fss0012,width=40)
+    ess0012.pack(side=tkinter.LEFT)
+
+    fss0013 = Frame(fss1)
+    fss0013.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss0013,text='等级',font=ft,width=6).pack(side=tkinter.LEFT)
+    cbx_0013 = Combobox(fss0013,width=6,state='readonly')
+    cbx_0013['values'] = ['7%', '15%', '25%', '30%']
+    cbx_0013.current(1)
+    cbx_0013.pack(side=tkinter.LEFT)
+    bss0013_2 = Button(fss0013,text='二维码解密',command=css0012)
+    bss0013_2.pack(side=tkinter.RIGHT,padx=1)
+    bss0013 = Button(fss0013,text='二维码加密',command=css0013)
+    bss0013.pack(side=tkinter.RIGHT,padx=1)
+    def _pyqrcode_code(*a):
+        try:
+            from . import pyqrcode
+        except:
+            import pyqrcode
+        fsstxt.delete(0.,tkinter.END)
+        with open(pyqrcode.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    def _pypyzbar_code(*a):
+        try:
+            from . import pypyzbar
+        except:
+            import pypyzbar
+        fsstxt.delete(0.,tkinter.END)
+        with open(pypyzbar.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    bss0013_4 = Button(fss0013,text='二维码加密[算法]',command=_pyqrcode_code)
+    bss0013_4.pack(side=tkinter.LEFT,padx=1)
+    bss0013_3 = Button(fss0013,text='二维码解密[算法]',command=_pypyzbar_code)
+    bss0013_3.pack(side=tkinter.LEFT,padx=1)
     return fr
 
 
