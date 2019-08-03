@@ -3606,7 +3606,8 @@ def screenshot(shape:'left,top,width,height'=None):
     size = (width, height)
     return png_bit(rgb, size) # 全屏截图 png bit 数据
 
-def create_png_pixel_tobytes(png_bit):
+def create_png_pixel_tobytes(png_bit, shapelimit=None):
+    left, top, width, height = [0,0,10000000,10000000] if shapelimit is None else shapelimit
     b = png_bit.find(b'IHDR')
     q = calcsize(">2I")
     w, h = unpack(">2I", png_bit[b+4:b+4+q])
@@ -3616,12 +3617,79 @@ def create_png_pixel_tobytes(png_bit):
     v = png_bit[b+4:b+4+v]
     z = zlib.decompress(v[2:-4], -15)
     l, p = w * 3 + 1, []
-    n = 0 # 通道，0，1，2
     for i in range(h):
-        li = z[i*l:(i+1)*l][1:]
-        for j in range(w):
-            p.append(li[(j+n)*1 : (j+1+n)*1]) # 只能使用一个通道
-    return b''.join(p), w, h
+        if i >= top and i < top + height:
+            li = z[i*l:(i+1)*l][1:]
+            for j in range(w):
+                if j >= left and j < left + width:
+                    p.append(sum(li[(j)*3 : (j+1)*3])//3)
+    w, h = (w, h) if shapelimit is None else (width, height)
+    p = [255 if i > 123 else 0 for i in p] # 人工二值化
+    return bytes(p), w, h
+
+
+
+import tkinter
+# 主要的截图处理工具，用于快速截图或者鼠标框选部分进行定位处理的工具
+class PicCapture:
+    def __init__(self, root, png):
+        self.X = tkinter.IntVar(value=0)
+        self.Y = tkinter.IntVar(value=0)
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        self.top = tkinter.Toplevel(root, width=sw, height=sh)
+        self.top.overrideredirect(True)
+        self.canvas = tkinter.Canvas(self.top, bg='white', width=sw, height=sh)
+        self.image  = tkinter.PhotoImage(file=png)
+        self.canvas.create_image(sw//2, sh//2, image=self.image)
+        self.fin_draw = None
+        def btndown(event):
+            self.X.set(event.x)
+            self.Y.set(event.y)
+            self.sel = True
+        self.canvas.bind('<Button-1>', btndown)
+        def btnmove(event):
+            if not self.sel:
+                return
+            try:
+                self.canvas.delete(self.fin_draw)
+            except Exception as e:
+                pass
+            self.fin_draw = self.canvas.create_rectangle(
+                                    self.X.get(), 
+                                    self.Y.get(), 
+                                    event.x, 
+                                    event.y, 
+                                    outline='red')
+            
+        self.canvas.bind('<B1-Motion>', btnmove)
+        def btnup(event):
+            self.sel = False
+            try:
+                self.canvas.delete(self.fin_draw)
+            except Exception as e:
+                pass
+            left, right = sorted([self.X.get(), event.x])
+            top, bottom = sorted([self.Y.get(), event.y])
+            self.rect = (left, top, right, bottom)
+            self.top.destroy()
+        self.canvas.bind('<ButtonRelease-1>', btnup)
+        self.canvas.pack(fill=tkinter.BOTH, expand=tkinter.YES)
+
+import tempfile
+def screenshot_rect(root):
+    filename = os.path.join(os.path.dirname(tempfile.mktemp()), 'temp.png')
+    screenshot_bit = screenshot()
+    with open(filename,'wb') as f:
+        f.write(screenshot_bit)
+    picshot = PicCapture(root, filename)
+    root.wait_window(picshot.top)
+    left, top, right, bottom = picshot.rect
+    left, top, width, height = left, top, right-left, bottom-top
+    os.remove(filename)
+    return create_png_pixel_tobytes(screenshot_bit, (left, top, width, height))
+
+
 
 if __name__ == '__main__':
     screenshot_bit = screenshot()

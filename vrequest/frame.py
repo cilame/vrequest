@@ -3166,13 +3166,20 @@ compare_encode(salt, text, compare_str)
     bss0010_2.pack(side=tkinter.RIGHT,padx=2)
 
 
+
+
+
+
     sshelp = '''
             关于二维码的加解密
-    使用解密时，需要将图片打开，解密功能会自动将桌面截图，
-    然后定位到二维码进行解密。不过由于桌面截图过大的原因，
-    这种比较便捷的方式需要将图片尽量展示在桌面左上角，这样可以提高识别率。
-    若要对右侧文本数据解密，注意将窗口移动直至二维码在桌面大概的左上角。不然仍会失败。
-    當然，你可以选择使用脚本进行自定义的处理。
+    解密：
+        使用解密时，需要将图片打开，解密功能会自动将桌面截图，
+        也可以直接使用截图解密，这样可以更加精准的定位数据。
+        當然，你可以选择使用脚本进行自定义的处理。
+    加密：
+        在加密中中文的加密有时会因为zbar的问题解码成日文，
+        请确认解码的正常后再使用加密的二维码，
+        解决方式可以尝试微调一下加密数据。
 '''.strip('\n')
 
     fss0011 = Frame(fss1)
@@ -3188,12 +3195,52 @@ compare_encode(salt, text, compare_str)
             screenshot_bit = pypyzbar.screenshot()
             pixbytes, w, h = pypyzbar.create_png_pixel_tobytes(screenshot_bit)
             deco = pypyzbar.decode((pixbytes, w, h))
+            print(time.ctime())
+            print('开始识别')
             if deco:
                 print('发现{}个二维码并解密：'.format(len(deco)))
-                for i in deco:
-                    print(i.data)
+                print(' <注意：含有中文解密若是在解码中出现问题则该bytes类型数据就已经不可信了>')
+                for idx,i in enumerate(deco):
+                    print('[ {} ]'.format(idx))
+                    print('    bytes类型展示')
+                    print('        ',i.data)
+                    print('    尝试简单解码')
+                    try:
+                        print('        ',i.data.decode('utf-8'))
+                    except:
+                        print('        ',i.data.decode('gbk'))
             else:
                 print('未定位到二维码。')
+            print('识别结束')
+        except:
+            print(traceback.format_exc())
+
+    def css0012_1(*a):
+        try:
+            from . import pypyzbar
+        except:
+            import pypyzbar
+        try:
+            pixbytes, w, h = pypyzbar.screenshot_rect(root)
+            deco = pypyzbar.decode((pixbytes, w, h))
+            fsstxt.delete(0.,tkinter.END)
+            print(time.ctime())
+            print('开始识别')
+            if deco:
+                print('发现{}个二维码并解密：'.format(len(deco)))
+                print(' <注意：含有中文解密若是在解码中出现问题则该bytes类型数据就已经不可信了>')
+                for idx,i in enumerate(deco):
+                    print('[ {} ]'.format(idx))
+                    print('    bytes类型展示')
+                    print('        ',i.data)
+                    print('    尝试简单解码')
+                    try:
+                        print('        ',i.data.decode('utf-8'))
+                    except:
+                        print('        ',i.data.decode('gbk'))
+            else:
+                print('未定位到二维码。')
+            print('识别结束')
         except:
             print(traceback.format_exc())
 
@@ -3211,7 +3258,7 @@ compare_encode(salt, text, compare_str)
             if encdlv == '25%': encdlv = pyqrcode.ERROR_CORRECT_Q
             if encdlv == '30%': encdlv = pyqrcode.ERROR_CORRECT_H
             s = pyqrcode.QRCode(error_correction=encdlv)
-            s.add_data(enctxt)
+            s.add_data(enctxt.encode('utf-8'))
             for i in s.get_matrix():
                 black = '██'
                 white = '  '
@@ -3233,9 +3280,11 @@ compare_encode(salt, text, compare_str)
     cbx_0013['values'] = ['7%', '15%', '25%', '30%']
     cbx_0013.current(1)
     cbx_0013.pack(side=tkinter.LEFT)
-    bss0013_2 = Button(fss0013,text='二维码解密',command=css0012)
+    bss0013_3 = Button(fss0013,text='截图解密',command=css0012_1,width=9)
+    bss0013_3.pack(side=tkinter.RIGHT,padx=1)
+    bss0013_2 = Button(fss0013,text='全屏解密',command=css0012,width=9)
     bss0013_2.pack(side=tkinter.RIGHT,padx=1)
-    bss0013 = Button(fss0013,text='二维码加密',command=css0013)
+    bss0013 = Button(fss0013,text='二维码加密',command=css0013,width=9)
     bss0013.pack(side=tkinter.RIGHT,padx=1)
     def _pyqrcode_code(*a):
         try:
@@ -3255,9 +3304,9 @@ compare_encode(salt, text, compare_str)
         with open(pypyzbar.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
-    bss0013_4 = Button(fss0013,text='二维码加密[算法]',command=_pyqrcode_code)
+    bss0013_4 = Button(fss0013,text='加密[算法]',command=_pyqrcode_code,width=9)
     bss0013_4.pack(side=tkinter.LEFT,padx=1)
-    bss0013_3 = Button(fss0013,text='二维码解密[算法]',command=_pypyzbar_code)
+    bss0013_3 = Button(fss0013,text='解密[算法]',command=_pypyzbar_code,width=9)
     bss0013_3.pack(side=tkinter.LEFT,padx=1)
     return fr
 
