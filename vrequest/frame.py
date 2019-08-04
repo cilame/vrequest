@@ -1102,7 +1102,10 @@ def encode_window(setting=None):
             l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
             e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
         if name in allow and idx >= len(algorithms):
-            if name == 'md2': continue
+            if name == 'md2': 
+                continue
+            else:
+                hlen = len(hmac.new(b'',b'',name).hexdigest())
             l,e = Label(f2,text='[hmac]'+name+'[len:{}]'.format(str(hlen)),font=ft),Entry(f2,width=width,font=ft)
             di[name] = e
             l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
@@ -2549,149 +2552,6 @@ compare_encode(salt, text, compare_str)
 
 
 
-    bhashhelp = '''
-            以下算法为使用本地的密码字典进行 hash 爆破。
-    若想使用自己的字典，可以直接将字典内容粘贴到右侧窗口中，点击[自定义爆破]即可
-    会自动使用选择的算法进行 hash 的对比。
-    该算法会自动使用一定程度的黑客语(leetspeak)对密码进行膨胀处理，详细的处理请参考算法。
-    另外，算法内还有名字前缀以及日期的组合，没有放在该功能中
-    因为生成的字典会非常之大，爆破一次要花费好几十秒，
-    所以如果有更详细的需求请直接点开算法，使用别的ide进行更丰富的爆破处理。
-'''.strip('\n')
-    # 这里是 twofish 算法的部分
-    def fbx_change_cbit_1(*content):
-        if content:
-            blen = len(content[0])
-            fbx_cbit1['text'] = str(blen)
-            return True
-
-    fbx_change_cbit1 = root.register(fbx_change_cbit_1)
-    fbx100 = Frame(ff0)
-    fbx100.pack(side=tkinter.TOP,fill=tkinter.X)
-    fbx101 = Frame(fbx100)
-    fbx102 = Frame(fbx100)
-    fbx103 = Frame(fbx100)
-    fbx101.pack(side=tkinter.TOP,fill=tkinter.X)
-    fbx102.pack(side=tkinter.TOP,fill=tkinter.X)
-    fbx103.pack(side=tkinter.TOP,fill=tkinter.X)
-    Label(fbx101, text=bhashhelp).pack(fill=tkinter.X,expand=True)
-    def _pymapmd5_decode(*a):
-        _hash = fbxent.get().strip()
-        _mode = fbx1_mode1.get()
-        ftxt.delete(0.,tkinter.END)
-        try:
-            from . import pymapmd5, pymd2
-        except:
-            import pymapmd5, pymd2
-        try:
-            if _mode == 'md2':
-                hfunc = pymd2.md2
-            else:
-                hfunc = lambda i:hashlib.new(_mode, i).hexdigest()
-            emptyhash = hfunc(b'')
-            if len(_hash) != len(emptyhash):
-                print('非法的hash长度')
-                print(_mode,'需要的长度为',len(emptyhash))
-                return
-            if _hash == emptyhash:
-                print('空参数的hash。')
-                return
-            ctime = time.time()
-            mk_map_passleet = pymapmd5.mk_map_passleet
-            zpasslist       = mk_map_passleet(pymapmd5.zpasslist)
-            map_namehead_times = pymapmd5.map_namehead_times
-            findkey = False
-            for i in itertools.chain(zpasslist, map_namehead_times()):
-                v = hfunc(i.encode())
-                if v == _hash:
-                    findkey = (v, i)
-                    break
-            if findkey:
-                print('发现密码：')
-                print('password:',i)
-                print('hash:',v)
-            else:
-                print('未找到密码')
-            print('使用时间：',time.time()-ctime)
-        except:
-            ftxt.delete(0.,tkinter.END)
-            print(traceback.format_exc())
-
-    def _inputdict_map(*a):
-        _hash = fbxent.get().strip()
-        _mode = fbx1_mode1.get()
-        _list = ftxt.get(0.,tkinter.END).strip('\n').splitlines()
-        ftxt.delete(0.,tkinter.END)
-        try:
-            from . import pymapmd5, pymd2
-        except:
-            import pymapmd5, pymd2
-        try:
-            if _mode == 'md2':
-                hfunc = pymd2.md2
-            else:
-                hfunc = lambda i:hashlib.new(_mode, i).hexdigest()
-            emptyhash = hfunc(b'')
-            mk_map_passleet = pymapmd5.mk_map_passleet
-            if len(_hash) != len(emptyhash):
-                print('非法的hash长度')
-                print(_mode,'需要的长度为',len(emptyhash))
-                return
-            if _hash == emptyhash:
-                print('空参数的hash。')
-                return
-            ctime = time.time()
-            findkey = False
-            for i in mk_map_passleet(_list):
-                v = hfunc(i.encode())
-                if v == _hash:
-                    findkey = (v, i)
-                    break
-            if findkey:
-                print('发现密码：')
-                print('password:',i)
-                print('hash:',v)
-            else:
-                print('未找到密码')
-            print('使用时间：',time.time()-ctime)
-        except:
-            ftxt.delete(0.,tkinter.END)
-            print(traceback.format_exc())
-
-    def _pymapmd5_code(*a):
-        try:
-            from . import pymapmd5
-        except:
-            import pymapmd5
-        ftxt.delete(0.,tkinter.END)
-        with open(pymapmd5.__file__, encoding='utf-8') as f:
-            data = f.read().strip('\n')
-        print(data)
-
-    Label(fbx102, text='参数',width=4).pack(side=tkinter.LEFT,padx=5)
-    fbxent = Entry(fbx102, width=41,validate='key',validatecommand=(fbx_change_cbit1, '%P'))
-    fbxent.pack(side=tkinter.LEFT)
-    fbxent.bind('<Key>', fbx_change_cbit1)
-    # fbxent.pack(side=tkinter.LEFT)
-    fbx1_mode1 = Combobox(fbx102,width=12,state='readonly')
-    fbx1_mode1['values'] = ['md5', 'sha1', 'blake2b', 'blake2s', 'md2', 'md4', 'ripemd160', 'sha', \
-                            'sha224', 'sha256', 'sha384', 'sha3_224', 'sha3_256', 'sha3_384', \
-                            'sha3_512', 'sha512', 'whirlpool']
-    fbx1_mode1.current(0)
-    fbx1_mode1.pack(side=tkinter.RIGHT)
-    fbx_cbit1 = Label(fbx102, text='0',width=4)
-    fbx_cbit1.pack(side=tkinter.LEFT,padx=5)
-    Label(fbx102, text='hash',width=4).pack(side=tkinter.RIGHT,padx=5)
-    Button(fbx103, text='[算法]',command=_pymapmd5_code,width=5).pack(side=tkinter.RIGHT)
-    Button(fbx103, text='快速爆破',command=_pymapmd5_decode,width=8).pack(side=tkinter.RIGHT)
-    Button(fbx103, text='自定义爆破',command=_inputdict_map,width=10).pack(side=tkinter.RIGHT)
-
-
-
-
-
-
-
 
 
 
@@ -2887,20 +2747,20 @@ compare_encode(salt, text, compare_str)
 
 
 
-    sshelp = '''
-            一些关于素数的内容
-    以下一开始就在输入框的的内容均是测试内容
-    e=65537=0x10001 是常用的的 rsa 加密标准的通用初始值，
-    如果有需要自定义，请自行填入一个素数
-'''.strip('\n')
+
+
+
+
+
+
+
+
     _fss1 = Frame(fr)
     enb.add(_fss1, text='杂项')
     enb.pack()
     enb_names[_fss1._name] = '杂项'
-
     fss1 = Frame(_fss1)
     fss1.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
-
     fss1_ = Frame(_fss1)
     fss1_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
     txttitlefss = Frame(fss1_)
@@ -2911,6 +2771,154 @@ compare_encode(salt, text, compare_str)
     fssentlimit2.insert(0,'10000')
     fsstxt = Text(fss1_,font=ft)
     fsstxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+    bhashhelp = '''
+            hash 爆破
+    该算法会自动使用一定程度的黑客语(leetspeak)对密码进行膨胀处理，详细的处理请参考算法。
+    若想使用自己的字典，可以直接将字典内容粘贴到右侧窗口中，点击[自定义爆破]即可
+    会自动使用选择的算法进行 hash 的对比。
+    另外，算法内还有名字前缀以及日期的组合，没有放在该功能中，如果有更详细的需求
+    请直接点开算法，使用别的ide进行更丰富的爆破处理。
+'''.rstrip('\n')
+    # 这里是 twofish 算法的部分
+    def fbx_change_cbit_1(*content):
+        if content:
+            blen = len(content[0])
+            fbx_cbit1['text'] = str(blen)
+            return True
+
+    fbx_change_cbit1 = root.register(fbx_change_cbit_1)
+    fbx100 = Frame(fss1)
+    fbx100.pack(side=tkinter.TOP,fill=tkinter.X)
+    fbx101 = Frame(fbx100)
+    fbx102 = Frame(fbx100)
+    fbx103 = Frame(fbx100)
+    fbx101.pack(side=tkinter.TOP,fill=tkinter.X)
+    fbx102.pack(side=tkinter.TOP,fill=tkinter.X)
+    fbx103.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fbx101, text=bhashhelp, font=ft).pack(fill=tkinter.X,expand=True)
+    def _pymapmd5_decode(*a):
+        _hash = fbxent.get().strip()
+        _mode = fbx1_mode1.get()
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            from . import pymapmd5, pymd2
+        except:
+            import pymapmd5, pymd2
+        try:
+            if _mode == 'md2':
+                hfunc = pymd2.md2
+            else:
+                hfunc = lambda i:hashlib.new(_mode, i).hexdigest()
+            emptyhash = hfunc(b'')
+            if len(_hash) != len(emptyhash):
+                print('非法的hash长度')
+                print(_mode,'需要的长度为',len(emptyhash))
+                return
+            if _hash == emptyhash:
+                print('空参数的hash。')
+                return
+            ctime = time.time()
+            mk_map_passleet = pymapmd5.mk_map_passleet
+            zpasslist       = mk_map_passleet(pymapmd5.zpasslist)
+            map_namehead_times = pymapmd5.map_namehead_times
+            findkey = False
+            for i in itertools.chain(zpasslist, map_namehead_times()):
+                v = hfunc(i.encode())
+                if v == _hash:
+                    findkey = (v, i)
+                    break
+            if findkey:
+                print('发现密码：')
+                print('password:',i)
+                print('hash:',v)
+            else:
+                print('未找到密码')
+            print('使用时间：',time.time()-ctime)
+        except:
+            fsstxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+
+    def _inputdict_map(*a):
+        _hash = fbxent.get().strip()
+        _mode = fbx1_mode1.get()
+        _list = fsstxt.get(0.,tkinter.END).strip('\n').splitlines()
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            from . import pymapmd5, pymd2
+        except:
+            import pymapmd5, pymd2
+        try:
+            if _mode == 'md2':
+                hfunc = pymd2.md2
+            else:
+                hfunc = lambda i:hashlib.new(_mode, i).hexdigest()
+            emptyhash = hfunc(b'')
+            mk_map_passleet = pymapmd5.mk_map_passleet
+            if len(_hash) != len(emptyhash):
+                print('非法的hash长度')
+                print(_mode,'需要的长度为',len(emptyhash))
+                return
+            if _hash == emptyhash:
+                print('空参数的hash。')
+                return
+            ctime = time.time()
+            findkey = False
+            for i in mk_map_passleet(_list):
+                v = hfunc(i.encode())
+                if v == _hash:
+                    findkey = (v, i)
+                    break
+            if findkey:
+                print('发现密码：')
+                print('password:',i)
+                print('hash:',v)
+            else:
+                print('未找到密码')
+            print('使用时间：',time.time()-ctime)
+        except:
+            fsstxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+
+    def _pymapmd5_code(*a):
+        try:
+            from . import pymapmd5
+        except:
+            import pymapmd5
+        fsstxt.delete(0.,tkinter.END)
+        with open(pymapmd5.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Label(fbx102, text='参数',width=4).pack(side=tkinter.LEFT,padx=5)
+    fbxent = Entry(fbx102, width=41,validate='key',validatecommand=(fbx_change_cbit1, '%P'))
+    fbxent.pack(side=tkinter.LEFT)
+    fbxent.bind('<Key>', fbx_change_cbit1)
+    # fbxent.pack(side=tkinter.LEFT)
+    fbx1_mode1 = Combobox(fbx102,width=12,state='readonly')
+    fbx1_mode1['values'] = ['md5', 'sha1', 'blake2b', 'blake2s', 'md2', 'md4', 'ripemd160', 'sha', \
+                            'sha224', 'sha256', 'sha384', 'sha3_224', 'sha3_256', 'sha3_384', \
+                            'sha3_512', 'sha512', 'whirlpool']
+    fbx1_mode1.current(0)
+    fbx1_mode1.pack(side=tkinter.RIGHT)
+    fbx_cbit1 = Label(fbx102, text='0',width=4)
+    fbx_cbit1.pack(side=tkinter.LEFT,padx=5)
+    Label(fbx102, text='hash',width=4).pack(side=tkinter.RIGHT,padx=5)
+    Button(fbx103, text='[算法]',command=_pymapmd5_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fbx103, text='快速爆破',command=_pymapmd5_decode,width=8).pack(side=tkinter.RIGHT)
+    Button(fbx103, text='自定义爆破',command=_inputdict_map,width=10).pack(side=tkinter.RIGHT)
+
+
+
+
+
+
+    sshelp = '''
+            一些关于素数的内容
+    以下一开始就在输入框的的内容均是测试内容
+    e=65537=0x10001 是常用的的 rsa 加密标准的通用初始值，
+    如果有需要自定义，请自行填入一个素数
+'''.strip('\n')
     fss001 = Frame(fss1)
     fss001.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(fss001, text=sshelp,font=ft).pack(fill=tkinter.X,expand=True)

@@ -58,6 +58,7 @@ def get_prime(bitlen=1024):
 
 # 根据二进制数字长度需求生成rsa密钥，length需要为2的倍数
 def create_rsa_key(length=1024, e=65537):
+    assert length%2 == 0, 'bit长度必须为偶数'
     # 确保公共参数n的位数，以便保证密钥长度。
     while True:
         p = get_prime(length//2)
