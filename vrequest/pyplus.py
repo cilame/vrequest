@@ -30,13 +30,31 @@ def quote_to_bitstring(string, encoding='utf-8'):
 def bitstring_to_quote(bitstring, encoding='utf-8'):
     return urllib.parse.unquote(bitstring, encoding=encoding)
 
+def urlquote_to_bitstring(string, encoding='utf-8'):
+    def quote_val(url):
+        for i in re.findall('=([^=&]+)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.quote(i, encoding=encoding)))
+        return url
+    return quote_val(string.decode(encoding))
+
+def bitstring_to_urlquote(bitstring, encoding='utf-8'):
+    def unquote_val(url):
+        for i in re.findall('=([^=&]+)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.unquote(i, encoding=encoding)))
+        return url
+    return unquote_val(bitstring)
+
 def escape_to_bitstring(string, encoding='utf-8'):
     return html.escape(string.decode(encoding))
 
 def bitstring_to_escape(bitstring, encoding='utf-8'):
     return html.unescape(bitstring)
 
+def bitstring_to_unicode(string, encoding='utf-8'):
+    return string.encode(encoding).decode('unicode_escape')
 
+def unicode_to_bitstring(bitstring, encoding='utf-8'):
+    return bitstring.decode(encoding).encode('unicode_escape').decode(encoding)
 
 html_quote = {
     'base_8':(bitstring_to_base_8, base_8_to_bitstring),
@@ -44,9 +62,21 @@ html_quote = {
     'base_16':(bitstring_to_base_16, base_16_to_bitstring),
     'escape':(escape_to_bitstring, bitstring_to_escape), 
     'quote':(quote_to_bitstring, bitstring_to_quote), 
+    'urlquote':(urlquote_to_bitstring, bitstring_to_urlquote), 
+    'unicode':(unicode_to_bitstring, bitstring_to_unicode), 
 }
 
 if __name__ == '__main__':
+    try:
+        # 处理 sublime 执行时输出乱码
+        import io
+        import sys
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+        sys.stdout._CHUNK_SIZE = 1
+    except:
+        pass
+
+
     k = b'123123123asdf891(*&^&%^'
     v = bitstring_to_base_8(k)
     print(v)
@@ -77,6 +107,22 @@ if __name__ == '__main__':
     v = urllib.parse.unquote(v)
     print(v)
 
+    url = 'https://www.baidu.com/s?ie=UTF-8&wd=%E7%99%BE%E5%BA%A6'
+    v = bitstring_to_urlquote(url)
+    print(v)
+    v = urlquote_to_bitstring(v.encode())
+    print(v)
 
     v = base_16_to_bitstring(r'\xe6\x9c\x89\xe7\x82\xb9\xe5\x8f\xaf\xe7\x88\xb1')
     print(v)
+    v = base_16_to_bitstring(r'e69c89e782b9e58fafe788b1')
+    print(v)
+
+    v = '你好'.encode()
+    v = unicode_to_bitstring(v)
+    print(v)
+    v = bitstring_to_unicode(v)
+    print(v)
+    
+    
+    

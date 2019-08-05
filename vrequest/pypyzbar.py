@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 
+# 将库文件以二进制压缩模式放在脚本内，可以方便一个脚本处处运行。
 d = {}
 d['libiconv-2.dll'] = (
 '{Wp48S^xk9=GL@E0stWa761SMbT8$j;yoYl{#^hjmX2@$7x(N1yXy4+lmRb9?|kO<2^mBJDgRT=*3lIHo?)DV74`{wtZTIGR1lsf%5l%dM=QwdB1Qf|`m<S&as&y0Z#ryV#Z(2{s3#E$T%V6oxx8iYGj1PUBPKQ;ks^MK6Q@vXsor-o8`B-{4g{rvM3dKZFcsmBuemf$v7^OI&#lcy<{0Zhs!>FU-^1i8MlC4>F_E>X+mRlno&oq~YbRVsJ&yJ<Y^27w_F8}M%w%9Jj-8PyG6m~nv5ML6`&(IE6`o+@0x7GafO8EoPrKM!KalmS(1;Qhs}_tvVz(tHwauf(!~`^ysFL*Q0Jjw-$aDvxru6w>Idks`4H-^g0e>_+!X$j)z$9Kg_@OMU@5O!3RL2VJ_zxacN2R5QgH=84d+1GV!Edy*eD8hw?(hY!NZs===RaIf>AyJySHa!MmaH$;>Z&i4PU*lY(R$g@F4z@hZ`fv734k{~)&6y9!^7ia'
@@ -3554,9 +3555,8 @@ def decode(image, symbols=None, scan_locations=False):
 
 
 
-# 后续考虑将库的二进制文件压缩放在脚本内
-# 目前仅仅实现简单的不依赖 PIL 实现的纯py将全屏截图的数据传递给 pyzbar
-# 目前还是需要依赖 pyzbar
+# 已经将二进制的 zbar 集成在脚本内。
+# 现在只需要本地一个脚本就能实现二维码解密
 
 import zlib
 import ctypes
@@ -3692,9 +3692,19 @@ def screenshot_rect(root):
 
 
 if __name__ == '__main__':
+    # 截屏处理全部二维码
     screenshot_bit = screenshot()
     pixbytes, w, h = create_png_pixel_tobytes(screenshot_bit)
     deco = decode((pixbytes, w, h))
     for i in deco:
         print(i)
-        print(dir(i))
+
+    # 手动截图处理二维码
+    s = tkinter.Tk()
+    def parse_rect_from_png_bytes(*a):
+        pixbytes, w, h = screenshot_rect(s)
+        deco = decode((pixbytes, w, h))
+        for i in deco:
+            print(i)
+    tkinter.Button(s,text='截图解析二维码',command=parse_rect_from_png_bytes,width=40).pack()
+    s.mainloop()

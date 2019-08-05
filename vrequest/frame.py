@@ -1354,16 +1354,29 @@ compare_encode(salt, text, compare_str)
 
 
 
-    basehp = '''
+    basehp = r'''
             通用加解密（请将需要加/解密的数据输入右侧窗口）
     base加密：
         [-] 这种类型只能对数字进行加解密
         [*] 这种类型能对一般数据流进行加解密
+        [/] 这种类型通过正则切分并针对字符串内的数字进行 bytes 转换
+           base_8  RegExp:[0-7]{1,3}    : r"\o123\o123" => bytes([0o123, 0o123])
+                                          r"123123"     => bytes([0o123, 0o123])
+           base_10 RegExp:[0-9]{1,3}    : r"\123\123"   => bytes([123, 123])
+                                          r"123123"     => bytes([123, 123])
+           base_16 RegExp:[0-9a-fA-F]{2}: r"\xbe\xac"   => bytes([0xbe, 0xac])
+                                          r"beac"       => bytes([0xbe, 0xac])
+           (由于输出框不显示无法解码数据，如需 bit 类型数据请直接使用"杂项代码")
     注意：
-        使用全部加解密时，请尽量不要使用超过一千的字符串
-        否者entry窗口显示会有非常明显的卡顿
-        如果需要长字符串的加解密，请使用单独的加解密按钮实现
-        因为单独加解密统一使用右边的窗口输入和输出，不使用左边的 Entry组件
+        左边 Entry 控件在单行文书输入过长时会有卡顿甚至卡死
+        右边 Text 控件虽然也有相同的问题，但能接受更长的单行文本(行数不限)
+        所以长字符串的加解密，请使用单独的加解密按钮实现
+        全部加解密：
+            [input]  使用右边窗口为输入
+            [output] 使用左边窗口为输出
+        单独加解密：
+            [input]  使用右边窗口为输入
+            [output] 使用右边窗口为输出
 '''.strip('\n')
 
     _fr = Frame(fr)
@@ -1399,7 +1412,9 @@ compare_encode(salt, text, compare_str)
         'base_10',
         'base_16',
         'quote',
+        'urlquote',
         'escape',
+        'unicode',
     ]
     for idx,name in enumerate(base_algos+html_quote):
         if name in base_algos:
@@ -1412,6 +1427,7 @@ compare_encode(salt, text, compare_str)
             e.grid(row=idx,column=1,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
             l.grid(row=idx,column=0,ipadx=ipadx,ipady=ipady,padx=padx,pady=pady,sticky=sticky)
         if name in html_quote:
+            if name.startswith('base_'): name = '[/]' + name
             l,e = Label(f5,text=name,font=ft),Entry(f5,width=width,font=ft)
             b1,b2 = Button(f5,text='加',width=3), Button(f5,text='解',width=3)
             b2.grid(row=idx,column=3,ipadx=0,ipady=0,padx=0,pady=0,sticky=sticky)
@@ -1440,6 +1456,7 @@ compare_encode(salt, text, compare_str)
                 if name in base_algos:
                     base_encode, base_decode = pybase.base_algos[name]
                     ge.insert(0,base_encode(text))
+                name = name.strip('[/]')
                 if name in html_quote:
                     plus_encode, plus_decode = pyplus.html_quote[name]
                     ge.insert(0,plus_encode(text, encd))
@@ -1469,6 +1486,7 @@ compare_encode(salt, text, compare_str)
                 if name in base_algos:
                     base_encode, base_decode = pybase.base_algos[name]
                     ge.insert(0,base_decode(text).decode(encd))
+                name = name.strip('[/]')
                 if name in html_quote:
                     plus_encode, plus_decode = pyplus.html_quote[name]
                     ge.insert(0,plus_decode(text.decode(), encoding=encd))
@@ -1498,6 +1516,7 @@ compare_encode(salt, text, compare_str)
 
     def pack_button(name):
         def do():
+            nonlocal name
             encd = bben.get().strip()
             text = bbtxt.get(0.,tkinter.END).strip('\n').encode(encd)
             bbtxt.delete(0.,tkinter.END)
@@ -1511,6 +1530,7 @@ compare_encode(salt, text, compare_str)
                     v = base_encode(text)
                     v = v.decode() if isinstance(v, bytes) else v
                     print(v)
+                name = name.strip('[/]')
                 if name in html_quote:
                     plus_encode, plus_decode = pyplus.html_quote[name]
                     print(plus_encode(text, encd))
@@ -1518,6 +1538,7 @@ compare_encode(salt, text, compare_str)
                 import traceback
                 print(traceback.format_exc())
         def undo():
+            nonlocal name
             encd = bben.get().strip()
             text = bbtxt.get(0.,tkinter.END).strip('\n').encode()
             bbtxt.delete(0.,tkinter.END)
@@ -1529,6 +1550,7 @@ compare_encode(salt, text, compare_str)
                 if name in base_algos:
                     base_encode, base_decode = pybase.base_algos[name]
                     print(base_decode(text).decode(encd))
+                name = name.strip('[/]')
                 if name in html_quote:
                     plus_encode, plus_decode = pyplus.html_quote[name]
                     print(plus_decode(text.decode(), encoding=encd))
@@ -3185,7 +3207,7 @@ compare_encode(salt, text, compare_str)
         也可以直接使用截图解密，这样可以更加精准的定位数据。
         當然，你可以选择使用脚本进行自定义的处理。
     加密：
-        在加密中中文的加密有时会因为zbar的问题解码成日文，
+        在加密中中文的加密有时会因为zbar的问题解码成无意义的日文或乱码。
         请确认解码的正常后再使用加密的二维码，
         解决方式可以尝试微调一下加密数据。
 '''.strip('\n')
@@ -3207,7 +3229,7 @@ compare_encode(salt, text, compare_str)
             print('开始识别')
             if deco:
                 print('发现{}个二维码并解密：'.format(len(deco)))
-                print(' <注意：含有中文解密若是在解码中出现问题则该bytes类型数据就已经不可信了>')
+                print(' <注意：含有中文解密若是在解码中出现乱码问题则该bytes类型数据就已经不可信了>')
                 for idx,i in enumerate(deco):
                     print('[ {} ]'.format(idx))
                     print('    bytes类型展示')

@@ -1199,6 +1199,17 @@ def create_png_with_matrix(matrix, level=6):
     return magic + b"".join(ihdr + idat + iend)
 
 if __name__ == '__main__':
+    try:
+        # 处理 sublime 执行时输出乱码，这里是为了防止 ██ 这种特殊符号无法输出
+        import io
+        import sys
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+        sys.stdout._CHUNK_SIZE = 1
+    except:
+        pass
+
+
+    # 加密数据，直接通过特殊符号打印二维码
     s = QRCode(error_correction=ERROR_CORRECT_H)
     s.add_data('11111111111111111111')
     for i in s.get_matrix():
@@ -1210,6 +1221,9 @@ if __name__ == '__main__':
         print()
 
     # 通过matrix生成png文件流，直接写到桌面
+    import os
+    name = 'some.png'
+    filenamepath = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
     v = create_png_with_matrix(s.get_matrix())
-    with open(r'C:\Users\Administrator\Desktop\some.png','wb') as f:
+    with open(filenamepath,'wb') as f:
         f.write(v)
