@@ -56,14 +56,26 @@ def bitstring_to_unicode(string, encoding='utf-8'):
 def unicode_to_bitstring(bitstring, encoding='utf-8'):
     return bitstring.decode(encoding).encode('unicode_escape').decode(encoding)
 
+
+def bitstring_to_binary(string, encoding='utf-8'):
+    return bytes(list(map(lambda i:int(i, 2), re.findall('[0-1]{1,8}',string)))).decode(encoding)
+
+def binary_to_bitstring(bitstring, encoding='utf-8'):
+    r = []
+    for i in bitstring:
+        r.append('{:>08}'.format(bin(i)[2:]))
+    return ' '.join(r)
+
+
 html_quote = {
-    'base_8':(bitstring_to_base_8, base_8_to_bitstring),
-    'base_10':(bitstring_to_base_10, base_10_to_bitstring),
-    'base_16':(bitstring_to_base_16, base_16_to_bitstring),
-    'escape':(escape_to_bitstring, bitstring_to_escape), 
-    'quote':(quote_to_bitstring, bitstring_to_quote), 
-    'urlquote':(urlquote_to_bitstring, bitstring_to_urlquote), 
-    'unicode':(unicode_to_bitstring, bitstring_to_unicode), 
+    'base_2':   (binary_to_bitstring,   bitstring_to_binary),
+    'base_8':   (bitstring_to_base_8,   base_8_to_bitstring),
+    'base_10':  (bitstring_to_base_10,  base_10_to_bitstring),
+    'base_16':  (bitstring_to_base_16,  base_16_to_bitstring),
+    'escape':   (escape_to_bitstring,   bitstring_to_escape), 
+    'quote':    (quote_to_bitstring,    bitstring_to_quote), 
+    'urlquote': (urlquote_to_bitstring, bitstring_to_urlquote), 
+    'unicode':  (unicode_to_bitstring,  bitstring_to_unicode), 
 }
 
 if __name__ == '__main__':
@@ -122,6 +134,12 @@ if __name__ == '__main__':
     v = unicode_to_bitstring(v)
     print(v)
     v = bitstring_to_unicode(v)
+    print(v)
+    
+    v = '你好'.encode()
+    v = binary_to_bitstring(v)
+    print(v)
+    v = bitstring_to_binary(v)
     print(v)
     
     

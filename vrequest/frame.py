@@ -1372,11 +1372,9 @@ compare_encode(salt, text, compare_str)
         右边 Text 控件虽然也有相同的问题，但能接受更长的单行文本(行数不限)
         所以长字符串的加解密，请使用单独的加解密按钮实现
         全部加解密：
-            [input]  使用右边窗口为输入
-            [output] 使用左边窗口为输出
+            [input]  使用右边->窗口为输入  [output] 使用左边<-窗口为输出
         单独加解密：
-            [input]  使用右边窗口为输入
-            [output] 使用右边窗口为输出
+            [input]  使用右边->窗口为输入  [output] 使用右边->窗口为输出
 '''.strip('\n')
 
     _fr = Frame(fr)
@@ -1408,6 +1406,7 @@ compare_encode(salt, text, compare_str)
     ]
     bs = {}
     html_quote = [
+        'base_2',
         'base_8',
         'base_10',
         'base_16',
