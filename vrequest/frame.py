@@ -2528,16 +2528,14 @@ compare_encode(salt, text, compare_str)
     Button(f202, text='密码/数据编码格式',command=_swich_rc4_encd).pack(side=tkinter.RIGHT)
 
 
-
-
     # jsfuck 的解密
-    f100 = Frame(ff0)
-    f100.pack(side=tkinter.TOP,fill=tkinter.X)
-    f101 = Frame(f100)
-    f102 = Frame(f100)
-    f101.pack(side=tkinter.TOP,fill=tkinter.X)
-    f102.pack(side=tkinter.TOP,fill=tkinter.X)
-    Label(f101, text='     以下算法纯 python 解密 jsfuck。').pack(fill=tkinter.X,expand=True)
+    fxpy0010 = Frame(ff0)
+    fxpy0010.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0011 = Frame(fxpy0010)
+    fxpy0012 = Frame(fxpy0010)
+    fxpy0011.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0012.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fxpy0011, text='     以下算法纯 python 解密 jsfuck。').pack(fill=tkinter.X,expand=True)
     def _jsfuck_decode(*a):
         data = ftxt.get(0.,tkinter.END).strip('\n')
         ftxt.delete(0.,tkinter.END)
@@ -2546,7 +2544,11 @@ compare_encode(salt, text, compare_str)
         except:
             import pyjsfuck
         try:
-            f = pyjsfuck.unjsfuck(data, debuglevel=1, logger=print)
+            if cbxejsfuck.get().strip() == '显示解密过程':
+                debuglevel = 1
+            else:
+                debuglevel = 0
+            f = pyjsfuck.unjsfuck(data, debuglevel=debuglevel, logger=print)
             print()
             print('[ result ]:')
             print(f)
@@ -2565,8 +2567,123 @@ compare_encode(salt, text, compare_str)
             data = f.read().strip('\n')
         print(data)
 
-    Button(f102, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.RIGHT)
-    Button(f102, text='解密',command=_jsfuck_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0012, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0012, text='解密',command=_jsfuck_decode,width=5).pack(side=tkinter.RIGHT)
+    cbxejsfuck = Combobox(fxpy0012,width=10,state='readonly')
+    cbxejsfuck['values'] = ['显示解密过程', '不显示过程']
+    cbxejsfuck.current(0)
+    cbxejsfuck.pack(fill=tkinter.X,side=tkinter.RIGHT)
+
+    # 凯撒解密
+    fxpy0020 = Frame(ff0)
+    fxpy0020.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0021 = Frame(fxpy0020)
+    fxpy0022 = Frame(fxpy0020)
+    fxpy0021.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0022.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fxpy0021, text='     以下算法纯 python 解密凯撒密码。').pack(fill=tkinter.X,expand=True)
+    def _caesar_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pycaesar
+        except:
+            import pycaesar
+        try:
+            for i in range(0, 26):
+                v = pycaesar.caesar(data, i)
+                print('deviation: {:>2} --- result: {} '.format(i, v))
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_code(*a):
+        try:
+            from . import pycaesar
+        except:
+            import pycaesar
+        ftxt.delete(0.,tkinter.END)
+        with open(pycaesar.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0022, text='[算法]',command=_caesar_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0022, text='遍历',command=_caesar_decode,width=5).pack(side=tkinter.RIGHT)
+
+    # 莫斯解密
+    fxpy0030 = Frame(ff0)
+    fxpy0030.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0031 = Frame(fxpy0030)
+    fxpy0032 = Frame(fxpy0030)
+    fxpy0031.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0032.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fxpy0031, text='     以下算法纯 python 解密莫斯密码。').pack(fill=tkinter.X,expand=True)
+    def _morse_encode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        point = morse_point.get().strip()
+        line  = morse_line.get().strip()
+        space = morse_space.get().strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pymorse
+        except:
+            import pymorse
+        try:
+            v = pymorse.morse_enc(data, point, line, space)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _morse_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        point = morse_point.get().strip()
+        line  = morse_line.get().strip()
+        space = morse_space.get().strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pymorse
+        except:
+            import pymorse
+        try:
+            v = pymorse.morse_dec(data, point, line, space)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _morse_code(*a):
+        try:
+            from . import pymorse
+        except:
+            import pymorse
+        ftxt.delete(0.,tkinter.END)
+        with open(pymorse.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0032, text='[算法]',command=_morse_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0032, text='解密',command=_morse_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0032, text='加密',command=_morse_encode,width=5).pack(side=tkinter.RIGHT)
+    morse_space = Entry(fxpy0032, width=5)
+    morse_space.insert(0, ' ')
+    morse_space.pack(side=tkinter.RIGHT)
+    Label(fxpy0032, text='空格').pack(side=tkinter.RIGHT)
+    morse_line = Entry(fxpy0032, width=5)
+    morse_line.insert(0, '-')
+    morse_line.pack(side=tkinter.RIGHT)
+    Label(fxpy0032, text='线').pack(side=tkinter.RIGHT)
+    morse_point = Entry(fxpy0032, width=5)
+    morse_point.insert(0, '.')
+    morse_point.pack(side=tkinter.RIGHT)
+    Label(fxpy0032, text='点').pack(side=tkinter.RIGHT)
+    
+
+
+
 
 
 
