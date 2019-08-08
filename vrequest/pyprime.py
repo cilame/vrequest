@@ -58,7 +58,8 @@ def get_prime(bitlen=1024):
 
 # 根据二进制数字长度需求生成rsa密钥，length需要为2的倍数
 def create_rsa_key(length=1024, e=65537):
-    assert length%2 == 0, 'bit length must be even number'
+    if e == 2:          raise KeyError('The parameter E must not be equal to 2.')
+    if length%2 != 0:   raise KeyError('bit length must be even number')
     # 确保公共参数n的位数，以便保证密钥长度。
     while True:
         p = get_prime(length//2)
@@ -76,17 +77,19 @@ def create_rsa_key(length=1024, e=65537):
         x = y
         y = t - a//b*y
         return (x,y,r)
-    # 由于主动设定了e为素数，所以一次获取肯定能获取到符合要求的模逆元
-    # 该数也是一般通用标准，是为了方便计算机计算而选的数字：0x10001==65537
     a, b, r = ex_gcd(fn, e)
-    d = b + fn
+    if b == 1: return create_rsa_key(length, e)
+    # 值得注意的是，如果模拟元 b 等于 1 时就会出现 rsa 加密失效的情况，需要非常注意
+    # 同时 当加密参数 e == 2 的时候模拟元基本就等于 1 所以，加密参数一定不能是 2
+    # 当 e 为大于 2 的素数并且 e 的值很小时会有一定几率模拟元等于 1 的情况
     # 公钥n,e 私钥n,d
+    d = b + fn
     return e,d,n
 
 if __name__ == '__main__':
     print('============= test =============')
     # 测试rsa密钥生成效率
-    e,d,n = create_rsa_key(1024,885158609)#默认生成1024位的密钥
+    e,d,n = create_rsa_key(1024,3)#默认生成1024位的密钥
     print('(rsa publicKey n,e) {} --- {}'.format(n,e))
     print('(rsa PrivateKey n,d) {} --- {}'.format(n,d))
 
