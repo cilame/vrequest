@@ -3138,6 +3138,33 @@ compare_encode(salt, text, compare_str)
     bss009 = Button(fss009,text='质因数分解',command=css009)
     bss009.pack(side=tkinter.LEFT,padx=2)
 
+    def css0014(*a):
+        try:
+            from . import pyprime
+        except:
+            import pyprime
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            e = int(ess005.get())
+            n = int(ess006.get())
+            print('注意：p,q 中的最小值的 bit 长度应大约小于40（经验判断），否则程序卡死。')
+            fsstxt.update()
+            d, p, q = pyprime.get_d_from_e_n(e, n)
+            print('p:',p)
+            print('q:',q)
+            print()
+            print('计算结果d:', d)
+            ess007.delete(0,tkinter.END)
+            ess007.insert(0,str(d))
+        except:
+            print(traceback.format_exc())
+
+    fss0014 = Frame(fss1)
+    fss0014.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss0014,text='n因式分解条件：n==p*q; min(p,q)的bit长度大约在40或更小，否则程序卡死',font=ft).pack(side=tkinter.LEFT)
+    bss0014 = Button(fss0014,text='通过e,n直接解出参数d',command=css0014)
+    bss0014.pack(side=tkinter.RIGHT,padx=2)
+
     def css008(*a):
         try:
             from . import pywiener_attack

@@ -56,6 +56,16 @@ def get_prime(bitlen=1024):
         if isprime_mr(num):
             return num
 
+# 扩展欧几里得算法获取乘法模逆元
+def ex_gcd(a,b):
+    if b == 0:
+        return (1,0,a)
+    (x, y, r) = ex_gcd(b,a%b)
+    t = x
+    x = y
+    y = t - a//b*y
+    return (x,y,r)
+
 # 根据二进制数字长度需求生成rsa密钥，length需要为2的倍数
 def create_rsa_key(length=1024, e=65537):
     if e == 2:          raise KeyError('The parameter E must not be equal to 2.')
@@ -68,28 +78,26 @@ def create_rsa_key(length=1024, e=65537):
         if n.bit_length() == length and p != q:
             break
     fn  = (p-1) * (q-1)
-    # 扩展欧几里得算法获取乘法模逆元
-    def ex_gcd(a,b):
-        if b == 0:
-            return (1,0,a)
-        (x, y, r) = ex_gcd(b,a%b)
-        t = x
-        x = y
-        y = t - a//b*y
-        return (x,y,r)
     a, b, r = ex_gcd(fn, e)
     if b == 1: return create_rsa_key(length, e)
     # 值得注意的是，如果模拟元 b 等于 1 时就会出现 rsa 加密失效的情况，需要非常注意
     # 同时 当加密参数 e == 2 的时候模拟元基本就等于 1 所以，加密参数一定不能是 2
     # 当 e 为大于 2 的素数并且 e 的值很小时会有一定几率模拟元等于 1 的情况
     # 公钥n,e 私钥n,d
-    d = b + fn
+    d = b + fn if b < 0 else b
     return e,d,n
+
+def get_d_from_e_n(e, n):
+    p, q = prime_list_rho(n)
+    fn = (p-1) * (q-1)
+    a, b, r = ex_gcd(fn, e)
+    d = b + fn if b < 0 else b
+    return d, p, q
 
 if __name__ == '__main__':
     print('============= test =============')
     # 测试rsa密钥生成效率
-    e,d,n = create_rsa_key(1024,3)#默认生成1024位的密钥
+    e,d,n = create_rsa_key(1024,17)#默认生成1024位的密钥
     print('(rsa publicKey n,e) {} --- {}'.format(n,e))
     print('(rsa PrivateKey n,d) {} --- {}'.format(n,d))
 
