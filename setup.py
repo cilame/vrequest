@@ -38,6 +38,7 @@ setup(
         'gui_scripts': [
             'vv = vrequest.main:execute',
             'vreqeust = vrequest.main:execute',
+            'ee = vrequest.main:algo',
         ]
     },
 )

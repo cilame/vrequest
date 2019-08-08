@@ -90,19 +90,23 @@ bind_alt_key(create_scrapy_code,    's') # 生成scrapy代码
 bind_alt_key(execute_scrapy_code,   'w') # 用自动生成的环境执行scrapy代码
 bind_alt_key(create_temp_idle,      '`') # 使用临时的idle文本
 
+
+def algo():
+    from .frame import encode_window
+    fr = encode_window()
+    ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
+    fr.iconbitmap(ico)
+    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口, 组合快捷键 Alt+` 快速打开IDLE')
+    fr.bind('<Escape>',lambda *a:fr.master.quit())
+    fr.bind('<Alt-`>',lambda *a:create_temp_idle())
+    fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
+    fr.master.withdraw()
+    fr.mainloop()
+
 def execute():
     argv = sys.argv
     if 'e' in argv:
-        from .frame import encode_window
-        fr = encode_window()
-        ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
-        fr.iconbitmap(ico)
-        fr.title('命令行输入 vv e 则可快速打开便捷加密窗口, 组合快捷键 Alt+` 快速打开IDLE')
-        fr.bind('<Escape>',lambda *a:fr.master.quit())
-        fr.bind('<Alt-`>',lambda *a:create_temp_idle())
-        fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
-        fr.master.withdraw()
-        fr.mainloop()
+        algo()
         return
 
     root.title('vrequest [{}]'.format(__version__))
