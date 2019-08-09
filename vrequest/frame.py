@@ -757,12 +757,23 @@ vrequest：
 也可以生成且能执行 scrapy 代码，不过由于scrapy库依赖过重，该工具不会依赖下载
 若需要执行 scrapy 代码，需额外下载 scrapy。
 
+通用快捷键 (该处多数功能右键窗口就能实现，只要记得右键窗口任意处即可)：
+(Ctrl + q) 创建新的请求标签
+(Ctrl + j) 创建 js 代码执行窗口
+(Ctrl + e) 修改当前标签名字
+(Ctrl + w) 关闭当前标签
+(Ctrl + h) 创建帮助标签
+(Ctrl + s) 保存当前全部请求配置(只能保存请求配置)
+(Alt  + `) 用IDLE固定打开一个文件,方便长脚本测试
+
 请求窗口快捷键：
 (Ctrl + r) 发送请求任务并保存
 *(Alt + c) 生成请求代码(一般建议在请求后处理分析再生成代码，那样包含解析代码)
-           HEADERS 窗口接受 “:” 或 “=” 分割
-           BODY    窗口接受 “:” 或 “=” 分割
-                   若是BODY窗口需要传字符串可以在字符串前后加英文双引号
+           HEADERS 窗口接受 “:” 或 “=” 分割生成 字典参数
+           BODY    窗口接受 “:” 或 “=” 分割生成 字典参数
+                注意：对于 BODY 有时也会存在这里不需要对 dict 进行 urlencode 编码
+                      的情况，这时候只要将传入的一行数据前后加上英文的双引号
+                      程序会自动不对该 dict 进行编码，POST 请求时请留意该功能
 *(Alt + s) 生成 scrapy 请求代码，格式化结构同上
 
 响应窗口快捷键：
@@ -781,15 +792,6 @@ vrequest：
 
 scrapy 代码窗口快捷键：
 (Alt + w) scrapy 代码执行
-
-通用快捷键：
-(Ctrl + q) 创建新的请求标签
-(Ctrl + j) 创建 js 代码执行窗口
-(Ctrl + e) 修改当前标签名字
-(Ctrl + w) 关闭当前标签
-(Ctrl + h) 创建帮助标签
-(Ctrl + s) 保存当前全部请求配置(只能保存请求配置)
-(Alt  + `) 用IDLE固定打开一个文件,方便长脚本测试
 
 开源代码：
 https://github.com/cilame/vrequest
@@ -1022,7 +1024,7 @@ def encode_window(setting=None):
     处理简单的加密编码对比
     '''
     fr = tkinter.Toplevel()
-    fr.title('命令行输入 vv e 则可快速打开便捷加密窗口, 组合快捷键 Alt+` 快速打开IDLE')
+    fr.title('命令行输入 ee 则可快速打开便捷加密窗口(为防冲突，输入vv e也可以打开), 组合快捷键 Alt+` 快速打开IDLE')
     fr.resizable(False, False)
     try:
         try:
@@ -1230,7 +1232,7 @@ def encode_window(setting=None):
         name = enb.select().rsplit('.')[-1]
         if enb_names[name] == 'hash':
             txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
-        elif enb_names[name] == '纯py加解密':
+        elif enb_names[name] == '算法加解密':
             ftxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '依赖库加解密':
             ctxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
@@ -1606,9 +1608,9 @@ compare_encode(salt, text, compare_str)
 
 
     _fr0 = Frame(fr)
-    enb.add(_fr0, text='纯py加解密')
+    enb.add(_fr0, text='算法加解密')
     enb.pack()
-    enb_names[_fr0._name] = '纯py加解密'
+    enb_names[_fr0._name] = '算法加解密'
 
     ff0 = Frame(_fr0)
     ff0.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
@@ -1658,7 +1660,7 @@ compare_encode(salt, text, compare_str)
 
     pure_python_encrypthelp = '''
             纯 python 实现的加解密算法
-    该处大部分算法均为从各个地方收集而来的纯 python 实现的加解密算法，
+    该处大部分算法均为从各个地方收集而来的、或是我自己写的纯 python 实现的加解密算法，
     如果没有特别苛刻的环境要求，请还是尽量使用成熟的加解密函数库来实现
 '''.strip('\n')
 
@@ -2531,11 +2533,8 @@ compare_encode(salt, text, compare_str)
     # jsfuck 的解密
     fxpy0010 = Frame(ff0)
     fxpy0010.pack(side=tkinter.TOP,fill=tkinter.X)
-    fxpy0011 = Frame(fxpy0010)
     fxpy0012 = Frame(fxpy0010)
-    fxpy0011.pack(side=tkinter.TOP,fill=tkinter.X)
     fxpy0012.pack(side=tkinter.TOP,fill=tkinter.X)
-    Label(fxpy0011, text='     以下算法纯 python 解密 jsfuck。').pack(fill=tkinter.X,expand=True)
     def _jsfuck_decode(*a):
         data = ftxt.get(0.,tkinter.END).strip('\n')
         ftxt.delete(0.,tkinter.END)
@@ -2567,22 +2566,105 @@ compare_encode(salt, text, compare_str)
             data = f.read().strip('\n')
         print(data)
 
-    Button(fxpy0012, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0012, text='[算法]',command=_jsfuck_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0012, text=' 这里为 jsfuck 算法解密。').pack(side=tkinter.LEFT)
     Button(fxpy0012, text='解密',command=_jsfuck_decode,width=5).pack(side=tkinter.RIGHT)
-    cbxejsfuck = Combobox(fxpy0012,width=10,state='readonly')
+    cbxejsfuck = Combobox(fxpy0012,width=11,state='readonly')
     cbxejsfuck['values'] = ['显示解密过程', '不显示过程']
     cbxejsfuck.current(0)
     cbxejsfuck.pack(fill=tkinter.X,side=tkinter.RIGHT)
 
+    # brainfuck 的解密
+    fxpy0070 = Frame(ff0)
+    fxpy0070.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0072 = Frame(fxpy0070)
+    fxpy0072.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _brainfuck_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pybrainfuck
+        except:
+            import pybrainfuck
+        try:
+            v = pybrainfuck.evaluate(data)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _brainfuck_code(*a):
+        try:
+            from . import pybrainfuck
+        except:
+            import pybrainfuck
+        ftxt.delete(0.,tkinter.END)
+        with open(pybrainfuck.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0072, text='[算法]',command=_brainfuck_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0072, text=' 这里为 brainfuck 算法解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0072, text='brainfuck解密',command=_brainfuck_decode,width=12).pack(side=tkinter.RIGHT)
+
+    # ook 的解密
+    fxpy0080 = Frame(ff0)
+    fxpy0080.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0082 = Frame(fxpy0080)
+    fxpy0082.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _brainfuckook_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        a = brainfuckook_a.get().strip()
+        b = brainfuckook_b.get().strip()
+        c = brainfuckook_c.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pybrainfuck
+        except:
+            import pybrainfuck
+        try:
+            data = pybrainfuck.parse_ook_to_brainfuckmap(data, abc = (a,b,c))
+            v = pybrainfuck.evaluate(data)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _brainfuck_code(*a):
+        try:
+            from . import pybrainfuck
+        except:
+            import pybrainfuck
+        ftxt.delete(0.,tkinter.END)
+        with open(pybrainfuck.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0082, text='[算法]',command=_brainfuck_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0082, text=' 这里为 Ook! 算法解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0082, text='Ook!解密',command=_brainfuckook_decode,width=8).pack(side=tkinter.RIGHT)
+    brainfuckook_c = Entry(fxpy0082, width=2)
+    brainfuckook_c.insert(0, '.')
+    brainfuckook_c.pack(side=tkinter.RIGHT)
+    Label(fxpy0082, text='c').pack(side=tkinter.RIGHT)
+    brainfuckook_b = Entry(fxpy0082, width=2)
+    brainfuckook_b.insert(0, '?')
+    brainfuckook_b.pack(side=tkinter.RIGHT)
+    Label(fxpy0082, text='b').pack(side=tkinter.RIGHT)
+    brainfuckook_a = Entry(fxpy0082, width=2)
+    brainfuckook_a.insert(0, '!')
+    brainfuckook_a.pack(side=tkinter.RIGHT)
+    Label(fxpy0082, text='a').pack(side=tkinter.RIGHT)
+
+
     # 凯撒解密
     fxpy0020 = Frame(ff0)
     fxpy0020.pack(side=tkinter.TOP,fill=tkinter.X)
-    fxpy0021 = Frame(fxpy0020)
     fxpy0022 = Frame(fxpy0020)
-    fxpy0021.pack(side=tkinter.TOP,fill=tkinter.X)
     fxpy0022.pack(side=tkinter.TOP,fill=tkinter.X)
-    Label(fxpy0021, text='     以下算法纯 python 解密凯撒密码。').pack(fill=tkinter.X,expand=True)
-    def _caesar_decode(*a):
+    def _caesar_enum(*a):
         data = ftxt.get(0.,tkinter.END).strip('\n')
         ftxt.delete(0.,tkinter.END)
         try:
@@ -2590,9 +2672,47 @@ compare_encode(salt, text, compare_str)
         except:
             import pycaesar
         try:
-            for i in range(0, 26):
+            if len(data) > 1000:
+                print('注意，使用超过1000长度的的凯撒遍历处理时，请直接使用代码在 IDE 里面自行处理。')
+            for i in range(-13, 13, 1):
                 v = pycaesar.caesar(data, i)
-                print('deviation: {:>2} --- result: {} '.format(i, v))
+                if i == 0:print()
+                print('{:>3} --- {} '.format(i, v))
+                if i == 0:print()
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_encode():
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        deviation = fxpy0022ent.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pycaesar
+        except:
+            import pycaesar
+        try:
+            deviation = int(deviation)
+            v = pycaesar.caesar(data, deviation)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_decode():
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        deviation = fxpy0022ent.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pycaesar
+        except:
+            import pycaesar
+        try:
+            deviation = int(deviation)
+            v = pycaesar.caesar(data, -deviation)
+            print(v)
         except:
             ftxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -2607,18 +2727,102 @@ compare_encode(salt, text, compare_str)
         with open(pycaesar.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
+    
+    Button(fxpy0022, text='[算法]',command=_caesar_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0022, text=' 这里为 凯撒密码 算法加解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0022, text='遍历',command=_caesar_enum,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0022, text='解密',command=_caesar_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0022, text='加密',command=_caesar_encode,width=5).pack(side=tkinter.RIGHT)
+    fxpy0022ent = Entry(fxpy0022, width=3)
+    fxpy0022ent.pack(side=tkinter.RIGHT)
+    fxpy0022ent.insert(0, '3')
+    Label(fxpy0022, text='偏移').pack(side=tkinter.RIGHT)
 
-    Button(fxpy0022, text='[算法]',command=_caesar_code,width=5).pack(side=tkinter.RIGHT)
-    Button(fxpy0022, text='遍历',command=_caesar_decode,width=5).pack(side=tkinter.RIGHT)
+    # ascii偏移解密
+    fxpy0060 = Frame(ff0)
+    fxpy0060.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0062 = Frame(fxpy0060)
+    fxpy0062.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _caesar_enum(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyascii_deviation
+        except:
+            import pyascii_deviation
+        try:
+            if len(data) > 1000:
+                print('注意，使用超过1000长度的的凯撒遍历处理时，请直接使用代码在 IDE 里面自行处理。')
+            for i in range(-20, 20, 1):
+                v = pyascii_deviation.ascii_deviation(data, i)
+                if i == 0:print()
+                print('{:>3} --- {} '.format(i, v))
+                if i == 0:print()
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_encode():
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        deviation = fxpy0062ent.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyascii_deviation
+        except:
+            import pyascii_deviation
+        try:
+            deviation = int(deviation)
+            v = pyascii_deviation.ascii_deviation(data, deviation)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_decode():
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        deviation = fxpy0062ent.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyascii_deviation
+        except:
+            import pyascii_deviation
+        try:
+            deviation = int(deviation)
+            v = pyascii_deviation.ascii_deviation(data, -deviation)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _caesar_code(*a):
+        try:
+            from . import pyascii_deviation
+        except:
+            import pyascii_deviation
+        ftxt.delete(0.,tkinter.END)
+        with open(pyascii_deviation.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0062, text='[算法]',command=_caesar_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0062, text=' 这里为 ascii偏移 算法加解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0062, text='遍历',command=_caesar_enum,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0062, text='解密',command=_caesar_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0062, text='加密',command=_caesar_encode,width=5).pack(side=tkinter.RIGHT)
+    fxpy0062ent = Entry(fxpy0062, width=3)
+    fxpy0062ent.pack(side=tkinter.RIGHT)
+    fxpy0062ent.insert(0, '3')
+    Label(fxpy0062, text='偏移').pack(side=tkinter.RIGHT)
+
 
     # 莫斯解密
     fxpy0030 = Frame(ff0)
     fxpy0030.pack(side=tkinter.TOP,fill=tkinter.X)
-    fxpy0031 = Frame(fxpy0030)
     fxpy0032 = Frame(fxpy0030)
-    fxpy0031.pack(side=tkinter.TOP,fill=tkinter.X)
     fxpy0032.pack(side=tkinter.TOP,fill=tkinter.X)
-    Label(fxpy0031, text='     以下算法纯 python 解密莫斯密码。').pack(fill=tkinter.X,expand=True)
     def _morse_encode(*a):
         data = ftxt.get(0.,tkinter.END).strip('\n')
         point = morse_point.get().strip()
@@ -2665,29 +2869,256 @@ compare_encode(salt, text, compare_str)
             data = f.read().strip('\n')
         print(data)
 
-    Button(fxpy0032, text='[算法]',command=_morse_code,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0032, text='[算法]',command=_morse_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0032, text=' 这里为 莫斯密码 算法加解密。').pack(side=tkinter.LEFT)
     Button(fxpy0032, text='解密',command=_morse_decode,width=5).pack(side=tkinter.RIGHT)
     Button(fxpy0032, text='加密',command=_morse_encode,width=5).pack(side=tkinter.RIGHT)
-    morse_space = Entry(fxpy0032, width=5)
+    morse_space = Entry(fxpy0032, width=2)
     morse_space.insert(0, ' ')
     morse_space.pack(side=tkinter.RIGHT)
     Label(fxpy0032, text='空格').pack(side=tkinter.RIGHT)
-    morse_line = Entry(fxpy0032, width=5)
+    morse_line = Entry(fxpy0032, width=2)
     morse_line.insert(0, '-')
     morse_line.pack(side=tkinter.RIGHT)
     Label(fxpy0032, text='线').pack(side=tkinter.RIGHT)
-    morse_point = Entry(fxpy0032, width=5)
+    morse_point = Entry(fxpy0032, width=2)
     morse_point.insert(0, '.')
     morse_point.pack(side=tkinter.RIGHT)
     Label(fxpy0032, text='点').pack(side=tkinter.RIGHT)
     
 
 
+    # rot 加解密
+    fxpy0040 = Frame(ff0)
+    fxpy0040.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0042 = Frame(fxpy0040)
+    fxpy0042.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _rots_encode_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrots
+        except:
+            import pyrots
+        try:
+            if cbxrots.get().strip() == 'rot5':  encdec = pyrots.rot5
+            if cbxrots.get().strip() == 'rot13': encdec = pyrots.rot13
+            if cbxrots.get().strip() == 'rot18': encdec = pyrots.rot18
+            if cbxrots.get().strip() == 'rot47': encdec = pyrots.rot47
+            v = encdec(data)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rots_encode_decode_all(*a):
+        data = ftxt.get(0.,tkinter.END).strip('\n')
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrots
+        except:
+            import pyrots
+        try:
+            v = pyrots.morse_enc(data, point, line, space)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _morse_code(*a):
+        try:
+            from . import pyrots
+        except:
+            import pyrots
+        ftxt.delete(0.,tkinter.END)
+        with open(pyrots.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0042, text='[算法]',command=_morse_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0042, text=' 这里为 rot* 算法加解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0042, text='加解密',command=_rots_encode_decode,width=5).pack(side=tkinter.RIGHT)
+    cbxrots = Combobox(fxpy0042,width=5,state='readonly')
+    cbxrots['values'] = ['rot5', 'rot13','rot18','rot47']
+    cbxrots.current(0)
+    cbxrots.pack(fill=tkinter.X,side=tkinter.RIGHT)
 
 
 
+    # 培根加解密
+    fxpy0050 = Frame(ff0)
+    fxpy0050.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0052 = Frame(fxpy0050)
+    fxpy0052.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _bacon_encode(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        a = bacon_a.get().strip()
+        b = bacon_b.get().strip()
+        ver = cbxbaconver.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pybacon
+        except:
+            import pybacon
+        try:
+            v = pybacon.bacon_enc(data, a, b, ver)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _bacon_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        a = bacon_a.get().strip()
+        b = bacon_b.get().strip()
+        ver = cbxbaconver.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pybacon
+        except:
+            import pybacon
+        try:
+            v = pybacon.bacon_dec(data, a, b, ver)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _bacon_code(*a):
+        try:
+            from . import pybacon
+        except:
+            import pybacon
+        ftxt.delete(0.,tkinter.END)
+        with open(pybacon.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0052, text='[算法]',command=_bacon_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0052, text=' 这里为 培根密码 算法加解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0052, text='解密',command=_bacon_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0052, text='加密',command=_bacon_encode,width=5).pack(side=tkinter.RIGHT)
+    bacon_b = Entry(fxpy0052, width=2)
+    bacon_b.insert(0, 'b')
+    bacon_b.pack(side=tkinter.RIGHT)
+    Label(fxpy0052, text='b').pack(side=tkinter.RIGHT)
+    bacon_a = Entry(fxpy0052, width=2)
+    bacon_a.insert(0, 'a')
+    bacon_a.pack(side=tkinter.RIGHT)
+    Label(fxpy0052, text='a').pack(side=tkinter.RIGHT)
+    cbxbaconver = Combobox(fxpy0052,width=3,state='readonly')
+    cbxbaconver['values'] = ['v1', 'v2']
+    cbxbaconver.current(0)
+    cbxbaconver.pack(fill=tkinter.X,side=tkinter.RIGHT)
 
 
+    # 栅栏加解密
+    fxpy0090 = Frame(ff0)
+    fxpy0090.pack(side=tkinter.TOP,fill=tkinter.X)
+    fxpy0092 = Frame(fxpy0090)
+    fxpy0092.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _rail_fence_encode(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        _num = rail_num.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrail_fence
+        except:
+            import pyrail_fence
+        try:
+            _num = int(_num)
+            v, _ = pyrail_fence.rail_fence_enc(data, _num)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rail_fence_decode(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        _num = rail_num.get().strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrail_fence
+        except:
+            import pyrail_fence
+        try:
+            _num = int(_num)
+            v = pyrail_fence.rail_fence_dec(data, _num)
+            print(v)
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rail_fence_enum(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrail_fence
+        except:
+            import pyrail_fence
+        try:
+            v = pyrail_fence.rail_fence_enum(data)
+            if not v:
+                print('cannot factorize. by len(string):{}'.format(len(data)))
+                return
+            for a,b,r in v:
+                print('{:>2} --- {}'.format(a, r))
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rail_fence_enummatrix(*a):
+        data = ftxt.get(0.,tkinter.END).strip()
+        ftxt.delete(0.,tkinter.END)
+        try:
+            from . import pyrail_fence
+        except:
+            import pyrail_fence
+        try:
+            v = pyrail_fence.rail_fence_enum(data, return_matrix=True)
+            if not v:
+                print('cannot factorize. by len(string):{}'.format(len(data)))
+                return
+            for a,b,i in v:
+                print('--- {}x{} ---'.format(a,b))
+                for j in i:
+                    r = ''
+                    for k in list(j):
+                        r += k + ' '
+                    print(r.strip())
+                    # re.sub("''")
+        except:
+            ftxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _rail_fence_code(*a):
+        try:
+            from . import pyrail_fence
+        except:
+            import pyrail_fence
+        ftxt.delete(0.,tkinter.END)
+        with open(pyrail_fence.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fxpy0092, text='[算法]',command=_rail_fence_code,width=5).pack(side=tkinter.LEFT)
+    Label(fxpy0092, text=' 这里为 栅栏密码 算法加解密。').pack(side=tkinter.LEFT)
+    Button(fxpy0092, text='遍历矩阵',command=_rail_fence_enummatrix,width=8).pack(side=tkinter.RIGHT)
+    Button(fxpy0092, text='遍历',command=_rail_fence_enum,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0092, text='解密',command=_rail_fence_decode,width=5).pack(side=tkinter.RIGHT)
+    Button(fxpy0092, text='加密',command=_rail_fence_encode,width=5).pack(side=tkinter.RIGHT)
+    rail_num = Entry(fxpy0092, width=2)
+    rail_num.insert(0, '2')
+    rail_num.pack(side=tkinter.RIGHT)
+    Label(fxpy0092, text='栅栏数').pack(side=tkinter.RIGHT)
 
 
 
