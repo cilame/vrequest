@@ -6,7 +6,7 @@ def caesar(t, n, keys='abcdefghijklmnopqrstuvwxyz'):
     for i in t:
         if i in s:
             r += s[(s.index(i) + n)% len(keys)]
-        if i in u:
+        elif i in u:
             r += u[(u.index(i) + n)% len(keys)]
         else:
             r += i
