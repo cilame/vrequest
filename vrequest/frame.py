@@ -3956,10 +3956,11 @@ compare_encode(salt, text, compare_str)
             d = finddesktop()
             s = SimpleDialog(fr,buttons=gifs)
             v = os.path.join(d, gifs[s.go()])
-            print('正在解析图片')
+            print('为了提高压缩率，gif图片格式增加了一些透明通道,')
+            print('所以一些图片出现白色脏点是正常的。')
+            print('正在解析图片...')
             fpictxt.update()
             phlist = pygif.mk_phlist(v)
-            fpictxt.delete(0.,tkinter.END)
             for i in phlist:
                 fpictxt.image_create(tkinter.END, image=i)
         except:

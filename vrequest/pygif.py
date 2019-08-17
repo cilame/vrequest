@@ -1,7 +1,8 @@
+# 该脚本切分gif无需依赖
 from tkinter import *
 
 def mk_phlist(filename):
-    global phlist
+    global phlist # 这个 global 是必须的，PhotoImage 加载多个图片的机制有点迷。
     phlist = []
     for i in range(100):
         try:
