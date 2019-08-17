@@ -3978,13 +3978,239 @@ compare_encode(salt, text, compare_str)
             data = f.read().strip('\n')
         print(data)
 
-    Label(fpic0012, text='图片相关的处理部分').pack(side=tkinter.TOP,padx=10)
+    pichelp1 = '''图片相关的处理部分'''
+    Label(fpic0012, text=pichelp1).pack(side=tkinter.TOP,padx=10)
     Button(fpic0012, text='[算法]',command=_pygif_code,width=5).pack(side=tkinter.LEFT)
     Label(fpic0012, text=' 这里为 gif 图片切分显示。').pack(side=tkinter.LEFT)
     Button(fpic0012, text='从桌面获取gif解析',command=_find_desktop_gif,width=16).pack(side=tkinter.RIGHT)
-    return fr
+
+    fpic0020 = Frame(fpic1)
+    fpic0020.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0022 = Frame(fpic0020)
+    fpic0022.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _pyscreenshot(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pyfinddesktopfile
+            from . import pyscreenshot
+        except:
+            import pyfinddesktopfile
+            import pyscreenshot
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            screenshot_rect  = pyscreenshot.screenshot_rect
+            dfile  = os.path.join(finddesktop(), fpic002ent.get().strip())
+            bitpng = screenshot_rect(root)
+            with open(dfile, 'wb') as f:
+                f.write(bitpng)
+                print('write in:{}'.format(dfile))
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pyscreenshot_code(*a):
+        try:
+            from . import pyscreenshot
+        except:
+            import pyscreenshot
+        fpictxt.delete(0.,tkinter.END)
+        with open(pyscreenshot.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fpic0022, text='[算法]',command=_pyscreenshot_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0022, text=' 截图并存放到桌面，文件名字：').pack(side=tkinter.LEFT)
+    fpic002ent = Entry(fpic0022,width=10)
+    fpic002ent.pack(side=tkinter.LEFT)
+    fpic002ent.insert(0,'_temp.png')
+    Button(fpic0022, text='截图存放至桌面',command=_pyscreenshot,width=16).pack(side=tkinter.RIGHT)
 
 
+    fpic0030 = Frame(fpic1)
+    fpic0030.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0032 = Frame(fpic0030)
+    fpic0032.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _pyscreenshot_video_local(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pyfinddesktopfile
+            from . import pyscreenshot
+        except:
+            import pyfinddesktopfile
+            import pyscreenshot
+        try:
+            finddesktop         = pyfinddesktopfile.finddesktop
+            screenshot_rect_int = pyscreenshot.screenshot_rect_int
+            dfile  = os.path.join(finddesktop(), fpic003ent.get().strip())
+            left,top,w,h = screenshot_rect_int(root)
+            fpic003ent1.delete(0,tkinter.END)
+            fpic003ent2.delete(0,tkinter.END)
+            fpic003ent3.delete(0,tkinter.END)
+            fpic003ent4.delete(0,tkinter.END)
+            fpic003ent1.insert(0,str(left))
+            fpic003ent2.insert(0,str(top))
+            fpic003ent3.insert(0,str(w))
+            fpic003ent4.insert(0,str(h))
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    fpic003toggle = True
+    def _pyscreenshot_video(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pyfinddesktopfile
+            from . import pyscreenshot
+        except:
+            import pyfinddesktopfile
+            import pyscreenshot
+        try:
+            finddesktop = pyfinddesktopfile.finddesktop
+            _start_video = pyscreenshot._start_video
+            _stop_video  = pyscreenshot._stop_video
+            nonlocal fpic003toggle
+            if fpic003toggle:
+                fpic003btn1['text'] = '录制图片[已开启]'
+                fpic003toggle = False
+                try:
+                    left = int(fpic003ent1.get().strip())
+                    top  = int(fpic003ent2.get().strip())
+                    w    = int(fpic003ent3.get().strip())
+                    h    = int(fpic003ent4.get().strip())
+                    rect = (left,top,w,h)
+                except:
+                    print('error left,top,w,h. use fill desktop.')
+                    rect = pyscreenshot.desktop_ltwh()
+                _start_video(finddesktop(), rect, fpic003ent.get().strip(), print)
+            elif not fpic003toggle:
+                fpic003btn1['text'] = '录制图片[已关闭]'
+                fpic003toggle = True
+                _stop_video()
+
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pyscreenshot_video_code(*a):
+        try:
+            from . import pyscreenshot
+        except:
+            import pyscreenshot
+        fpictxt.delete(0.,tkinter.END)
+        with open(pyscreenshot.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fpic0032, text='[算法]',command=_pyscreenshot_video_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0032, text=' 文件夹：').pack(side=tkinter.LEFT)
+    fpic003ent = Entry(fpic0032,width=6)
+    fpic003ent.pack(side=tkinter.LEFT)
+    fpic003ent.insert(0,'_temp')
+    Label(fpic0032, text='left').pack(side=tkinter.LEFT)
+    fpic003ent1 = Entry(fpic0032,width=4)
+    fpic003ent1.pack(side=tkinter.LEFT)
+    Label(fpic0032, text='top').pack(side=tkinter.LEFT)
+    fpic003ent2 = Entry(fpic0032,width=4)
+    fpic003ent2.pack(side=tkinter.LEFT)
+    Label(fpic0032, text='w').pack(side=tkinter.LEFT)
+    fpic003ent3 = Entry(fpic0032,width=4)
+    fpic003ent3.pack(side=tkinter.LEFT)
+    Label(fpic0032, text='h').pack(side=tkinter.LEFT)
+    fpic003ent4 = Entry(fpic0032,width=4)
+    fpic003ent4.pack(side=tkinter.LEFT)
+    fpic003btn1 = Button(fpic0032, text='录制图片[已关闭]',command=_pyscreenshot_video,width=16)
+    fpic003btn1.pack(side=tkinter.RIGHT)
+    fpic003btn2 = Button(fpic0032, text='定位',command=_pyscreenshot_video_local,width=5)
+    fpic003btn2.pack(side=tkinter.RIGHT)
+
+    fpic0040 = Frame(fpic1)
+    fpic0040.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0042 = Frame(fpic0040)
+    fpic0042.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _pypng2gif(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pyfinddesktopfile
+            from . import pypng2gif
+        except:
+            import pyfinddesktopfile
+            import pypng2gif
+        try:
+            finddesktop = pyfinddesktopfile.finddesktop
+            create_gif  = pypng2gif.create_gif
+            filedir  = os.path.join(finddesktop(), fpic003ent.get().strip())
+            filepathname = os.path.join(finddesktop(), fpic004ent1.get().strip())
+            step = int(fpic004ent2.get().strip())
+            try:
+                scale = float(fpic004ent3.get().strip())
+            except:
+                scale = None
+            try:
+                size_w = int(fpic004ent4.get().strip())
+                size_h = int(fpic004ent5.get().strip())
+                size = size_w, size_h
+            except:
+                size = None
+            print('step: ',step)
+            print('size: ',size)
+            print('scale:',scale)
+            realwh = create_gif(filepathname,filedir,size=size,scale=1/scale if scale else None,step=step)
+            print('write in:{}'.format(filepathname))
+            print('gif-> wh:{}'.format(realwh))
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pypng2gif_code(*a):
+        try:
+            from . import pypng2gif
+        except:
+            import pypng2gif
+        fpictxt.delete(0.,tkinter.END)
+        with open(pypng2gif.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    pichelp2 = '''    以下部分需要使用到第三方库 Pillow (py3)
+通过桌面录制的 png 文件生成 gif 文件
+鼓励前后部分多录制，因为下面合并 png 的步骤前
+可以直接删除部分 png 图片文件来调节 gif 文件前后溢出位。
+    step    : 间隔几张图片
+    scale   : 等比缩放（建议使用）
+    size_w  : 自定义尺寸（不建议使用）
+    size_h  : 自定义尺寸（不建议使用）
+（size，scale 最多只有一个有效，不编辑则使用默认）
+'''
+    Label(fpic0042, text=pichelp2).pack(side=tkinter.TOP)
+    Button(fpic0042, text='[算法]',command=_pypng2gif_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0042, text='生成文件名：').pack(side=tkinter.LEFT)
+    fpic004ent1 = Entry(fpic0042,width=8)
+    fpic004ent1.pack(side=tkinter.LEFT)
+    fpic004ent1.insert(0,'_temp.gif')
+    Label(fpic0042, text='step').pack(side=tkinter.LEFT)
+    fpic004ent2 = Entry(fpic0042,width=4)
+    fpic004ent2.pack(side=tkinter.LEFT)
+    fpic004ent2.insert(0,'2')
+    Label(fpic0042, text='scale').pack(side=tkinter.LEFT)
+    fpic004ent3 = Entry(fpic0042,width=4)
+    fpic004ent3.pack(side=tkinter.LEFT)
+    Label(fpic0042, text='size_w').pack(side=tkinter.LEFT)
+    fpic004ent4 = Entry(fpic0042,width=4)
+    fpic004ent4.pack(side=tkinter.LEFT)
+    Label(fpic0042, text='size_h').pack(side=tkinter.LEFT)
+    fpic004ent5 = Entry(fpic0042,width=4)
+    fpic004ent5.pack(side=tkinter.LEFT)
+    Button(fpic0042, text='生成 gif 到桌面',command=_pypng2gif,width=16).pack(side=tkinter.RIGHT)
+
+    return fr # 注意将该处放在该函数的最后部分
 
 
 
