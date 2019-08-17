@@ -3978,7 +3978,7 @@ compare_encode(salt, text, compare_str)
             data = f.read().strip('\n')
         print(data)
 
-    Label(fpic0012, text='使用以下文本框进行输出').pack(side=tkinter.TOP,padx=10)
+    Label(fpic0012, text='图片相关的处理部分').pack(side=tkinter.TOP,padx=10)
     Button(fpic0012, text='[算法]',command=_pygif_code,width=5).pack(side=tkinter.LEFT)
     Label(fpic0012, text=' 这里为 gif 图片切分显示。').pack(side=tkinter.LEFT)
     Button(fpic0012, text='从桌面获取gif解析',command=_find_desktop_gif,width=16).pack(side=tkinter.RIGHT)
