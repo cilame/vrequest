@@ -1240,6 +1240,8 @@ def encode_window(setting=None):
             bbtxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '杂项':
             fsstxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+        elif enb_names[name] == '图片相关':
+            fpictxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
 
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
@@ -3912,6 +3914,73 @@ compare_encode(salt, text, compare_str)
     bss0013_4.pack(side=tkinter.LEFT,padx=1)
     bss0013_3 = Button(fss0013,text='解密[算法]',command=_pypyzbar_code,width=9)
     bss0013_3.pack(side=tkinter.LEFT,padx=1)
+
+
+
+
+    _fpic = Frame(fr)
+    enb.add(_fpic, text='图片相关')
+    enb.pack()
+    enb_names[_fpic._name] = '图片相关'
+    fpic1 = Frame(_fpic)
+    fpic1.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+    fpic1_ = Frame(_fpic)
+    fpic1_.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
+    txttitlefpic = Frame(fpic1_)
+    txttitlefpic.pack(side=tkinter.TOP)
+    Label(txttitlefpic, text='使用以下文本框进行输出').pack(side=tkinter.LEFT,padx=10)
+    fpicentlimit2 = Entry(txttitlefpic, width=10)
+    fpicentlimit2.pack(side=tkinter.LEFT)
+    fpicentlimit2.insert(0,'10000')
+    fpictxt = Text(fpic1_,font=ft)
+    fpictxt.pack(padx=padx,pady=pady,fill=tkinter.BOTH,expand=True)
+
+    fpic0010 = Frame(fpic1)
+    fpic0010.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0012 = Frame(fpic0010)
+    fpic0012.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _find_desktop_gif(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pyfinddesktopfile
+            from . import pygif
+        except:
+            import pyfinddesktopfile
+            import pygif
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            findfile_desktop = pyfinddesktopfile.findfile_desktop
+            SimpleDialog     = pyfinddesktopfile.SimpleDialog
+            gifs = findfile_desktop('gif')
+            d = finddesktop()
+            s = SimpleDialog(fr,buttons=gifs)
+            v = os.path.join(d, gifs[s.go()])
+            print('正在解析图片')
+            fpictxt.update()
+            phlist = pygif.mk_phlist(v)
+            fpictxt.delete(0.,tkinter.END)
+            for i in phlist:
+                fpictxt.image_create(tkinter.END, image=i)
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pygif_code(*a):
+        try:
+            from . import pygif
+        except:
+            import pygif
+        fpictxt.delete(0.,tkinter.END)
+        with open(pygif.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Label(fpic0012, text='使用以下文本框进行输出').pack(side=tkinter.TOP,padx=10)
+    Button(fpic0012, text='[算法]',command=_pygif_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0012, text=' 这里为 gif 图片切分显示。').pack(side=tkinter.LEFT)
+    Button(fpic0012, text='从桌面获取gif解析',command=_find_desktop_gif,width=16).pack(side=tkinter.RIGHT)
     return fr
 
 
