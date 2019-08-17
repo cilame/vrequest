@@ -90,7 +90,7 @@ def findfile_desktop(end=''):
     dtop = os.path.join(os.path.expanduser("~"),'Desktop')
     r = []
     for i in os.listdir(dtop):
-        if i.endswith(end):
+        if i.lower().endswith(end.lower()):
             r.append(i)
     return r
 
