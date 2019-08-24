@@ -26,8 +26,8 @@ def create_gif(filepathname,filedir,size=None,scale=None,step=1):
         filepathname,
         save_all=True,
         append_images=q[1:],
-        loop=10000,
-        duration=1,
+        loop=0,
+        duration=120,
         comment=b"aaabb"
     )
     return q[0].size
