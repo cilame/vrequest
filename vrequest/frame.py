@@ -4210,7 +4210,205 @@ compare_encode(salt, text, compare_str)
     fpic004ent5.pack(side=tkinter.LEFT)
     Button(fpic0042, text='生成 gif 到桌面',command=_pypng2gif,width=16).pack(side=tkinter.RIGHT)
 
-    return fr # 注意将该处放在该函数的最后部分
+
+
+
+
+    # opencv
+    fpic0050 = Frame(fpic1)
+    fpic0050.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0052 = Frame(fpic0050)
+    fpic0052.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _opencv_canny(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pycv2
+            from . import pyfinddesktopfile
+        except:
+            import pycv2
+            import pyfinddesktopfile
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            findfile_desktop = pyfinddesktopfile.findfile_desktop
+            SimpleDialog     = pyfinddesktopfile.SimpleDialog
+            gifs = findfile_desktop()
+            gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            d = finddesktop()
+            s = SimpleDialog(fr,buttons=gifs)
+            v = os.path.join(d, gifs[s.go()])
+
+            left  = int(fpic005ent1.get().strip())
+            right = int(fpic005ent2.get().strip())
+            pycv2.canny(v, left, right)
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pycv2_code(*a):
+        try:
+            from . import pycv2
+        except:
+            import pycv2
+        fpictxt.delete(0.,tkinter.END)
+        with open(pycv2.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    pichelp1 = '''以下部分需要使用到第三方库 opencv [pip install opencv-python (py3)]'''
+    Label(fpic0052, text=pichelp1).pack(side=tkinter.TOP,padx=10)
+    Button(fpic0052, text='[算法]',command=_pycv2_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0052, text=' Canny').pack(side=tkinter.LEFT)
+    Button(fpic0052, text='Canny',command=_opencv_canny,width=16).pack(side=tkinter.RIGHT)
+    Label(fpic0052, text=' 后两项取值范围[0-255]，通常默认即可: left').pack(side=tkinter.LEFT)
+    fpic005ent1 = Entry(fpic0052,width=4)
+    fpic005ent1.pack(side=tkinter.LEFT)
+    fpic005ent1.insert(0,'70')
+    Label(fpic0052, text='right').pack(side=tkinter.LEFT)
+    fpic005ent2 = Entry(fpic0052,width=4)
+    fpic005ent2.pack(side=tkinter.LEFT)
+    fpic005ent2.insert(0,'140')
+
+    fpic0060 = Frame(fpic1)
+    fpic0060.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0062 = Frame(fpic0060)
+    fpic0062.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _opencv_laplacian(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pycv2
+            from . import pyfinddesktopfile
+        except:
+            import pycv2
+            import pyfinddesktopfile
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            findfile_desktop = pyfinddesktopfile.findfile_desktop
+            SimpleDialog     = pyfinddesktopfile.SimpleDialog
+            gifs = findfile_desktop()
+            gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            d = finddesktop()
+            s = SimpleDialog(fr,buttons=gifs)
+            v = os.path.join(d, gifs[s.go()])
+
+            pycv2.laplacian(v)
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pycv2_code(*a):
+        try:
+            from . import pycv2
+        except:
+            import pycv2
+        fpictxt.delete(0.,tkinter.END)
+        with open(pycv2.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fpic0062, text='[算法]',command=_pycv2_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0062, text=' Laplacian').pack(side=tkinter.LEFT)
+    Button(fpic0062, text='Laplacian',command=_opencv_laplacian,width=16).pack(side=tkinter.RIGHT)
+
+    fpic0070 = Frame(fpic1)
+    fpic0070.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0072 = Frame(fpic0070)
+    fpic0072.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _opencv_sobel(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pycv2
+            from . import pyfinddesktopfile
+        except:
+            import pycv2
+            import pyfinddesktopfile
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            findfile_desktop = pyfinddesktopfile.findfile_desktop
+            SimpleDialog     = pyfinddesktopfile.SimpleDialog
+            gifs = findfile_desktop()
+            gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            d = finddesktop()
+            s = SimpleDialog(fr,buttons=gifs)
+            v = os.path.join(d, gifs[s.go()])
+
+            pycv2.sobel(v)
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pycv2_code(*a):
+        try:
+            from . import pycv2
+        except:
+            import pycv2
+        fpictxt.delete(0.,tkinter.END)
+        with open(pycv2.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fpic0072, text='[算法]',command=_pycv2_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0072, text=' Sobel').pack(side=tkinter.LEFT)
+    Button(fpic0072, text='Sobel',command=_opencv_sobel,width=16).pack(side=tkinter.RIGHT)
+
+    fpic0080 = Frame(fpic1)
+    fpic0080.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0082 = Frame(fpic0080)
+    fpic0082.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _opencv_matchtemplate(*a):
+        data = fpictxt.get(0.,tkinter.END).strip('\n')
+        fpictxt.delete(0.,tkinter.END)
+        try:
+            from . import pycv2
+            from . import pyfinddesktopfile
+            from . import pyscreenshot
+        except:
+            import pycv2
+            import pyfinddesktopfile
+            import pyscreenshot
+        try:
+            finddesktop      = pyfinddesktopfile.finddesktop
+            findfile_desktop = pyfinddesktopfile.findfile_desktop
+            SimpleDialog     = pyfinddesktopfile.SimpleDialog
+            gifs = findfile_desktop()
+            gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            d = finddesktop()
+            s = SimpleDialog(fr,buttons=gifs)
+            v = os.path.join(d, gifs[s.go()])
+
+            t = fpic008ent1.get().strip()
+            f = tempfile.mkdtemp()
+            t = os.path.join(d, t) if t else os.path.join(f, '_desktop_png.png')
+            with open(t, 'wb') as f: 
+                f.write(pyscreenshot.screenshot())
+            v = pycv2.findmatchtemplate(v, t)
+            print('top,left,w,h -> {}'.format(v))
+        except:
+            fpictxt.delete(0.,tkinter.END)
+            print(traceback.format_exc())
+            print('error decoding!!! check input data.')
+
+    def _pycv2_code(*a):
+        try:
+            from . import pycv2
+        except:
+            import pycv2
+        fpictxt.delete(0.,tkinter.END)
+        with open(pycv2.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    Button(fpic0082, text='[算法]',command=_pycv2_code,width=5).pack(side=tkinter.LEFT)
+    Label(fpic0082, text=' MatchTemplate').pack(side=tkinter.LEFT)
+    Button(fpic0082, text='MatchTemplate',command=_opencv_matchtemplate,width=16).pack(side=tkinter.RIGHT)
+    Label(fpic0082, text=' 背景图片，不填则默认桌面').pack(side=tkinter.LEFT)
+    fpic008ent1 = Entry(fpic0082,width=10)
+    fpic008ent1.pack(side=tkinter.LEFT)
+    return fr # 开发时注意将该处放在该函数的最后部分
 
 
 

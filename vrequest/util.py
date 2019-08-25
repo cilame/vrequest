@@ -148,6 +148,8 @@ except:
 
 import re
 import json
+from urllib.parse import unquote, quote
+
 import requests
 from lxml import etree
 requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
@@ -174,12 +176,7 @@ def get_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers():
-        def quote_val(url):
-            import urllib
-            url = urllib.parse.unquote(url)
-            for i in re.findall('=([^=&]+)',url):
-                url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-            return url
+        def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -210,6 +207,8 @@ except:
 
 import re
 import json
+from urllib.parse import unquote, quote
+
 import requests
 from lxml import etree
 requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
@@ -236,12 +235,7 @@ def post_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers_body():
-        def quote_val(url):
-            import urllib
-            url = urllib.parse.unquote(url)
-            for i in re.findall('=([^=&]+)',url):
-                url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-            return url
+        def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -409,11 +403,7 @@ class VSpider(scrapy.Spider):
 
     def start_requests(self):
         def mk_url_headers():
-            def quote_val(url):
-                url = unquote(url)
-                for i in re.findall('=([^=&]+)',url):
-                    url = url.replace(i,'{}'.format(quote(i)))
-                return url
+            def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
             $c_url
             url = quote_val(url)
             $c_headers
@@ -454,11 +444,7 @@ class VSpider(scrapy.Spider):
 
     def start_requests(self):
         def mk_url_headers_body():
-            def quote_val(url):
-                url = unquote(url)
-                for i in re.findall('=([^=&]+)',url):
-                    url = url.replace(i,'{}'.format(quote(i)))
-                return url
+            def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
             $c_url
             url = quote_val(url)
             $c_headers
