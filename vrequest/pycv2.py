@@ -7,6 +7,7 @@ def canny(filepathname, left=70, right=140):
     s = cv2.cvtColor(v, cv2.COLOR_BGR2GRAY)
     s = cv2.Canny(s, left, right)
     cv2.imshow('nier',s)
+    return s
 
     # 圈出最小方矩形框，这里Canny算法后都是白色线条，所以取色范围 127-255 即可。
     # ret, binary = cv2.threshold(s,127,255,cv2.THRESH_BINARY) 
@@ -18,8 +19,8 @@ def canny(filepathname, left=70, right=140):
     # # cv2.drawContours(s,contours,-1,(0,0,255),3) # 画所有框
     # cv2.imshow('nier2',v)
 
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
 
 
 def laplacian(filepathname):
@@ -28,6 +29,7 @@ def laplacian(filepathname):
     s = cv2.Laplacian(s, cv2.CV_16S, ksize=3)
     s = cv2.convertScaleAbs(s)
     cv2.imshow('nier',s)
+    return s
 
     # ret, binary = cv2.threshold(s,40,255,cv2.THRESH_BINARY)
     # contours, hierarchy = cv2.findContours(binary,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -37,8 +39,8 @@ def laplacian(filepathname):
     #         cv2.rectangle(v,(x,y),(x+w,y+h),(155,155,0),1)
     # cv2.imshow('nier2',v)
 
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
 
 
 def sobel(filepathname):
@@ -48,6 +50,7 @@ def sobel(filepathname):
     s = cv2.convertScaleAbs(cv2.subtract(x,y))
     s = cv2.blur(s,(9,9))
     cv2.imshow('nier',s)
+    return s
 
     # ret, binary = cv2.threshold(s,40,255,cv2.THRESH_BINARY)
     # contours, hierarchy = cv2.findContours(binary,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -57,8 +60,8 @@ def sobel(filepathname):
     #         cv2.rectangle(v,(x,y),(x+w,y+h),(155,155,0),1)
     # cv2.imshow('nier2',v)
 
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
 
 
 def findmatchtemplate(filepathname, befindimage):
@@ -71,6 +74,6 @@ def findmatchtemplate(filepathname, befindimage):
     bot_right = top_left[0]+h, top_left[1]+w
     img3 = cv2.rectangle(img2, top_left, bot_right, (155,155,0), 1)
     cv2.imshow('nier', img3)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
     return top_left[0], top_left[1], w, h

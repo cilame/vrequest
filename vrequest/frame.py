@@ -4240,7 +4240,8 @@ compare_encode(salt, text, compare_str)
 
             left  = int(fpic005ent1.get().strip())
             right = int(fpic005ent2.get().strip())
-            pycv2.canny(v, left, right)
+            v = pycv2.canny(v, left, right)
+            print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -4291,8 +4292,8 @@ compare_encode(salt, text, compare_str)
             d = finddesktop()
             s = SimpleDialog(fr,buttons=gifs)
             v = os.path.join(d, gifs[s.go()])
-
-            pycv2.laplacian(v)
+            v = pycv2.laplacian(v)
+            print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -4334,8 +4335,8 @@ compare_encode(salt, text, compare_str)
             d = finddesktop()
             s = SimpleDialog(fr,buttons=gifs)
             v = os.path.join(d, gifs[s.go()])
-
-            pycv2.sobel(v)
+            v = pycv2.sobel(v)
+            print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
