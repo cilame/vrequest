@@ -37,7 +37,7 @@ setup(
     entry_points={
         'gui_scripts': [
             'vv = vrequest.main:execute',
-            'vreqeust = vrequest.main:execute',
+            'vrequest = vrequest.main:execute',
             'ee = vrequest.main:algo',
         ]
     },
