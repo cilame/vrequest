@@ -2596,6 +2596,33 @@ if __name__ == '__main__':
     Button(f202, text='密码/数据编码格式',command=_swich_rc4_encd).pack(side=tkinter.RIGHT)
 
 
+
+
+
+
+
+    fevpkdf0 = Frame(ff0)
+    fevpkdf0.pack(side=tkinter.TOP,fill=tkinter.X)
+    fevpkdf2 = Frame(fevpkdf0)
+    fevpkdf2.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _evpkdf_code(*a):
+        try:
+            from . import pyevpkdf
+        except:
+            import pyevpkdf
+        ftxt.delete(0.,tkinter.END)
+        with open(pyevpkdf.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    Button(fevpkdf2, text='[算法]',command=_evpkdf_code,width=5).pack(side=tkinter.LEFT)
+    Label(fevpkdf2, text=' 这里为以 U2FsdGVkX1 开头的数据的加解密代码解释，详细请看算法。').pack(side=tkinter.LEFT)
+
+
+
+
+
+
+
     # jsfuck 的解密
     fxpy0010 = Frame(ff0)
     fxpy0010.pack(side=tkinter.TOP,fill=tkinter.X)
@@ -4298,14 +4325,15 @@ if __name__ == '__main__':
             SimpleDialog     = pyfinddesktopfile.SimpleDialog
             gifs = findfile_desktop()
             gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            if not gifs: return
             d = finddesktop()
-            s = SimpleDialog(fr,buttons=gifs)
-            v = os.path.join(d, gifs[s.go()])
-
-            left  = int(fpic005ent1.get().strip())
-            right = int(fpic005ent2.get().strip())
-            v = pycv2.canny(v, left, right)
-            print('shape[h,w] -> {}'.format(v.shape))
+            s = SimpleDialog(fr,buttons=gifs,default=0,cancel=-1,).go()
+            if s != -1:
+                v = os.path.join(d, gifs[s])
+                left  = int(fpic005ent1.get().strip())
+                right = int(fpic005ent2.get().strip())
+                v = pycv2.canny(v, left, right)
+                print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -4353,11 +4381,13 @@ if __name__ == '__main__':
             SimpleDialog     = pyfinddesktopfile.SimpleDialog
             gifs = findfile_desktop()
             gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            if not gifs: return
             d = finddesktop()
-            s = SimpleDialog(fr,buttons=gifs)
-            v = os.path.join(d, gifs[s.go()])
-            v = pycv2.laplacian(v)
-            print('shape[h,w] -> {}'.format(v.shape))
+            s = SimpleDialog(fr,buttons=gifs,default=0,cancel=-1,).go()
+            if s != -1:
+                v = os.path.join(d, gifs[s])
+                v = pycv2.laplacian(v)
+                print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -4396,11 +4426,13 @@ if __name__ == '__main__':
             SimpleDialog     = pyfinddesktopfile.SimpleDialog
             gifs = findfile_desktop()
             gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
+            if not gifs: return
             d = finddesktop()
-            s = SimpleDialog(fr,buttons=gifs)
-            v = os.path.join(d, gifs[s.go()])
-            v = pycv2.sobel(v)
-            print('shape[h,w] -> {}'.format(v.shape))
+            s = SimpleDialog(fr,buttons=gifs,default=0,cancel=-1,).go()
+            if s != -1:
+                v = os.path.join(d, gifs[s])
+                v = pycv2.sobel(v)
+                print('shape[h,w] -> {}'.format(v.shape))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
@@ -4442,16 +4474,19 @@ if __name__ == '__main__':
             gifs = findfile_desktop()
             gifs = [i for i in gifs if any([i.lower().endswith(j) for j in pycv2.canread])]
             d = finddesktop()
-            s = SimpleDialog(fr,buttons=gifs)
-            v = os.path.join(d, gifs[s.go()])
-
-            t = fpic008ent1.get().strip()
-            f = tempfile.mkdtemp()
-            t = os.path.join(d, t) if t else os.path.join(f, '_desktop_png.png')
-            with open(t, 'wb') as f: 
-                f.write(pyscreenshot.screenshot())
-            v = pycv2.findmatchtemplate(v, t)
-            print('top,left,w,h -> {}'.format(v))
+            s = SimpleDialog(fr,buttons=gifs,default=0,cancel=-1,).go()
+            if s != -1:
+                v = os.path.join(d, gifs[s])
+                t = fpic008ent1.get().strip()
+                f = tempfile.mkdtemp()
+                if t and os.path.isfile(os.path.join(d, t)):
+                    t = os.path.join(d, t)
+                else:
+                    t = os.path.join(f, '_desktop_png.png')
+                    with open(t, 'wb') as f: 
+                        f.write(pyscreenshot.screenshot())
+                v = pycv2.findmatchtemplate(v, t)
+                print('top,left,w,h -> {}'.format(v))
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
