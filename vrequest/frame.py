@@ -1303,6 +1303,7 @@ def encode_window(setting=None):
 import hmac
 import hashlib
 
+# md2 算法
 def _hash(message, printdebug=False):
     assert isinstance(message, list)
     msg = list(message)
