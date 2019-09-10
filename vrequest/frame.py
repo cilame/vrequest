@@ -3391,7 +3391,7 @@ if __name__ == '__main__':
             以 U2FsdGVkX1 开头的加密数据相关
     该种类的加密方式为 cryptojs 的默认加密方式，在某种程度上只需要密码即可解密
     但是实际上使用的却是 CBC 模式（该模式需要设置偏移 iv参数）。
-    并且每次加密都是不同的密文数据，但是却用密码都能解密出相同的原始数据。
+    并且每次加密都能加密出不同的密文数据，但是却用密码都能解密出相同的原始数据，
     目前这里暂时只提供了加解密算法代码。
     加密算法伪代码：
         salt        <= os.urandom(8)
@@ -3399,10 +3399,10 @@ if __name__ == '__main__':
         encodedata  <= encrypt(key, iv, CBC, data)  # 通常为 cbc/pkcs7
         result      <= base64('Salted__' + salt + encodedata)
         1) 生成随机盐
-        2) 通过真实key算出固定加密key,iv
+        2) 通过真实 key 与盐算出固定加密用的 key,iv
         3) 使用加密算法加密数据
-        4) 将'Salted__'、盐和加密数据打包进行base64就是加密数据，
-            因为标识头都是'Salted__'，所以一般都是以 U2FsdGVkX1 开头的加密数据
+        4) 将标识头（Salted__）、盐和加密数据打包并进行 base64 就是加密数据，
+            因为标识头都是一样的，所以一般都是以 U2FsdGVkX1 开头的加密数据
 '''.rstrip('\n')
     fevpkdf0 = Frame(ff1)
     fevpkdf0.pack(side=tkinter.TOP,fill=tkinter.X)
