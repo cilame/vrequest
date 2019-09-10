@@ -11,7 +11,7 @@ import traceback
 def dprint(*a):
     # debug print
     from .frame import __org_stdout__
-    __org_stdout__.write(str(a)+'\n')
+    __org_stdout__.write(' '.join([str(i) for i in a])+'\n')
     __org_stdout__.flush()
 
 
@@ -41,7 +41,7 @@ def format_headers_code(headers):
             for i in sorted(p):
                 q += '        "'+i.replace('"','\\"')+'; "\n'
             q += '    )'
-            ret = re.sub(r'("{}": )([^\n]+)(,?\n)'.format(name),r'\1$cookie\3',ret,re.I)
+            ret = re.sub(r'("{}": )([^\n]+)(\n)'.format(name),r'\1$cookie,\3',ret,re.I)
             ret = ret.replace('$cookie',q)
         if name.lower() == 'accept-encoding':
             ret = re.sub(r'{}([^\n]+)'.format(name),r'{}\1 # auto delete br encoding. cos requests and scrapy can not decode it.'.format(name), ret)

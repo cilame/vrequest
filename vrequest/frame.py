@@ -2602,27 +2602,6 @@ if __name__ == '__main__':
 
 
 
-    fevpkdf0 = Frame(ff0)
-    fevpkdf0.pack(side=tkinter.TOP,fill=tkinter.X)
-    fevpkdf2 = Frame(fevpkdf0)
-    fevpkdf2.pack(side=tkinter.TOP,fill=tkinter.X)
-    def _evpkdf_code(*a):
-        try:
-            from . import pyevpkdf
-        except:
-            import pyevpkdf
-        ftxt.delete(0.,tkinter.END)
-        with open(pyevpkdf.__file__, encoding='utf-8') as f:
-            data = f.read().strip('\n')
-        print(data)
-    Button(fevpkdf2, text='[算法]',command=_evpkdf_code,width=5).pack(side=tkinter.LEFT)
-    Label(fevpkdf2, text=' 这里为以 U2FsdGVkX1 开头的数据的加解密代码解释，详细请看算法。').pack(side=tkinter.LEFT)
-
-
-
-
-
-
 
     # jsfuck 的解密
     fxpy0010 = Frame(ff0)
@@ -3408,6 +3387,40 @@ if __name__ == '__main__':
     Button(f9002, text='加密',command=_pymultialgo_encode,width=5).pack(side=tkinter.RIGHT)
 
 
+    fevpkdflab = '''
+            以 U2FsdGVkX1 开头的加密数据相关
+    该种类的加密方式为 cryptojs 的默认加密方式，在某种程度上只需要密码即可解密
+    但是实际上使用的却是 CBC 模式（该模式需要设置偏移 iv参数）。
+    并且每次加密都是不同的密文数据，但是却用密码都能解密出相同的原始数据。
+    目前这里暂时只提供了加解密算法代码。
+    加密算法伪代码：
+        salt        <= os.urandom(8)
+        key,iv      <= EvpKDF(realkey, salt)        # 这里有简化，详细请看代码
+        encodedata  <= encrypt(key, iv, CBC, data)  # 通常为 cbc/pkcs7
+        result      <= base64('Salted__' + salt + encodedata)
+        1) 生成随机盐
+        2) 通过真实key算出固定加密key,iv
+        3) 使用加密算法加密数据
+        4) 将'Salted__'、盐和加密数据打包进行base64就是加密数据，
+            因为标识头都是'Salted__'，所以一般都是以 U2FsdGVkX1 开头的加密数据
+'''.rstrip('\n')
+    fevpkdf0 = Frame(ff1)
+    fevpkdf0.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fevpkdf0, text=fevpkdflab,font=ft).pack(fill=tkinter.X,expand=True)
+    fevpkdf1 = Frame(ff1)
+    fevpkdf1.pack(side=tkinter.TOP,fill=tkinter.X)
+    fevpkdf2 = Frame(fevpkdf1)
+    fevpkdf2.pack(side=tkinter.TOP,fill=tkinter.X)
+    def _evpkdf_code(*a):
+        try:
+            from . import pyevpkdf
+        except:
+            import pyevpkdf
+        ftxt.delete(0.,tkinter.END)
+        with open(pyevpkdf.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+    Button(fevpkdf2, text='[算法]',command=_evpkdf_code,width=5).pack(side=tkinter.RIGHT)
 
 
 
