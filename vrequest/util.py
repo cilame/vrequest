@@ -1,9 +1,13 @@
+try:
+    from lxml import etree
+except:
+    pass
+
 import re
 import json
 import urllib.parse as ps
 import inspect
 import builtins
-from lxml import etree
 import tkinter.messagebox
 import traceback
 
@@ -625,6 +629,163 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
     )
     _format = _format if '$plus' not in _format else _format.replace('$plus',pas)
     return _format.strip()
+
+
+
+
+
+def format_req_urllib(method,c_url,c_headers,c_body):
+    _format_get = '''
+try:
+    # 处理 sublime 执行时输出乱码
+    import io
+    import sys
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
+except:
+    pass
+
+import re, json
+from urllib import request, parse
+from urllib.parse import quote, unquote, urlencode
+
+def mk_url_headers():
+    def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
+    $c_url
+    url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
+    $c_headers
+    return url,headers
+
+method = 'GET'
+url, headers = mk_url_headers()
+body = None
+r = request.Request(url, method=method)
+for k, v in headers.items():
+    r.add_header(k, v)
+s = request.urlopen(r)
+
+content = s.read()
+
+$plus
+#
+'''
+    _format_post = '''
+try:
+    # 处理 sublime 执行时输出乱码
+    import io
+    import sys
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
+    sys.stdout._CHUNK_SIZE = 1
+except:
+    pass
+
+import re, json
+from urllib import request, parse
+from urllib.parse import quote, unquote, urlencode
+
+def mk_url_headers_body():
+    def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
+    $c_url
+    url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
+    $c_headers
+    $c_body
+    return url,headers,body
+
+method = 'POST'
+url, headers, body = mk_url_headers_body()
+JSONString = False #，这里通常为False，极少情况需要data为string情况下的json数据，如需要，这里设置为True
+body = json.dumps(body).encode('utf-8') if JSONString else urlencode(body).encode('utf-8')
+r = request.Request(url, method=method)
+for k, v in headers.items():
+    r.add_header(k, v)
+s = request.urlopen(r, data=body)
+
+content = s.read()
+
+$plus
+#
+'''
+
+    func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
+    c_url       = func(c_url).strip()
+    c_headers   = func(c_headers).strip()
+    c_body      = func(c_body).strip()
+    if method == 'GET':
+        _format = _format_get
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
+    elif method == 'POST':
+        _format = _format_post
+        _format = _format.replace('$c_url',c_url)
+        _format = _format.replace('$c_headers',c_headers)
+        _format = _format.replace('$c_body',c_body)
+    return _format.strip()
+
+def del_plus_urllib(string):
+    pas = r'''
+print('\n')
+print('生成 urllib 代码的功能本质就是用来解决无依赖的快速请求，用于简单的请求处理。')
+print('该请求功能用于简单的请求代码生成，暂无解码能力，所以注意返回的编码问题。')
+print('\n')
+def header_fprint(headers_dict):
+    maxklen = len(repr(max(headers_dict,key=len)))
+    for keystring in sorted(headers_dict):
+        valuestring = headers_dict[keystring]
+        if 'cookie' in keystring.lower():
+            vlist = sorted(valuestring.split('; '))
+            for idx,value in enumerate(vlist):
+                lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
+                          ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
+                if idx == len(vlist)-1: lstring += '),'
+                print(lstring)
+        else:
+            print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
+
+# 请求信息
+print('===========')
+print('| request |')
+print('===========')
+print('request method: {}'.format(method))
+print('request url: {}'.format(url))
+print('------------------- request headers ---------------------')
+reqhead = headers
+header_fprint(reqhead)
+print('------------------- request body ------------------------')
+print(body)
+print('\n'*2)
+
+# 返回信息
+print('============')
+print('| response |')
+print('============')
+print('status:',s.status)
+print('response length: {}'.format(len(content)))
+print('------------------- response headers --------------------')
+reshead = dict(s.getheaders())
+header_fprint(reshead)
+print('------------------- response content[:1000] ----------------')
+print('请注意，这里如果出现乱码，则有可能是因为编码问题导致，因为 urllib 请求后并没有自动处理编码。')
+print('后续有空再看看这里怎么解决。尽量无依赖实现一个请求并解码数据的功能，方便脚本的传阅性。')
+print('如果想要无编码的数据，可以尝试删掉 headers 中的 Accept-Encoding 这个key。')
+print('response content[:1000]:\n {}'.format(content[:1000]))
+print('=========================================================')
+print('\n'*2)'''
+    return string.replace('$plus',pas).strip()
+
+def format_request_urllib(method,c_url,c_headers,c_body):
+    return del_plus_urllib(format_req_urllib(method,c_url,c_headers,c_body))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,4 +1,7 @@
-from lxml import etree
+try:
+    from lxml import etree
+except:
+    pass
 
 import re
 import os
@@ -31,6 +34,7 @@ from .frame import (
     __org_stdout__,
 )
 from .util import (
+    dprint,
     format_url,
     format_url_show,
     format_url_code,
@@ -39,6 +43,7 @@ from .util import (
     format_body_str,
     format_body_code,
     format_request,
+    format_request_urllib,
     format_response,
     format_scrapy_request,
     format_scrapy_response,
@@ -313,6 +318,25 @@ def create_test_code(*a):
         setting = {}
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
+
+
+
+def create_test_code_urllib(*a):
+    _select = nb.select()
+    name    = nb_names[_select]['name']
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'request':
+        method,c_url,c_headers,c_body = get_request_config(setting)
+        code_string = format_request_urllib(method,c_url,c_headers,c_body)
+        setting = {}
+        setting['code_string'] = code_string
+        create_new_codetab(setting,reqname=name)
+    if setting.get('type') == 'response':
+        (method,c_url,c_headers,c_body),c_set,c_content,tps = get_response_config(setting)
+        code_string = format_request_urllib(method,c_url,c_headers,c_body)
+        setting['code_string'] = code_string
+        create_new_codetab(setting,reqname=name)
+
 
 
 # 生成 scrapy 代码的函数 # 暂时还在开发中

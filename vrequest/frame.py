@@ -1,5 +1,7 @@
-
-import requests
+try:
+    import requests
+except:
+    pass
 
 import io
 import os
@@ -775,15 +777,17 @@ vrequest：
                       的情况，这时候只要将传入的一行数据前后加上英文的双引号
                       程序会自动不对该 dict 进行编码，POST 请求时请留意该功能
 *(Alt + s) 生成 scrapy 请求代码，格式化结构同上
+(Alt + u)  生成 urllib 请求代码，格式化结构同上
 
 响应窗口快捷键：
-*(Alt + r) 打开一个空的响应标签(不常用)
+*(Alt + r) 打开一个空的响应标签(不建议在响应窗口使用)
 (Alt + f) 智能解析列表路径，解析后使用 xpath 解析功能会自动弹出解析选择窗
 (Alt + x) <代码过程> 使用 xpath 解析
 (Alt + z) <代码过程> 智能提取 json 数据
 (Alt + d) <代码过程> 获取纯文字内容
 (Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码 [在js代码窗同样适用]
 (Alt + s) 生成 scrapy 请求代码，有<代码过程>则生成代码中包含过程代码
+(Alt + u) 生成 urllib 请求代码，不包含过程(解析过程必依赖lxml,与无依赖理念冲突)
 (Esc)     开启/关闭 response 解析窗口
 
 代码窗口快捷键：
