@@ -113,6 +113,16 @@ def execute():
         algo()
         return
 
+    def preimport():
+        import time
+        time.sleep(.5) # 需要花点时间导包的部分，用别的线程进行预加载，增加工具顺滑度
+        try: import js2py
+        except: pass
+        try: import execjs
+        except: pass
+    import threading
+    threading.Thread(target=preimport).start()
+
     root.title('vrequest [{}]'.format(__version__))
     ico = os.path.join(os.path.split(__file__)[0],'ico.ico')
     root.iconbitmap(ico)

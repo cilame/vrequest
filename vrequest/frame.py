@@ -1,7 +1,7 @@
 try:
     import requests
 except:
-    pass
+    requests = None
 
 import io
 import os
@@ -70,6 +70,9 @@ def request_window(setting=None):
         from .tab import create_scrapy_code
         create_scrapy_code()
 
+    def urllib_code(*a):
+        from .tab import create_test_code_urllib
+        create_test_code_urllib()
 
     def send_req(*a):
         from .tab import send_request
@@ -91,6 +94,8 @@ def request_window(setting=None):
     btn6.pack(side=tkinter.LEFT)
     btn7 = Button(temp_fr0, text='生成[scrapy]代码[Alt+s]', command=scrapy_code)
     btn7.pack(side=tkinter.LEFT)
+    btn8 = Button(temp_fr0, text='生成[urllib]代码[Alt+u]', command=urllib_code)
+    btn8.pack(side=tkinter.LEFT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -246,6 +251,10 @@ eg.:
         from .tab import create_scrapy_code
         create_scrapy_code()
 
+    def urllib_code(*a):
+        from .tab import create_test_code_urllib
+        create_test_code_urllib()
+
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
@@ -270,6 +279,8 @@ eg.:
     btn6.pack(side=tkinter.RIGHT)
     btn7 = Button(temp_fr0, text='生成[scrapy]代码', command=scrapy_code)
     btn7.pack(side=tkinter.RIGHT)
+    btn8 = Button(temp_fr0, text='生成[urllib]代码', command=urllib_code)
+    btn8.pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -364,15 +375,43 @@ eg.:
         headers = setting.get('headers')
         body    = setting.get('body')
         try:
-            if method == 'GET':
-                s = requests.get(quote_val(ps.unquote(url)),headers=headers,verify=False)
-                tp,content = format_content(s.content)
-                insert_txt(tx1, content)
-            elif method == 'POST':
-                # 这里的post 里面的body 暂时还没有进行处理
-                s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body,verify=False)
-                tp,content = format_content(s.content)
-                insert_txt(tx1, content)
+            if requests is not None:
+                if method == 'GET':
+                    s = requests.get(quote_val(ps.unquote(url)),headers=headers,verify=False)
+                    tp,content = format_content(s.content)
+                    insert_txt(tx1, content)
+                elif method == 'POST':
+                    # 这里的post 里面的body 暂时还没有进行处理
+                    s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body,verify=False)
+                    tp,content = format_content(s.content)
+                    insert_txt(tx1, content)
+            else:
+                # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
+                from urllib import request, parse
+                from urllib.parse import quote, unquote, urlencode
+                if method == 'GET':
+                    url = quote_val(ps.unquote(url))
+                    r = request.Request(url, method=method)
+                    for k, v in headers.items(): 
+                        # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
+                        # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
+                        if k.lower() == 'accept-encoding': continue
+                        r.add_header(k, v)
+                    s = request.urlopen(r)
+                    tp, content = format_content(s.read())
+                    insert_txt(tx1, content)
+                elif method == 'POST':
+                    url = quote_val(ps.unquote(url))
+                    body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
+                    r = request.Request(url, method=method)
+                    for k, v in headers.items(): 
+                        # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
+                        # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
+                        if k.lower() == 'accept-encoding': continue
+                        r.add_header(k, v)
+                    s = request.urlopen(r, data=body)
+                    tp, content = format_content(s.read())
+                    insert_txt(tx1, content)
         except:
             einfo = traceback.format_exc()
             tkinter.messagebox.showinfo('Error',einfo)
@@ -674,7 +713,7 @@ def scrapy_code_window(setting=None):
     et.insert(0,dtopfile)
     bt2 = Button(temp_fr0,text='拷贝项目文件到桌面',command=save_project_in_desktop)
     bt2.pack(side=tkinter.LEFT)
-    btn1 = Button(temp_fr0, text='执行本地代码 [Alt+w]', command=_execute_scrapy_code)
+    btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
     hva = tkinter.IntVar()
     hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)

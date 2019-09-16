@@ -46,7 +46,7 @@ user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 # 默认的数据结构
 config = {
-    'siz':'800x770+200+200',
+    'siz':'700x800+100+100',
     'set':{},
     'focus':None,
 }

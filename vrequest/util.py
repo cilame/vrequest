@@ -427,6 +427,24 @@ class VSpider(scrapy.Spider):
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
 
         $plus
+
+
+
+# 配置在单脚本情况也能爬取的脚本的备选方案，使用项目启动则下面的代码无效
+if __name__ == '__main__':
+    import time
+    from scrapy.crawler import CrawlerProcess
+    filename = 'v%02d%02d%02d_%04d%02d%02d.json' % (time.localtime()[3:6] + time.localtime()[:3])
+    p = CrawlerProcess({
+        'TELNETCONSOLE_ENABLED':    False,      # 几乎没人使用到这个功能
+        # 'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多
+        # 'LOG_LEVEL':                'INFO',     # DEBUG,INFO,WARNING,ERROR,CRITICAL
+        # 'FEED_URI':                 filename,   # 下载数据到文件
+        # 'FEED_FORMAT':              'json',     # 下载的文件格式，不配置默认以 jsonlines 方式写入文件，
+                                                  # 支持的格式 json, jsonlines, cvs, xml, pickle, marshal
+    })
+    p.crawl(VSpider)
+    p.start()
 '''
 
     _format_post = '''
@@ -471,6 +489,24 @@ class VSpider(scrapy.Spider):
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
 
         $plus
+
+
+
+# 配置在单脚本情况也能爬取的脚本的备选方案，使用项目启动则下面的代码无效
+if __name__ == '__main__':
+    import time
+    from scrapy.crawler import CrawlerProcess
+    filename = 'v%02d%02d%02d_%04d%02d%02d.json' % (time.localtime()[3:6] + time.localtime()[:3])
+    p = CrawlerProcess({
+        'TELNETCONSOLE_ENABLED':    False,      # 几乎没人使用到这个功能
+        # 'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多
+        # 'LOG_LEVEL':                'INFO',     # DEBUG,INFO,WARNING,ERROR,CRITICAL
+        # 'FEED_URI':                 filename,   # 下载数据到文件
+        # 'FEED_FORMAT':              'json',     # 下载的文件格式，不配置默认以 jsonlines 方式写入文件，
+                                                  # 支持的格式 json, jsonlines, cvs, xml, pickle, marshal
+    })
+    p.crawl(VSpider)
+    p.start()
 '''
 
     func = lambda c_:''.join(map(lambda i:'            '+i+'\n',c_.splitlines()))
@@ -661,6 +697,7 @@ url, headers = mk_url_headers()
 body = None
 r = request.Request(url, method=method)
 for k, v in headers.items():
+    if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
     r.add_header(k, v)
 s = request.urlopen(r)
 
@@ -697,6 +734,7 @@ JSONString = False #，这里通常为False，极少情况需要data为string情
 body = json.dumps(body).encode('utf-8') if JSONString else urlencode(body).encode('utf-8')
 r = request.Request(url, method=method)
 for k, v in headers.items():
+    if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
     r.add_header(k, v)
 s = request.urlopen(r, data=body)
 
@@ -725,7 +763,7 @@ def del_plus_urllib(string):
     pas = r'''
 print('\n')
 print('生成 urllib 代码的功能本质就是用来解决无依赖的快速请求，用于简单的请求处理。')
-print('该请求功能用于简单的请求代码生成，暂无解码能力，所以注意返回的编码问题。')
+print('暂无解码能力，所以自动将headers中的 accept-encoding 去除。')
 print('\n')
 def header_fprint(headers_dict):
     maxklen = len(repr(max(headers_dict,key=len)))
@@ -764,9 +802,6 @@ print('------------------- response headers --------------------')
 reshead = dict(s.getheaders())
 header_fprint(reshead)
 print('------------------- response content[:1000] ----------------')
-print('请注意，这里如果出现乱码，则有可能是因为编码问题导致，因为 urllib 请求后并没有自动处理编码。')
-print('后续有空再看看这里怎么解决。尽量无依赖实现一个请求并解码数据的功能，方便脚本的传阅性。')
-print('如果想要无编码的数据，可以尝试删掉 headers 中的 Accept-Encoding 这个key。')
 print('response content[:1000]:\n {}'.format(content[:1000]))
 print('=========================================================')
 print('\n'*2)'''
