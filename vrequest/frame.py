@@ -838,6 +838,7 @@ scrapy 代码窗口快捷键：
 
 开源代码：
 https://github.com/cilame/vrequest
+donate：右键该窗口 -> “创建便捷加密编码窗口” -> “爆破;RSA;二维码” -> “赞助作者”
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
 
@@ -879,6 +880,27 @@ def exec_js_window(setting=None):
             js2pycode = js2py.translate_js(jscode)
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,js2pycode)
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
+    def translate_js_python():
+        try:
+            from . import pysimplejs2python
+        except:
+            import pysimplejs2python
+        jscode = txt1.get(0.,tkinter.END)
+        try:
+            import jsbeautifier
+            jscode   = txt1.get(0.,tkinter.END)
+            btjscode = jsbeautifier.beautify(jscode)
+            pycode   = pysimplejs2python.simplejs2python(btjscode)
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,pycode)
+        except ImportError as e:
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
         except:
             e = traceback.format_exc()
             txt2.delete(0.,tkinter.END)
@@ -1004,6 +1026,8 @@ print(js.func)
     btn_create_python_code.pack(side=tkinter.LEFT)
     btn_translate_js = Button(temp_fr0,text='翻译成[js2py]代码',command=translate_js_js2py)
     btn_translate_js.pack(side=tkinter.LEFT)
+    btn_translate_js2python = Button(temp_fr0,text='简单js代码翻译成[python]代码(可能有错误)',command=translate_js_python)
+    btn_translate_js2python.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=_exec_javascript)
     btn2.pack(side=tkinter.RIGHT)
 
@@ -1289,7 +1313,7 @@ def encode_window(setting=None):
             ctxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '通用解密':
             bbtxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
-        elif enb_names[name] == '杂项':
+        elif enb_names[name] == '爆破;RSA;二维码':
             fsstxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
         elif enb_names[name] == '图片相关':
             fpictxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
@@ -1478,7 +1502,7 @@ if __name__ == '__main__':
                                           r"123123"     => bytes([123, 123])
            base_16 RegExp:[0-9a-fA-F]{2}: r"\xbe\xac"   => bytes([0xbe, 0xac])
                                           r"beac"       => bytes([0xbe, 0xac])
-           (由于输出框不显示无法解码数据，如需 bit 类型数据请直接使用"杂项代码")
+           (由于输出框不显示无法解码数据，如需 bit 类型数据请直接使用"其他算法")
     注意：
         左边 Entry 控件在单行文书输入过长时会有卡顿甚至卡死
         右边 Text 控件虽然也有相同的问题，但能接受更长的单行文本(行数不限)
@@ -1674,7 +1698,7 @@ if __name__ == '__main__':
         return d
 
     Label(f4,text=basehp,font=ft).pack(side=tkinter.TOP,padx=6)
-    Button(f4,text='杂项代码',width=8,command=_pyplus_code).pack(side=tkinter.RIGHT)
+    Button(f4,text='其他算法',width=8,command=_pyplus_code).pack(side=tkinter.RIGHT)
     Button(f4,text='base算法',width=8,command=_pybase_code).pack(side=tkinter.RIGHT)
     Button(f4,text='全部解密',width=8,command=_b_decode).pack(side=tkinter.RIGHT)
     Button(f4,text='全部加密',width=8,command=_b_encode).pack(side=tkinter.RIGHT)
@@ -3054,7 +3078,7 @@ if __name__ == '__main__':
         print(data)
 
     Button(fxpy0042, text='[算法]',command=_morse_code,width=5).pack(side=tkinter.LEFT)
-    Label(fxpy0042, text=' 这里为 rot* 算法加解密。').pack(side=tkinter.LEFT)
+    Label(fxpy0042, text=' 这里为 rot* 算法加解密。(rot18,rot47 部分加密数据的大小写无法还原)').pack(side=tkinter.LEFT)
     Button(fxpy0042, text='加解密',command=_rots_encode_decode,width=5).pack(side=tkinter.RIGHT)
     cbxrots = Combobox(fxpy0042,width=5,state='readonly')
     cbxrots['values'] = ['rot5', 'rot13','rot18','rot47']
@@ -3459,7 +3483,7 @@ if __name__ == '__main__':
             from . import pyevpkdf
         except:
             import pyevpkdf
-        ftxt.delete(0.,tkinter.END)
+        ctxt.delete(0.,tkinter.END)
         with open(pyevpkdf.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
@@ -3475,9 +3499,9 @@ if __name__ == '__main__':
 
 
     _fss1 = Frame(fr)
-    enb.add(_fss1, text='杂项')
+    enb.add(_fss1, text='爆破;RSA;二维码')
     enb.pack()
-    enb_names[_fss1._name] = '杂项'
+    enb_names[_fss1._name] = '爆破;RSA;二维码'
     fss1 = Frame(_fss1)
     fss1.pack(side=tkinter.LEFT,fill=tkinter.BOTH,expand=True)
     fss1_ = Frame(_fss1)
@@ -4024,7 +4048,7 @@ if __name__ == '__main__':
     fss0012 = Frame(fss1)
     fss0012.pack(side=tkinter.TOP,fill=tkinter.X)
     Label(fss0012,text='加密',font=ft,width=6).pack(side=tkinter.LEFT)
-    ess0012 = Entry(fss0012,width=40)
+    ess0012 = Entry(fss0012,width=50)
     ess0012.pack(side=tkinter.LEFT)
 
     fss0013 = Frame(fss1)
@@ -4058,10 +4082,44 @@ if __name__ == '__main__':
         with open(pypyzbar.__file__, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
+    def _donate_code(*a):
+        try:
+            from . import pyqrcode
+        except:
+            import pyqrcode
+        fsstxt.delete(0.,tkinter.END)
+        try:
+            encdlv = pyqrcode.ERROR_CORRECT_L
+            print('支付宝扫码赞助：')
+            enctxt = 'HTTPS://QR.ALIPAY.COM/FKX07500WBJ0OXZUXJLUCF'
+            s = pyqrcode.QRCode(error_correction=encdlv)
+            s.add_data(enctxt.encode('utf-8'))
+            for i in s.get_matrix()[3:]:
+                black = '██'
+                white = '  '
+                v = ''.join([black if j else white for j in i])
+                print(v)
+            print('微信扫码赞助：')
+            enctxt = 'wxp://f2f0xF3d1egb-YtPxHm0AZHw0gdJByCgZeLz'
+            s = pyqrcode.QRCode(error_correction=encdlv)
+            s.add_data(enctxt.encode('utf-8'))
+            for i in s.get_matrix()[3:]:
+                black = '██'
+                white = '  '
+                v = ''.join([black if j else white for j in i])
+                print(v)
+        except:
+            print(traceback.format_exc())
+    style = ttk.Style()
+    style.map("TEST.TButton",
+        foreground=[('!focus', '#EE6363')],
+    )
+    bss0013_5 = Button(fss0013,text='赞助作者',command=_donate_code,width=7,style='TEST.TButton')
+    bss0013_5.pack(side=tkinter.LEFT)
     bss0013_4 = Button(fss0013,text='加密[算法]',command=_pyqrcode_code,width=9)
-    bss0013_4.pack(side=tkinter.LEFT,padx=1)
+    bss0013_4.pack(side=tkinter.LEFT)
     bss0013_3 = Button(fss0013,text='解密[算法]',command=_pypyzbar_code,width=9)
-    bss0013_3.pack(side=tkinter.LEFT,padx=1)
+    bss0013_3.pack(side=tkinter.LEFT)
 
 
 

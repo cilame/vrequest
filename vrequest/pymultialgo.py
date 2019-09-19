@@ -91,25 +91,35 @@ if __name__ == '__main__':
 
 
 
-# 这里是常用模式 aes/cbc/pkcs7 模式下的 get_encryptor 简写代码
-# 上面的代码是考虑完全的通用性以及在工具内部被使用的必要多封装，这里主要是为了更加简化代码方便使用
-# from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-# from cryptography.hazmat.primitives import padding
-# from cryptography.hazmat.backends import default_backend
-# def get_encryptor(key, iv=None):
-#     algoer = algorithms.AES(key)
-#     cipher = Cipher(algoer, modes.CBC(iv), backend=default_backend())
-#     def enc(bitstring):
-#         padder    = padding.PKCS7(algoer.block_size).padder()
-#         bitstring = padder.update(bitstring) + padder.finalize()
-#         encryptor = cipher.encryptor()
-#         return encryptor.update(bitstring) + encryptor.finalize()
-#     def dec(bitstring):
-#         decryptor = cipher.decryptor()
-#         ddata     = decryptor.update(bitstring) + decryptor.finalize()
-#         unpadder  = padding.PKCS7(algoer.block_size).unpadder()
-#         return unpadder.update(ddata) + unpadder.finalize()
-#     class f:pass
-#     f.encrypt = enc
-#     f.decrypt = dec
-#     return f
+# 这里是常用模式 aes/cbc/pkcs7 模式下的 get_encryptor 简化代码
+# 上面的代码是考虑完全的通用性以及在工具内部被使用的必要多封装，这里主要是为了更加方便使用的简写
+#import base64
+#from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+#from cryptography.hazmat.primitives import padding
+#from cryptography.hazmat.backends import default_backend
+#def get_encryptor(key, iv=None):
+#    algoer = algorithms.AES(key) #若要使用DES这里改成TripleDES
+#    mode   = modes.CBC(iv)       #模式若是ecb则为 modes.ECB(), 其余模式均为一个参数 mode.***(iv)
+#    cipher = Cipher(algoer, mode, backend=default_backend())
+#    def enc(bitstring):
+#        padder    = padding.PKCS7(algoer.block_size).padder()
+#        bitstring = padder.update(bitstring) + padder.finalize()
+#        encryptor = cipher.encryptor()
+#        return encryptor.update(bitstring) + encryptor.finalize()
+#    def dec(bitstring):
+#        decryptor = cipher.decryptor()
+#        ddata     = decryptor.update(bitstring) + decryptor.finalize()
+#        unpadder  = padding.PKCS7(algoer.block_size).unpadder()
+#        return unpadder.update(ddata) + unpadder.finalize()
+#    class f:pass
+#    f.encrypt = enc
+#    f.decrypt = dec
+#    return f
+#if __name__ == '__main__':
+#    key         = b'1234567890123456'   #密码
+#    iv          = b'1234567890123456'   #某些加密模式需要的参数，（ARC4，ChaCha20 加密或者所有的 ecb 模式下，该参数无效！！）
+#    data        = '2LWYSMdnDJSym1TSN54uesXryeud7lOPCtlpWV16dAw='.encode()
+#    db64        = base64.b64decode(data)
+#    encryptor   = get_encryptor(key, iv)
+#    v = encryptor.decrypt(db64)
+#    print(v)

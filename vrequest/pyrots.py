@@ -50,13 +50,13 @@ def rot47(string):
 
 
 if __name__ == '__main__':
-    s = 'nihaoaxiongdi1234567890'
+    s = 'nihaoaxiongdi1234567890_ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     s = rot5(s); print('enc>',s)
     s = rot5(s); print('dec=',s)
     s = rot13(s); print('enc>',s)
     s = rot13(s); print('dec=',s)
     s = rot18(s); print('enc>',s)
-    s = rot18(s); print('dec=',s)
+    s = rot18(s); print('dec=',s) # 注意，加密数据若存在数字，则逆运算的大小将无法全部还原
     s = rot47(s); print('enc>',s)
-    s = rot47(s); print('dec=',s)
+    s = rot47(s); print('dec=',s) # 注意，加密数据若存在数字，则逆运算的大小将无法全部还原
     print()
