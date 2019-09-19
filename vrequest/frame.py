@@ -838,7 +838,8 @@ scrapy 代码窗口快捷键：
 
 开源代码：
 https://github.com/cilame/vrequest
-donate：右键该窗口 -> “创建便捷加密编码窗口” -> “爆破;RSA;二维码” -> “赞助作者”
+赞助作者：
+右键该窗口 -> “创建便捷加密编码窗口” -> “爆破;RSA;二维码” -> “赞助作者”
 '''
     temp_fr1 = Frame(fr,highlightthickness=lin)
 
