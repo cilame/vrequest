@@ -10,7 +10,7 @@ import inspect
 import builtins
 import tkinter.messagebox
 import traceback
-
+import random
 
 def dprint(*a):
     # debug print
@@ -427,24 +427,6 @@ class VSpider(scrapy.Spider):
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
 
         $plus
-
-
-
-# 配置在单脚本情况也能爬取的脚本的备选方案，使用项目启动则下面的代码无效
-if __name__ == '__main__':
-    import time
-    from scrapy.crawler import CrawlerProcess
-    filename = 'v%02d%02d%02d_%04d%02d%02d.json' % (time.localtime()[3:6] + time.localtime()[:3])
-    p = CrawlerProcess({
-        'TELNETCONSOLE_ENABLED':    False,      # 几乎没人使用到这个功能
-        # 'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多
-        # 'LOG_LEVEL':                'INFO',     # DEBUG,INFO,WARNING,ERROR,CRITICAL
-        # 'FEED_URI':                 filename,   # 下载数据到文件
-        # 'FEED_FORMAT':              'json',     # 下载的文件格式，不配置默认以 jsonlines 方式写入文件，
-                                                  # 支持的格式 json, jsonlines, cvs, xml, pickle, marshal
-    })
-    p.crawl(VSpider)
-    p.start()
 '''
 
     _format_post = '''
@@ -489,25 +471,39 @@ class VSpider(scrapy.Spider):
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
 
         $plus
+'''
 
-
-
+    for_single_script_tail = '''\n\n\n
 # 配置在单脚本情况也能爬取的脚本的备选方案，使用项目启动则下面的代码无效
 if __name__ == '__main__':
-    import time
+    import os, time
     from scrapy.crawler import CrawlerProcess
-    filename = 'v%02d%02d%02d_%04d%02d%02d.json' % (time.localtime()[3:6] + time.localtime()[:3])
+    timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime()) # 年月日_时分秒
+    filename = 'v{}.json'.format(timestamp) # 这是输出文件名字（解开 'FEED_URI' 配置注释生效）
+    jobdir   = 'JOBDIR/$jobdir'          # 这是队列信息地址（解开 'JOBDIR'   配置注释生效）
+
+    # 工具作者有时会偏向将某些临时生成的文件放到固定地址(例如桌面)，统一管理，便于工作
+    # 如果想要让单脚本运行的所有配置以及生成文件跟随脚本所在地址，则无需解开下列注释
+    # desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')  # 获取桌面地址的通用代码
+    # filename    = 'file:///' + os.path.join(desktoppath, filename) # 使用绝对地址时存文件需增加前缀，注意
+    # jobdir      = os.path.join(desktoppath, jobdir)
+
     p = CrawlerProcess({
-        'TELNETCONSOLE_ENABLED':    False,      # 几乎没人使用到这个功能
-        # 'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多
-        # 'LOG_LEVEL':                'INFO',     # DEBUG,INFO,WARNING,ERROR,CRITICAL
+        'TELNETCONSOLE_ENABLED':    False,        # 几乎没人使用到这个功能，直接关闭提高爬虫启动时间
+        'LOG_LEVEL':                'INFO',       # DEBUG , INFO , WARNING , ERROR , CRITICAL
+        # 'JOBDIR':                   jobdir,     # 解开注释则增加断点续爬功能
+                                                  # 任务队列、任务去重指纹、任务状态存储空间(简单来说就是一个文件夹)
         # 'FEED_URI':                 filename,   # 下载数据到文件
         # 'FEED_FORMAT':              'json',     # 下载的文件格式，不配置默认以 jsonlines 方式写入文件，
                                                   # 支持的格式 json, jsonlines, cvs, xml, pickle, marshal
+        # 'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多
     })
     p.crawl(VSpider)
     p.start()
-'''
+'''.replace('$jobdir', ''.join(random.sample('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 10)))
+
+    _format_get  = _format_get  + for_single_script_tail
+    _format_post = _format_post + for_single_script_tail
 
     func = lambda c_:''.join(map(lambda i:'            '+i+'\n',c_.splitlines()))
     c_url       = func(c_url).strip()
@@ -631,6 +627,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps):
                     p.append("none.extract = lambda:None")
                     p.append("for x in response.xpath('{}'):".format(xp))
                     p.extend([' '*indent+func2(i) for i in ax])
+                    p.append(' '*indent+'yield d')
                     func_code ='\n'.join(p)
                 except:
                     traceback.print_exc()
