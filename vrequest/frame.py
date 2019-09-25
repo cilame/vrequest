@@ -681,8 +681,8 @@ single_script_comment_part2 = r'''
     #     vimage.crawler = i
     #     i.engine.scraper.itemproc._add_middleware(vimage)
 
-    # 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，那也很方便，使用下面的小脚本
-    # 然后将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。
+    # 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，那也很方便
+    # 将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。
     # $pyinstaller_scrapy
     # 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib，如有需要引用请删除这里的部分 --exclude-module
 '''.strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
