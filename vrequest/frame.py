@@ -637,6 +637,8 @@ single_script_comment_part1 = '''
     # jobdir      = os.path.join(desktoppath, jobdir)
 '''.strip('\n')
 
+_pyinstaller_scrapy = r'--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
+_pyinstaller_scrapy = _pyinstaller_scrapy.replace('$sysexec', os.path.dirname(sys.executable))
 single_script_comment_part2 = r'''
     # 动态中间件介绍
     # 通过实例动态增加中间件（解耦了之前只能通过配置中间件字符串），方便单脚本实现增加中间件功能，例如数据库存储方面的内容。
@@ -678,7 +680,12 @@ single_script_comment_part2 = r'''
     #     vimage.spiderinfo = vimage.SpiderInfo(i.spider)
     #     vimage.crawler = i
     #     i.engine.scraper.itemproc._add_middleware(vimage)
-'''.strip('\n')
+
+    # 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，那也很方便，使用下面的小脚本
+    # 然后将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。
+    # $pyinstaller_scrapy
+    # 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib，如有需要引用请删除这里的部分 --exclude-module
+'''.strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
 
 # 生成代码临时放在这里
 def scrapy_code_window(setting=None):

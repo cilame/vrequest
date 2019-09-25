@@ -965,7 +965,7 @@ def find_xtree(item_list):
 # 这里的代码应该会是最后一次对自动列表解析处理的精准度的提升
 # 以各种函数处理将解析上升到像是对json列表解析一样的高度
 def auto_xpath(oxp,content,_type=None):
-    tps = ['href', 'title']
+    tps = ['href', 'title', 'src']
     d = {}
     e = {}
     _oxp = re.sub('//[^/]+/','./',oxp)
