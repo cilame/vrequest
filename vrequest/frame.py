@@ -629,6 +629,56 @@ post_verification_model = r"""
         yield r
 """
 
+single_script_comment_part1 = '''
+    # 工具作者有时会偏向将某些临时生成的文件放到固定地址(例如桌面)，统一管理，便于工作
+    # 如果想要让单脚本运行的所有配置以及生成文件跟随脚本所在地址，则无需解开下列注释
+    # desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')  # 获取桌面地址的通用代码
+    # filename    = 'file:///' + os.path.join(desktoppath, filename) # 使用绝对地址时存文件需增加前缀，注意
+    # jobdir      = os.path.join(desktoppath, jobdir)
+'''.strip('\n')
+
+single_script_comment_part2 = r'''
+    # 动态中间件介绍
+    # 通过实例动态增加中间件（解耦了之前只能通过配置中间件字符串），方便单脚本实现增加中间件功能，例如数据库存储方面的内容。
+    # 便于单脚本利用别人的中间件。（将别人的中间件脚本粘贴进该脚本，实例化添加即可。示例如下，解开注释到 #(1) 即可测试。）
+    # class VPipeline(object):
+    #     def process_item(self, item, spider):
+    #         print('\\n==== 这里是动态增加的“下载中间件”部分 ====\\n')
+    #         return item
+    # for i in p.crawlers: i.engine.scraper.itemproc._add_middleware(VPipeline()) #(1)
+
+    # for i in p.crawlers: i.engine.scraper.spidermw._add_middleware(...)         #(2) 这里的...需要一个对应的中间件对象
+    # for i in p.crawlers: i.engine.downloader.middleware._add_middleware(...)    #(3) 这里的...需要一个对应的中间件对象
+    #1) 通过对象动态增加 itemmiddlewares，目前仅在数据管道部分这种处理方式比较常用（因默认item中间件为空，不会被默认配置影响）
+    #2) 通过对象动态增加 spidermiddlewares     # i.engine.scraper.spidermw.middlewares        # 当前全部“爬虫中间件”
+    #3) 通过对象动态增加 downloadermiddlewares # i.engine.downloader.middleware.middlewares   # 当前全部“下载中间件”
+    #*) 注意: 2,3两种中间件的动态增加不常用。因 p.crawl 函数执行后就已初始化默认中间件。新的中间件只能“后添加”，缺乏灵活。
+
+    # 图片下载中间件介绍
+    # 图片相关的文件下载中间件的添加，注意：图片相关的资源需要绑定 spider 以及 crawler。示例如下。
+    # 在一般的脚本 item['src'] 中添加字符串下载地址即可，一个 item 一个字符串下载地址，便于管理。不要按照默认方式添加下载列表
+    # import logging, hashlib
+    # from scrapy.pipelines.images import ImagesPipeline
+    # from scrapy.exceptions import DropItem
+    # class VImagePipeline(ImagesPipeline):
+    #     def get_media_requests(self, item, info):
+    #         yield Request(item['src']) 
+    #     def file_path(self, request, response=None, info=None):
+    #         url = request if not isinstance(request, Request) else request.url
+    #         filename = hashlib.md5(url.encode()).hexdigest() # 或将存放的分类或名字通过 meta 传递，用 request.meta 获取
+    #         return 'full/%s.jpg' % filename # 生成的图片文件名字，此处可增加多级分类路径（路径不存在则自动创建）
+    #     def item_completed(self, results, item, info): # 判断下载是否成功
+    #         k, v = results[0]
+    #         if not k: logging.info('download fail {}'.format(item))
+    #         else:     logging.info('download success {}'.format(item))
+    #         item['image_download_stat'] = 'success' if k else 'fail'
+    #         return item
+    # for i in p.crawlers: 
+    #     vimage = VImagePipeline('./image') # 生成的文件地址，默认跟随脚本路径下生成的一个 image文件夹
+    #     vimage.spiderinfo = vimage.SpiderInfo(i.spider)
+    #     vimage.crawler = i
+    #     i.engine.scraper.itemproc._add_middleware(vimage)
+'''.strip('\n')
 
 # 生成代码临时放在这里
 def scrapy_code_window(setting=None):
@@ -698,6 +748,15 @@ def scrapy_code_window(setting=None):
                 pass
         _show(stat='show') if va.get() else _show(stat='hide')
 
+    def _add_single_script_comment(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        tx.delete(0.,tkinter.END)
+        if 'os.path.join(os.path.expanduser("~")' not in script:
+            script = re.sub('\n    p = CrawlerProcess', '\n' + single_script_comment_part1 + '\n\n    p = CrawlerProcess', script)
+        if 'VImagePipeline' not in script:
+            script = re.sub(r'p\.crawl\(VSpider\)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n', script)
+        tx.insert(0.,script)
+        tx.see(tkinter.END)
 
     def pprint(*a):
         __org_stdout__.write(str(a)+'\n')
@@ -715,6 +774,8 @@ def scrapy_code_window(setting=None):
     bt2.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='增加单脚本中间件注释', command=_add_single_script_comment)
+    btn2.pack(side=tkinter.LEFT)
     hva = tkinter.IntVar()
     hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)
     hrb.deselect()

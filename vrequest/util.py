@@ -482,12 +482,6 @@ if __name__ == '__main__':
     filename = 'v{}.json'.format(timestamp) # 这是输出文件名字（解开 'FEED_URI' 配置注释生效）
     jobdir   = 'JOBDIR/$jobdir'          # 这是队列信息地址（解开 'JOBDIR'   配置注释生效）
 
-    # 工具作者有时会偏向将某些临时生成的文件放到固定地址(例如桌面)，统一管理，便于工作
-    # 如果想要让单脚本运行的所有配置以及生成文件跟随脚本所在地址，则无需解开下列注释
-    # desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')  # 获取桌面地址的通用代码
-    # filename    = 'file:///' + os.path.join(desktoppath, filename) # 使用绝对地址时存文件需增加前缀，注意
-    # jobdir      = os.path.join(desktoppath, jobdir)
-
     p = CrawlerProcess({
         'TELNETCONSOLE_ENABLED':    False,        # 几乎没人使用到这个功能，直接关闭提高爬虫启动时间
         'LOG_LEVEL':                'INFO',       # DEBUG , INFO , WARNING , ERROR , CRITICAL
