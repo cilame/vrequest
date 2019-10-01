@@ -795,7 +795,71 @@ header_fprint(reshead)
 print('------------------- response content[:1000] ----------------')
 print('response content[:1000]:\n {}'.format(content[:1000]))
 print('=========================================================')
-print('\n'*2)'''
+print('\n'*2)
+
+
+# 以下为 "简易xpath": 无依赖库的 xpath 解析代码，
+# 为了让分析工具分析出的 xpath 在一定程度上能被无依赖库的代码使用所开发的代码片，不使用删除即可。
+# 无轴功能，简单的属性条件解析只支持一个，其他和正常的 xpath 用法一样
+import re
+from html.parser import HTMLParser
+class Vparser(HTMLParser):
+    def __init__(s, *a, **k): super().__init__(*a, **k); s.maps = s.m = {'info':{'data':''}, 'sub':[]}; s.c = 0
+    def _a(s, m):       [m.update({'m':m['m'][-1]['sub']}) for _ in range(s.c)]
+    def _b(s, m, i):    (m.update({'m':m['m'][-1]['sub']}), i.append(m['m'][-1]['info']))
+    def _c(s, m, i):    [s._b(m, i) for _ in range(s.c - 1)]
+    def _d(s):          m = {}; m['m'] = s.m['sub']; s._a(m); return m['m']
+    def _e(s, a=0):     m = {}; m['m'] = s.m['sub'];i = []; s._c(m, i); return i if a else m['m'][-1]['info']
+    def _f(s):          s._d().append({'info':{'data':''}, 'sub':[]}); s.c += 1
+    def _g(s, t, a=0):  c = s._e(); c['tag'], c['attrs'] = t, dict(a)
+    def _h(s, c, d):    c.update({'data':d}) if 'data' not in c else c.update({'data':c['data'] + d})
+    def _i(s, d):       return [s._h(c, d) for c in s._e(True)] if s._e(True) else 0
+    def _j(s, t):       return True if t in ['br','meta','link'] else False
+    def handle_starttag(s, t, a): s.handle_startendtag(t, a) if s._j(t) else (s._f(), s._g(t, a))
+    def handle_endtag(s, t): s.c -= 1
+    def handle_startendtag(s, t, a): s._f(); s._g(t, a); s.c -= 1
+    def handle_data(s, d): s._i(d)
+class Vnode:
+    def __init__(self, mapsdict): self.maps = mapsdict
+    def __repr__(self): r = self.maps['info'].get('data'); return "<class 'Vnode' data={}>".format(repr(r[:10])[:-1]+"...'" if r else None)
+    def find_by_maps(self, maps, tag='*', attrs={}, depth=float('inf'), one=None):
+        r = []
+        def _a(s, t):       return all([i not in t for i in s.split('|')])
+        def _b(s, n):       return (_a(s[1:],n) if s.startswith('*') else s != n) and s != '*'
+        def _c(k, i, v):    return k not in i['attrs'] or _b(v, i['attrs'][k])
+        def _d(n):          return any([_c(k, n['info'], v) for k,v in attrs.items()])
+        def _e(n):          return not _d(n) and not _b(tag, n['info']['tag'])
+        def _f(ns, d=0):    [(r.append(n) if _e(n) else 0, _f(n,d+1)) for n in ns['sub']] if d < depth else 0
+        return _f(maps) or (([r[one]] if len(r) > one else []) if type(one) == int else r)
+    def xpath(self, x):
+        def _pc(m, n):
+            a = re.findall(r'\d+', n)
+            b = re.findall(r'@([a-zA-Z_][a-zA-Z_0-9]+) *= *"([^"]+)"', n)
+            c = re.findall(r'@([a-zA-Z_][a-zA-Z_0-9]+) *$', m)
+            if a and a[0] == n.strip('[]'): return int(a[0])
+            if b: return dict(b)
+            if c and c[0] == m.strip('@ '): return ['attrs', c[0]]
+            if m.strip() == 'text()': return ['data']
+        p = re.findall(r'(//?)([^/\[\]]+)(\[[^\[\]]+\])?', x); r = {}; ms = [self.maps]
+        for i, (k, m, n) in enumerate(p, 1):
+            r[i] = []; ps = _pc(m, n); depth = float('inf') if k.startswith('//') else 1
+            attrs = ps if type(ps) == dict else {}; one = ps if type(ps) == int  else None
+            if (i != len(p) or i == 1) and type(ps) != list:
+                for s in ms: r[i].extend(self.find_by_maps(s, m, attrs=attrs, depth=depth, one=one))
+                ms = r[i]; r[i - 1] = None; continue
+            for s in ms:
+                if   ps and ps[0] =='attrs': s = s['info']['attrs'].get(ps[1])
+                elif ps and ps[0] =='data':  s = s['info']['data']
+                if s: r[i].append(s)
+            ms = r[i]; r[i - 1] = None
+        return [Vnode(i) if type(i) == dict else i for i in ms]
+class VHTML:
+    def __init__(self, hc): self.pr = Vparser(); self.pr.feed(hc); self.root = Vnode(self.pr.maps)
+    def xpath(self, x): return [Vnode(i) if type(i) == dict else i for i in self.root.xpath(x)]
+
+# v = VHTML(content.decode())
+# for i in v.xpath('//*/@href'): print(i)
+'''
     return string.replace('$plus',pas).strip()
 
 def format_request_urllib(method,c_url,c_headers,c_body):
@@ -856,7 +920,7 @@ def get_simple_path_head(p,lilimit=5):
     s = {}
     w = {}
     for xp, sxp, key in p:
-        q = re.sub('\[\d+\]','',xp)#.rsplit('/',1)[0]
+        q = re.sub(r'\[\d+\]','',xp)#.rsplit('/',1)[0]
         if q not in s:
             s[q] = [[xp, sxp, key]]
         else:
@@ -864,7 +928,7 @@ def get_simple_path_head(p,lilimit=5):
     rm = []
     for px in sorted(s,key=lambda i: -len(i)):
         xps,sxps,keys = zip(*s[px])
-        if len(sxps) == len(set(sxps)): continue
+        # if len(sxps) == len(set(sxps)): continue # 后续发现这行妨碍了分析，注释即可。
         p = {}
         ls = list(set(keys))
         for j in s[px]:

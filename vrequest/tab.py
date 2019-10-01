@@ -479,6 +479,7 @@ from tkinter import (
     Frame,
     Button,
 )
+import tkinter.ttk as ttk
 class SimpleDialog:
     def __init__(self, master,
                  text='', buttons=[], default=None, cancel=None,
@@ -502,10 +503,8 @@ class SimpleDialog:
         for num in range(len(buttons)):
             s = buttons[num]
             f = Frame(self.frame)
-            b = Button(f, text=s, 
+            b = ttk.Button(f, text=s,
                        command=(lambda self=self, num=num: self.done(num)))
-            if num == default:
-                pass
             b.pack(side=LEFT, fill=BOTH)
             f.pack(side=TOP, fill=BOTH)
         self.root.protocol('WM_DELETE_WINDOW', self.wm_delete_window)
