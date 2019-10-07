@@ -42,8 +42,8 @@ def format_headers_code(headers):
             q = '(\n'
             p =[]
             for i in headers[name].split('; '): p.append(i)
-            for i in sorted(p):
-                q += '        "'+i.replace('"','\\"')+'; "\n'
+            for i in sorted(p[:-1]): q += '        "'+i.replace('"','\\"')+'; "\n'
+            for i in sorted(p[-1:]): q += '        "'+i.replace('"','\\"')+'"\n'
             q += '    )'
             ret = re.sub(r'("{}": )([^\n]+)(\n)'.format(name),r'\1$cookie,\3',ret,re.I)
             ret = ret.replace('$cookie',q)
