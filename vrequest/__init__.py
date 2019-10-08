@@ -1,4 +1,4 @@
 __author__ = 'cilame'
-__version__ = '1.7.26'
+__version__ = '1.7.27'
 __email__ = 'opaquism@hotmail.com'
 __github__ = 'https://github.com/cilame/vrequest'
