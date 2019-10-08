@@ -595,10 +595,8 @@ def get_xpath_elements(*a):
                         elif p:
                             d[p] += 1
                     show_num = 25
-                    m = sorted(d,key=len)[:show_num]
-                    for i in m:
-                        q.append('[ cnt:{} ]'.format(d[i]) + i)
-                    q = sorted(q,key=len)[:show_num]
+                    m = sorted(d,key=lambda i:-d[i])[:show_num]
+                    for i in m: q.append('[ cnt:{} ]'.format(d[i]) + i)
                     d = SimpleDialog(nb,
                         text="是否选择自动解析出的xpath路径？\n"
                              "（不选择，默认填充 “//html” ，最大显示{}条内容）".format(show_num),

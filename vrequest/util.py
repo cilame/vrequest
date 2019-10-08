@@ -971,7 +971,11 @@ def get_xpath_by_str(strs, html_content):
 
     rets = []
     for key, xp, sxp, px in p:
-        v = e.xpath('string({})'.format(xp))
+        try:
+            v = e.xpath('string({})'.format(xp))
+        except:
+            dprint('error xp: {}'.format(xp))
+            continue
         v = re.sub('\s+',' ',v)
         v = v[:40] + '...' if len(v) > 40 else v
         v = '[{}] {}'.format(len(v),v)
