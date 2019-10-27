@@ -114,7 +114,7 @@ def simplejs2python(s):
 # 在一定程度上能方便更加青睐于纯 python 教徒对 js 翻译
 # 请勿对翻译后的代码抱有过度信赖，该功能仅依赖于正则替换，所以生成代码很可能需要一定的微调。
 ''' + s
-    return s
+    return s.rstrip(' }\n')
 
 if __name__ == '__main__':
     s = '''
