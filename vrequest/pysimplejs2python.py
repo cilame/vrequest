@@ -15,7 +15,7 @@ def simplejs2python(s):
         a,b,c = e.group(2),e.group(3),e.group(4)
         v = g + a.strip() + g + 'while ({}):'.format(b.strip()) + '  [{}]'.format(c.strip())
         return v
-    s = re.sub(r'(\n *)for *\(([^;]*);([^;]*);([^;]*)\):', deal_for, s)
+    s = re.sub(r'(\n *)for *\(([^;]*?);([^;]*?);([^;]*?)\):?', deal_for, s)
     def deal_while_1(s):
         q = []
         g = None
@@ -57,11 +57,54 @@ def simplejs2python(s):
     s = re.sub(r'(\n *)else *', r'\1else:', s)
     s = re.sub(r'(\n *)var ', r'\1', s)
     s = re.sub(r'(\n *)//', r'\1#', s)
+    def deal_comment_1(e):
+        r = []
+        for i in e.group(0).splitlines():
+            i = i.strip('/ *')
+            if i: r.append('# ' + i)
+        return '\n'.join(r)
+    s = re.sub(r'/\*.*?\*/', deal_comment_1, s, flags=re.S)
+    s = re.sub(r'\n\n+', r'\n\n', s, flags=re.S)
+    s = re.sub(r'\| *\n', r'| \\\n', s, flags=re.S)
     s = re.sub(r'; *;', r';', s)
     s = re.sub(r': *:', r':', s)
     s = re.sub(r'<<<', r'<<', s)
     s = re.sub(r'>>>', r'>>', s)
     s = re.sub(r'!==', r'!=', s)
+
+    s = re.sub(r'((?:[a-zA-Z0-9_$]+(?:\[[a-zA-Z0-9_$]+\])* *\. *)*[a-zA-Z0-9_$]+(?:\[[a-zA-Z0-9_$]+\])*) *\. *length', r'len(\1)', s) # 处理 .length 函数为 len()
+    def find_something(s, p='charAt', b='()'):
+        o = re.findall(r'(?:[a-zA-Z0-9_$]+(?:\[[a-zA-Z0-9_$]+\])* *\. *)*[a-zA-Z0-9_$]+(?:\[[a-zA-Z0-9_$]+\])* *\. *' + p, s)
+        if o:
+            p = o[0]
+            v = s.find(p)
+            if v != -1:
+                r = 0
+                c = []
+                for i in s[v+len(p):]:
+                    t = False
+                    if i == b[0]: r += 1; t = True
+                    if i == b[1]: r -= 1; t = True
+                    c.append(i)
+                    if t and r == 0:
+                        break
+                v = ''.join(c)
+                return o[0], v
+    def replace_something(s, p='charAt', b='()'):
+        cont = 0
+        while True:
+            cont += 1
+            r = find_something(s, p, b)
+            if r and cont <= 500:
+                o, v = r
+                if p == 'charAt': s = s.replace('.' + o.rsplit('.', 1)[-1] + v, '[{}]'.format(v.strip()[1:-1]))
+                elif p == 'charCodeAt': s = s.replace(o + v, 'ord({}[{}])'.format(o.rsplit('.', 1)[0], v.strip()[1:-1]))
+                elif p == 'fromCharCode': s = s.replace(o + v, 'bytes({}).decode()'.format(v))
+            else:
+                return s
+    s = replace_something(s, p='charAt')
+    s = replace_something(s, p='charCodeAt')
+    s = replace_something(s, p='fromCharCode')
 
     # 这里考虑处理赋值的对齐,不过现在还是有点问题
     # s = re.sub(r'(\n *)([^\n=]+=[^\n=]+), *', r'\1\2', s)
