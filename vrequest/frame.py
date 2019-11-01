@@ -724,7 +724,7 @@ single_script_comment_part2 = r"""
     #         else:
     #             return item
     #     def insert_item(self, conn, db, table, item):
-    #         table_sql = ''.join(["'{}',".format(json.dumps(v, ensure_ascii=False).replace("'","\\'")) for k,v in item.items()])
+    #         table_sql = ''.join(["'{}',".format(json.dumps(v, ensure_ascii=False).replace("'","\\\\'")) for k,v in item.items()])
     #         insert_sql = 'INSERT INTO `{}`.`{}` VALUES({})'.format(db, table, table_sql.strip(','))
     #         try: 
     #             conn.execute(insert_sql)
