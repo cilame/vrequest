@@ -639,8 +639,8 @@ single_script_comment_part1 = '''
 
 _pyinstaller_scrapy = r'--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
 _pyinstaller_scrapy = _pyinstaller_scrapy.replace('$sysexec', os.path.dirname(sys.executable))
-single_script_comment_part2 = r'''
-    # 动态中间件介绍
+single_script_comment_part2 = r"""
+    # 基础中间件介绍
     # 通过实例动态增加中间件（解耦了之前只能通过配置中间件字符串），方便单脚本实现增加中间件功能，例如数据库存储方面的内容。
     # 便于单脚本利用别人的中间件。（将别人的中间件脚本粘贴进该脚本，实例化添加即可。示例如下，解开注释到 #(1) 即可测试。）
     # class VPipeline(object):
@@ -654,26 +654,30 @@ single_script_comment_part2 = r'''
     #1) 通过对象动态增加 itemmiddlewares，目前仅在数据管道部分这种处理方式比较常用（因默认item中间件为空，不会被默认配置影响）
     #2) 通过对象动态增加 spidermiddlewares     # i.engine.scraper.spidermw.middlewares        # 当前全部“爬虫中间件”
     #3) 通过对象动态增加 downloadermiddlewares # i.engine.downloader.middleware.middlewares   # 当前全部“下载中间件”
-    #*) 注意: 2,3两种中间件的动态增加不常用。因 p.crawl 函数执行后就已初始化默认中间件。新的中间件只能“后添加”，缺乏灵活。
+    #*) 注意: 2,3两种中间件的动态增加不常用。因 p.crawl 函数执行后就已初始化默认中间件顺序。新的中间件只能“后添加”，缺乏灵活。
 
-    # 图片下载中间件介绍
+
+    # 【图片下载】 中间件介绍
     # 图片相关的文件下载中间件的添加，注意：图片相关的资源需要绑定 spider 以及 crawler。示例如下。
-    # 在一般的脚本 item['src'] 中添加字符串下载地址即可，一个 item 一个字符串下载地址，便于管理。不要按照默认方式添加下载列表
+    # 在一般的脚本 item['src'] 中添加字符串下载地址即可，一个 item 一个字符串下载地址，便于管理。详细阅读下面代码。
+    # 解开下面的代码块即可使用该功能
     # import logging, hashlib
     # from scrapy.pipelines.images import ImagesPipeline
     # from scrapy.exceptions import DropItem
     # class VImagePipeline(ImagesPipeline):
     #     def get_media_requests(self, item, info):
-    #         yield Request(item['src']) 
+    #         yield Request(item['src'], meta=item) 
     #     def file_path(self, request, response=None, info=None):
     #         url = request if not isinstance(request, Request) else request.url
-    #         filename = hashlib.md5(url.encode()).hexdigest() # 或将存放的分类或名字通过 meta 传递，用 request.meta 获取
-    #         return 'full/%s.jpg' % filename # 生成的图片文件名字，此处可增加多级分类路径（路径不存在则自动创建）
+    #         image_name = request.meta.get('image_name') # 使用 item中的 image_name 字段作为文件名进行存储，没有该字段则使用 url的 md5作为文件名存储
+    #         image_name = re.sub(r'[/\\\\:\\*"<>\\|\\?]', '_', image_name).strip()[:80] if image_name else hashlib.md5(url.encode()).hexdigest()
+    #         return '%s.jpg' % image_name # 生成的图片文件名字，此处可增加多级分类路径（路径不存在则自动创建），使用 image_name 请注意重名可能性。
     #     def item_completed(self, results, item, info): # 判断下载是否成功
     #         k, v = results[0]
     #         if not k: logging.info('download fail {}'.format(item))
     #         else:     logging.info('download success {}'.format(item))
     #         item['image_download_stat'] = 'success' if k else 'fail'
+    #         item['image_path'] = v['path'] if k else None # 保留文件名地址
     #         return item
     # for i in p.crawlers: 
     #     vimage = VImagePipeline('./image') # 生成的文件地址，默认跟随脚本路径下生成的一个 image文件夹
@@ -681,11 +685,76 @@ single_script_comment_part2 = r'''
     #     vimage.crawler = i
     #     i.engine.scraper.itemproc._add_middleware(vimage)
 
+
+    # 【数据库存储】 中间件介绍
+    # 当你需要直接将数据传入数据库的时候只需要在 item里面加一个字段: item['__mysql__'] = __mysql__
+    # 代码片如下：
+    #         d['__mysql__'] = {
+    #             'host':'127.0.0.1',  # str 【可选】 （默认 'localhost'）
+    #             'port':3306 ,        # int 【可选】 （默认 3306）
+    #             'user':'user',       # str 该配置是必须的
+    #             'password':'mypass', # str 该配置是必须的
+    #             'table':'mytable',   # str 该配置是必须的（如果没有会自动创建）注意！创建后的表结构不可改变。
+    #             'db':'mydb',         # str 【可选】 （默认vrequest）（如果没有则自动创建）
+    #         }
+    # 这个字段里面需要详细描述需要连接的数据库以及需要传入的表的名字，
+    # 注意，这里会根据 __mysql__ 的值的 hash 进行数据库连接池的创建，不同配置使用不同连接池，优化连接
+    # 之所以使用这样的接口处理是因为，这样可以使得一个任务能根据配置写入不同的数据库，非常方便
+    # 解开下面的代码块即可使用该功能
+    # import hmac, logging, traceback
+    # from twisted.enterprise import adbapi
+    # class VMySQLPipeline(object):
+    #     dbn = {}
+    #     def process_item(self, item, spider):
+    #         mysql_config = item.pop('__mysql__', None) # 存储时自动删除配置
+    #         if mysql_config and item:
+    #             if type(mysql_config) is dict:
+    #                 table = mysql_config.pop('table', None)
+    #                 db = mysql_config.get('db', None) or 'vrequest'
+    #                 mysql_config.setdefault('charset','utf8mb4')
+    #                 mysql_config.setdefault('db', db)
+    #                 dbk = hmac.new(b'',json.dumps(mysql_config, sort_keys=True).encode(),'md5').hexdigest()
+    #                 if dbk not in self.dbn:
+    #                     self.dbn[dbk] = adbapi.ConnectionPool('pymysql', **mysql_config)
+    #                     self.init_database(self.dbn[dbk], mysql_config, db, table, item)
+    #                 self.dbn[dbk].runInteraction(self.insert_item, db, table, item)
+    #                 return item
+    #             else:
+    #                 raise TypeError('Unable Parse mysql_config type:{}'.format(type(mysql_config)))
+    #         else:
+    #             return item
+    #     def insert_item(self, conn, db, table, item):
+    #         table_sql = ''.join(["'{}',".format(json.dumps(v, ensure_ascii=False).replace("'","\\'")) for k,v in item.items()])
+    #         insert_sql = 'INSERT INTO `{}`.`{}` VALUES({})'.format(db, table, table_sql.strip(','))
+    #         try: 
+    #             conn.execute(insert_sql)
+    #             logging.info('insert sql success')
+    #         except Exception as e: 
+    #             logging.info('insert sql fail: {}'.format(insert_sql))
+    #             logging.error(traceback.format_exc())
+    #     def init_database(self, pool, mysql_config, db, table, item):
+    #         # 需要注意的是，在一些非常老的版本的mysql 里面并不支持 utf8mb4。这是 mysql 的设计缺陷，赶紧使用大于 5.5 版本的 mysql !
+    #         # 创建db，创建表名，所有字段都以 MEDIUMTEXT 存储，用 json.dumps 保证了数据类型也能存储，后续取出时只需要每个值 json.loads 这样就能获取数据类型
+    #         # 例如一个数字类型    123 -> json.dumps -> '123' -> json.loads -> 123，统一类型存储，取出时又能保证数据类型，这种处理会很方便
+    #         # MEDIUMTEXT 最大能使用16M 的长度，所以对于一般的 html 文本也非常足够。
+    #         db, charset = mysql_config.pop('db'), mysql_config.get('charset')
+    #         try:
+    #             conn = pool.dbapi.connect(**mysql_config)
+    #             cursor = conn.cursor()
+    #             table_sql = ''.join(['`{}` MEDIUMTEXT NULL,'.format(str(k)) for k,v in item.items()])
+    #             cursor.execute('Create Database If Not Exists {} Character Set {}'.format(db, charset))
+    #             cursor.execute('Create Table If Not Exists `{}`.`{}` ({})'.format(db, table, table_sql.strip(',')))
+    #             conn.commit(); cursor.close(); conn.close()
+    #         except Exception as e:
+    #             traceback.print_exc()
+    # for i in p.crawlers: i.engine.scraper.itemproc._add_middleware(VMySQLPipeline())
+
+
     # 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，那也很方便
     # 将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。
     # $pyinstaller_scrapy
     # 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib，如有需要引用请删除这里的部分 --exclude-module
-'''.strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
+""".strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
 
 _main_2_list_2_info_model = r'''
             # 当你使用该模板时，我将会默认你已经熟练使用scrapy
