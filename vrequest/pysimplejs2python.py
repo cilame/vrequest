@@ -113,6 +113,42 @@ def simplejs2python(s):
     s = '''# 该功能仅用于简单的函数算法转换，
 # 在一定程度上能方便更加青睐于纯 python 教徒对 js 翻译
 # 请勿对翻译后的代码抱有过度信赖，该功能仅依赖于正则替换，所以生成代码很可能需要一定的微调。
+# 当函数出现左移或者右移函数得情况下，由于js与python在这里不一样，所以可以尝试解开下面得函数
+# 用函数实现左移和右移，例如：    s << 13  ->   rotleft(s, 13)   ，部分数字加减需要约束范围
+# 则使用 limitint 来保证函数范围。
+# 因为功能实现很急，又因为 python 的位移很奇怪，暂时用到了比较笨的方法，后续有空再改。
+# def _rot(num, rnum, side):
+#     bnum = bin(((1 << 32) - 1) & num)[2:]
+#     s = [None] * 32
+#     for idx, i in enumerate('{:>032s}'.format(bnum[-32:])):
+#         s[idx] = '0' if i == '0' else '1'
+#     if side == 'left':
+#         s.extend(['0'] * rnum)
+#         s = s[-32:]
+#     elif side == 'right':
+#         s = ['0'] * rnum + s
+#         s = s[:32]
+#     if s[0] == '1':
+#         for i in range(1,32):
+#             s[i] = '1' if s[i] == '0' else '0'
+#         v = -int(''.join(s[1:]), 2)-1
+#     else:
+#         v = int(''.join(s),2)
+#     return v
+# def limitint(num):
+#     bnum = bin(((1 << 32) - 1) & num)[2:]
+#     s = [None] * 32
+#     for idx, i in enumerate('{:>032s}'.format(bnum[-32:])):
+#         s[idx] = '0' if i == '0' else '1'
+#     if s[0] == '1':
+#         for i in range(1,32):
+#             s[i] = '1' if s[i] == '0' else '0'
+#         v = -int(''.join(s[1:]), 2)-1
+#     else:
+#         v = int(''.join(s),2)
+#     return v
+# def rotleft(num, rnum):  return _rot(num, rnum, 'left')
+# def rotright(num, rnum): return _rot(num, rnum, 'right')
 ''' + s
     return s.rstrip(' }\n')
 
