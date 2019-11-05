@@ -113,6 +113,23 @@ def simplejs2python(s):
     s = '''# 该功能仅用于简单的函数算法转换，
 # 在一定程度上能方便更加青睐于纯 python 教徒对 js 翻译
 # 请勿对翻译后的代码抱有过度信赖，该功能仅依赖于正则替换，所以生成代码很可能需要一定的微调。
+''' + s + '''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 备用函数注意
 # 当函数出现左移或者右移函数得情况下，由于js与python在这里不一样，所以可以尝试解开下面得函数
 # 用函数实现左移和右移，例如：    s << 13  ->   rotleft(s, 13)   ，部分数字加减需要约束范围
 # 则使用 limitint 来保证函数范围。
@@ -149,7 +166,7 @@ def simplejs2python(s):
 #     return v
 # def rotleft(num, rnum):  return _rot(num, rnum, 'left')
 # def rotright(num, rnum): return _rot(num, rnum, 'right')
-''' + s
+'''
     return s.rstrip(' }\n')
 
 if __name__ == '__main__':
