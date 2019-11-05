@@ -39,7 +39,7 @@ def simplejs2python(s):
                     t = 1
             q.append(i)
         q = '\n'.join(q)
-        if re.findall(r'while[^\n]+\[([^\n]+)\]', q):
+        if re.findall(r'while[^\n]+\[([^\n]+)\]', q) and q != s:
             return deal_while_1(q)
         else:
             return q
