@@ -32,15 +32,15 @@ def bitstring_to_quote(bitstring, encoding='utf-8'):
 
 def urlquote_to_bitstring(string, encoding='utf-8'):
     def quote_val(url):
-        for i in re.findall('=([^=&]+)',url):
-            url = url.replace(i,'{}'.format(urllib.parse.quote(i, encoding=encoding)))
+        for i in re.findall(r'[\?&][^=&]*=([^&]*)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.quote_plus(i, encoding=encoding)))
         return url
     return quote_val(string.decode(encoding))
 
 def bitstring_to_urlquote(bitstring, encoding='utf-8'):
     def unquote_val(url):
-        for i in re.findall('=([^=&]+)',url):
-            url = url.replace(i,'{}'.format(urllib.parse.unquote(i, encoding=encoding)))
+        for i in re.findall(r'[\?&][^=&]*=([^&]*)',url):
+            url = url.replace(i,'{}'.format(urllib.parse.unquote_plus(i, encoding=encoding)))
         return url
     return unquote_val(bitstring)
 

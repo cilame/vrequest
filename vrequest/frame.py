@@ -78,6 +78,18 @@ def request_window(setting=None):
         from .tab import send_request
         send_request()
 
+    def _swich_encd(*a):
+        s = ent1.get().strip()
+        if s == 'utf-8':
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'gbk')
+        elif s == 'gbk':
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'utf-8')
+        else:
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'utf-8')
+
     temp_fr0 = Frame(fr)
     methods = ('GET','POST')
     cbx = Combobox(temp_fr0,width=10,state='readonly')
@@ -88,6 +100,10 @@ def request_window(setting=None):
     temp_fr0.pack(fill=tkinter.X)
     btn1 = Button(temp_fr0, text='发送请求[Ctrl+r]', command=send_req)
     btn1.pack(side=tkinter.RIGHT)
+    ent1 = Entry(temp_fr0,width=6)
+    ent1.pack(side=tkinter.RIGHT)
+    btnurlencode = Button(temp_fr0, width=14, text='url中文编码格式', command=_swich_encd)
+    btnurlencode.pack(side=tkinter.RIGHT)
     lab1 = Label(temp_fr0, text='请尽量发送请求后生成代码，那样会有更多功能：')
     lab1.pack(side=tkinter.LEFT)
     btn6 = Button(temp_fr0, text='生成[requests]代码[Alt+c]', command=test_code)
@@ -127,8 +143,10 @@ def request_window(setting=None):
         tx1.insert(0.,setting['url'].strip())
         tx2.insert(0.,setting['headers'].strip())
         tx3.insert(0.,setting['body'].strip())
+        ent1.insert(0,setting.get('urlenc') or 'utf-8')
     else:
         tx2.insert(0.,DEFAULTS_HEADERS.strip())
+        ent1.insert(0,'utf-8')
 
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'request'
@@ -136,6 +154,7 @@ def request_window(setting=None):
     frame_setting[fr]['fr_url'] = tx1
     frame_setting[fr]['fr_headers'] = tx2
     frame_setting[fr]['fr_body'] = tx3
+    frame_setting[fr]['fr_urlenc'] = ent1
     return fr
 
 
@@ -282,6 +301,24 @@ eg.:
     btn8 = Button(temp_fr0, text='生成[urllib]代码', command=urllib_code)
     btn8.pack(side=tkinter.RIGHT)
 
+    def _swich_encd(*a):
+        s = ent1.get().strip()
+        if s == 'utf-8':
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'gbk')
+        elif s == 'gbk':
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'utf-8')
+        else:
+            ent1.delete(0,tkinter.END)
+            ent1.insert(0,'utf-8')
+    ent1 = Entry(temp_fr0,width=6)
+    ent1.pack(side=tkinter.RIGHT)
+    btnurlencode = Button(temp_fr0, width=14, text='url中文编码格式', command=_swich_encd)
+    btnurlencode.pack(side=tkinter.RIGHT)
+    urlenc = (setting.get('urlenc') or 'utf-8') if setting is not None else 'utf-8'
+    ent1.insert(0, urlenc)
+
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
     lb1 = Label (temp_fold_fr1,text='HTML文本展示')
@@ -321,6 +358,7 @@ eg.:
     frame_setting[fr]['fr_local_info'] = tx3 # 一个辅助说明的文本空间
     frame_setting[fr]['fr_parse_info'] = tx4
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
+    frame_setting[fr]['fr_urlenc'] = ent1
 
     # 检查数据格式
     # 非常坑，后续再考虑，现在只考虑 ['utf-8','gbk'] 两种
@@ -362,11 +400,8 @@ eg.:
             einfo = 'type:{} is not in type:[bytes]'.format(type(content))
             raise TypeError(einfo)
 
-    def quote_val(url):
-        import urllib
-        for i in re.findall('=([^=&]+)',url):
-            url = url.replace(i,'{}'.format(urllib.parse.quote(i)))
-        return url
+    from urllib.parse import quote, unquote, unquote_plus, quote_plus
+    def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2), encoding=enc), encoding=enc), url)
 
     tp = None
     if setting is not None:
@@ -377,20 +412,20 @@ eg.:
         try:
             if requests is not None:
                 if method == 'GET':
-                    s = requests.get(quote_val(ps.unquote(url)),headers=headers,verify=False)
+                    s = requests.get(quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc),headers=headers,verify=False)
                     tp,content = format_content(s.content)
                     insert_txt(tx1, content)
                 elif method == 'POST':
                     # 这里的post 里面的body 暂时还没有进行处理
-                    s = requests.post(quote_val(ps.unquote(url)),headers=headers,data=body,verify=False)
+                    s = requests.post(quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc),headers=headers,data=body,verify=False)
                     tp,content = format_content(s.content)
                     insert_txt(tx1, content)
             else:
                 # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
                 from urllib import request, parse
-                from urllib.parse import quote, unquote, urlencode
+                from urllib.parse import quote_plus, unquote_plus, urlencode
                 if method == 'GET':
-                    url = quote_val(ps.unquote(url))
+                    url = quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc)
                     r = request.Request(url, method=method)
                     for k, v in headers.items(): 
                         # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
@@ -401,7 +436,7 @@ eg.:
                     tp, content = format_content(s.read())
                     insert_txt(tx1, content)
                 elif method == 'POST':
-                    url = quote_val(ps.unquote(url))
+                    url = quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc)
                     body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
                     r = request.Request(url, method=method)
                     for k, v in headers.items(): 
@@ -801,7 +836,7 @@ _main_2_list_2_info_model = r'''
         for r in self.parse_list(response): yield r # 首页列表
         _meta = response.meta.get('_plusmeta')
         def mk_url_headers(page):
-            def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
+            def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2))), url)
             url = ... # 通常来说，这里会通过对原始的网页进行页码的修改来实现新列表页的请求
             url = quote_val(url)
             headers = {
@@ -837,7 +872,7 @@ _main_2_list_2_info_model = r'''
             d["data"] = x.xpath(...)
             # B ========================
             def mk_url_headers(d):
-                def quote_val(url): return re.sub('=([^=&]+)',lambda i:'='+quote(unquote(i.group(1))), url)
+                def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2))), url)
                 # 通常来说，这里需要从解析出的d中去获取数据页地址，并不一定是如下的字段，有时会稍稍有些复杂
                 url = response.urljoin(d['href'])
                 url = quote_val(url)
