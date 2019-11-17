@@ -374,11 +374,13 @@ def format_response(r_setting,c_set,c_content,urlenc):
                                 "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
-                    func_code = get_json_code(c_content).strip()
+                    func_code = get_json_code(c_content, i.replace('<auto_list_json:', '')[:-1].strip()).strip()
                 except:
                     import traceback
                     traceback.print_exc()
                     func_code = ''
+            if i.startswith('<just_json:'):
+                func_code = "jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nimport pprint\npprint.pprint(jsondata, depth= None )"
         func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
         _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
     # _format = _format if '$plus' not in _format else _format.replace('$plus','')
@@ -638,7 +640,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc):
                                 "    print(attr)\n")
             if i.startswith('<auto_list_json:'):
                 try:
-                    jsoncode = get_json_code(c_content).strip()
+                    jsoncode = get_json_code(c_content, i.replace('<auto_list_json:', '')[:-1].strip()).strip()
                     if jsoncode:
                         if 'pprint.pprint(d)' in jsoncode:
                             func_code = 'content = response.body.decode("{}",errors="{}")\n'.format(tps,err) + \
@@ -649,6 +651,8 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc):
                 except:
                     traceback.print_exc()
                     return _format.strip().replace('$plus','pass')
+            if i.startswith('<just_json:'):
+                func_code = 'content = response.body.decode("{}",errors="{}")\n'.format(tps,err) + "jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nimport pprint\npprint.pprint(jsondata, depth= None )"
         func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
         _format = _format.replace('$plus', func(func_code)) if func_code is not None else _format
     pas = (
@@ -1302,8 +1306,9 @@ def format_json_parse_show(p,standard=True):
     # 通常能解析的json列表的数据结构都是 list[dict1,dict2,...]，将这些当作标准解析结构
     # 不过也会有一些列表内部并非都是dict的数据结构，这时候就需要考虑一些别的方法进行格式化处理。
     if standard:
+        lens, (okey, iner) = p
         mx,okey,sortkeys = analisys_key_sort(p)
-        ret = 'jsondata{}\n'.format(okey)
+        ret = '[cnt:{}] jsondata{}\n'.format(lens, okey)
         ret += '='*(len(ret)-1) + '\n'
         for key,alen,dups,val in sortkeys:
             _ret = ('{:<'+str(mx)+'}').format(key)
@@ -1321,7 +1326,7 @@ def format_json_parse_show(p,standard=True):
         return ret
     else:
         lens, (okey, iner) = p
-        ret = 'jsondata{}\n'.format(okey)
+        ret = '[cnt:{}] jsondata{}\n'.format(lens, okey)
         ret += '='*(len(ret)-1) + '\n'
         for i in iner:
             ret += str(i) + '\n'
@@ -1347,18 +1352,42 @@ def parse_json_content(content):
         raise TypeError('unparse type {}'.format(type(s)))
     return json_content,tp
 
-def get_json_code(content):
+def get_json_code(content, parsestring=None):
     s,tp = parse_json_content(content)
     p = get_parse_list(s)
-    p = get_max_len_list(p)
-    if p[0] == 0: return ''
-    standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
-    return format_json_parse_code(p,standard,tp)
+    if not parsestring:
+        p = get_max_len_list(p)
+        if p[0] == 0: return ''
+        standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
+        return format_json_parse_code(p,standard,tp)
+    else:
+        for i in p:
+            lens = p[i]['lens']
+            iner = p[i]['iner']
+            x = lens, (i, iner)
+            if lens == 0: continue
+            standard = True if all(map(lambda i:type(i)==dict,iner)) else False
+            if 'jsondata'+i == parsestring:
+                return format_json_parse_code(x,standard,tp)
+
 
 def get_json_show(content):
     s,tp = parse_json_content(content)
     p = get_parse_list(s)
-    p = get_max_len_list(p)
-    if p[0] == 0: return ''
-    standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
-    return format_json_parse_show(p,standard)
+    v = []
+    for i in p:
+        lens = p[i]['lens']
+        iner = p[i]['iner']
+        x = lens, (i, iner)
+        if lens == 0: continue
+        standard = True if all(map(lambda i:type(i)==dict,iner)) else False
+        v.append([format_json_parse_show(x,standard), lens])
+    v = sorted(v, key=lambda i:i[1])[::-1]
+    v = [i[0] for i in v][:10]
+    return '\n\n'.join(v)
+
+    # 之前只显示最长的列表，所以之前的代码将抛弃
+    # p = get_max_len_list(p)
+    # if p[0] == 0: return ''
+    # standard = True if all(map(lambda i:type(i)==dict,p[1][1])) else False
+    # return format_json_parse_show(p,standard)

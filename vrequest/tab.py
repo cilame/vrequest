@@ -608,7 +608,7 @@ def get_xpath_elements(*a):
                         buttons=q,
                         default=0,
                         cancel=-1,
-                        title="Test Dialog")
+                        title="选则")
                     id = d.go()
                     if id == -1: return
                     xp = re.sub(r'^\[ cnt:\d+ \]', '', q[id])
@@ -682,7 +682,7 @@ def get_auto_xpath(*a):
 
 
 
-# 通过xpath获取element内部数据和内容
+# 通过分析json结构内的数据生成对应的列表信息
 def get_auto_json(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
@@ -720,6 +720,53 @@ def get_auto_json(*a):
             tx2.insert(0.,'<auto_list_json:>')
         show_response_log()
 
+# 选则对应的列表信息的数据
+def choice_auto_json(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        # txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+        tx4 = setting.get('fr_parse_info')
+        c_set = tx4.get(0., tkinter.END).split('\n\n')
+        v = []
+        vv = []
+        for i in c_set:
+            ls = []
+            for j in i.splitlines():
+                k = re.findall(r'^\[cnt:\d+\] jsondata[^\n]+', j)
+                if k: v.append(k[0])
+                ls.append(j)
+            vv.append(ls)
+        if not v: return
+        d = SimpleDialog(nb,
+            text="选则一条json列表进行解析，默认第一条内容。",
+            buttons=v,
+            default=0,
+            cancel=-1,
+            title="选则")
+        id = d.go()
+        if id == -1: return
+        k = re.findall(r'^\[cnt:\d+\] (jsondata[^\n]+)', v[id])[0]
+        content = '\n'.join(vv[id]).strip()
+        tx4.delete(0.,tkinter.END)
+        tx4.insert(0.,content)
+        tx2.delete(0.,tkinter.END)
+        tx2.insert(0.,'<auto_list_json:{}>'.format(k))
+
+# 选则对应的列表信息的数据
+def response_jsonformat(*a):
+    _select = nb.select()
+    setting = nb_names[_select]['setting']
+    if setting.get('type') == 'response':
+        txt = setting.get('fr_html_content')
+        tx2 = setting.get('fr_local_set')
+        content = txt.get(0., tkinter.END)
+        jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])
+        txt.delete(0., tkinter.END)
+        txt.insert(0., json.dumps(jsondata, ensure_ascii=False, indent=4))
+        tx2.delete(0.,tkinter.END)
+        tx2.insert(0.,'<just_json:>')
 
 
 

@@ -174,7 +174,7 @@ def response_window(setting=None):
         fr_txt.delete(0.,tkinter.END)
         fr_txt.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
 
-    doc0 = '''列表解析路径方式
+    doc0 = '''选则列表解析路径方式
 冒号后面配置的的内容为 xpath
 <xpath:>
 *组合功能！
@@ -191,7 +191,7 @@ def response_window(setting=None):
     doc2 = '''根据字符串自动分析 xpath 路径
 一般用于列表形式的路径
 通常来说这个功能针对简单的网页结构还勉强有用，并非一定能够解析
-所以一些比较复杂的网页或许还是需要考虑自省分析xpath。
+所以一些比较复杂的网页或许还是需要考虑自行分析xpath。
 
 冒号后面配置需要处理的字符串
 多个字符串可以通过空格分隔
@@ -203,15 +203,24 @@ eg.:
 
     doc3 = '''简单分析json数据内容
 找出最长的list进行初步的迭代分析，并给出分析结果在输出框
+如果没有主动选则某一个json列表，则默认使用第一个最长的列表
+进行默认的代码生成
 <auto_list_json:>
 '''
 
-    doc4 = '''生成scrapy代码
+    doc4 = '''选则分析的json列表
+选则的json列表的解析方式放在auto_list_json配置的后面
+当你生成代码的时候将会使用这个进行对列表解析自动生成对应的代码
+下面是一个例子：
+<auto_list_json:jsondata["data"]["list"]>
+'''
+
+    doc5 = '''生成scrapy代码
 如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
 则会在生成代码中包含相应的代码
 '''
 
-    doc5 = '''生成requests代码
+    doc6 = '''生成requests代码
 如果存在 “解析xpath”、“自动json” 或 “获取纯文字” 状态
 则会在生成代码中包含相应的代码
 '''
@@ -230,6 +239,8 @@ eg.:
             insert_txt(tx3,doc4)
         if methods.index(method) == 5:
             insert_txt(tx3,doc5)
+        if methods.index(method) == 6:
+            insert_txt(tx3,doc6)
         switch_show(onlyshow=True)
 
     fr = Frame()
@@ -262,6 +273,10 @@ eg.:
         from .tab import get_auto_json
         get_auto_json()
 
+    def choice_json(*a):
+        from .tab import choice_auto_json
+        choice_auto_json()
+
     def test_code(*a):
         from .tab import create_test_code
         create_test_code()
@@ -274,24 +289,32 @@ eg.:
         from .tab import create_test_code_urllib
         create_test_code_urllib()
 
+    def jsonformat(*a):
+        from .tab import response_jsonformat
+        response_jsonformat()
+
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
-    methods = ('(Alt+x) 解析xpath','(Alt+d) 获取纯文字','(Alt+f) 分析xpath','(Alt+z) 自动json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
+    methods = ('(Alt+x) 选则xpath','(Alt+d) 获取纯文字','(Alt+f) 分析xpath','(Alt+z) 分析json','(Alt+q) 选则json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
     cbx = Combobox(temp_fr0,width=18,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
     cbx.pack(side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', document)
     temp_fr0.pack(fill=tkinter.X)
-    btn3 = Button(temp_fr0, text='分析xpath', command=auto_xpath)
+    btn3 = Button(temp_fr0, text='(f)分析xpath', command=auto_xpath)
     btn3.pack(side=tkinter.LEFT)
-    btn4 = Button(temp_fr0, text='解析xpath', command=xpath_elements)
+    btn4 = Button(temp_fr0, text='(x)选则xpath', command=xpath_elements)
     btn4.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='获取纯文字', command=html_pure_text)
-    btn2.pack(side=tkinter.LEFT)
-    btn5 = Button(temp_fr0, text='自动json', command=auto_json)
+    btn5 = Button(temp_fr0, text='(z)分析json', command=auto_json)
     btn5.pack(side=tkinter.LEFT)
+    btn9 = Button(temp_fr0, text='(q)选则json', command=choice_json)
+    btn9.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='(d)获取纯文字', command=html_pure_text)
+    btn2.pack(side=tkinter.LEFT)
+    btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
+    btn9.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
     btn1.pack(side=tkinter.RIGHT)
     btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
@@ -359,27 +382,6 @@ eg.:
     frame_setting[fr]['fr_parse_info'] = tx4
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
     frame_setting[fr]['fr_urlenc'] = ent1
-
-    # 检查数据格式
-    # 非常坑，后续再考虑，现在只考虑 ['utf-8','gbk'] 两种
-    # def parse_content_type(content, types=['utf-8','gbk']):
-    #     itype = iter(types)
-    #     while True:
-    #         try:
-    #             tp = next(itype)
-    #             content = content.decode(tp)
-    #             return tp, content
-    #         except StopIteration:
-    #             try:
-    #                 import chardet
-    #                 tp = chardet.detect(content)['encoding']
-    #                 types.append(tp)
-    #                 content = content.decode(tp)
-    #                 return tp, content
-    #             except:
-    #                 raise TypeError('not in {}'.format(types))
-    #         except:
-    #             continue
 
     # 统一数据格式
     def format_content(content):
@@ -1119,15 +1121,16 @@ vrequest：
                       的情况，这时候只要将传入的一行数据前后加上英文的双引号
                       程序会自动不对该 dict 进行编码，POST 请求时请留意该功能
 *(Alt + s) 生成 scrapy 请求代码，格式化结构同上
-(Alt + u)  生成 urllib 请求代码，格式化结构同上
+*(Alt + u) 生成 urllib 请求代码，格式化结构同上
 
 响应窗口快捷键：
 *(Alt + r) 打开一个空的响应标签(不建议在响应窗口使用)
 (Alt + f) 智能解析列表路径，解析后使用 xpath 解析功能会自动弹出解析选择窗
 (Alt + x) <代码过程> 使用 xpath 解析
-(Alt + z) <代码过程> 智能提取 json 数据
+(Alt + z) <代码过程> 智能提取 json 列表(由长到短顺序排列，不选默认第一条)
+(Alt + q) <代码过程> 选则一个 json 列表
 (Alt + d) <代码过程> 获取纯文字内容
-(Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码 [在js代码窗同样适用]
+(Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码
 (Alt + s) 生成 scrapy 请求代码，有<代码过程>则生成代码中包含过程代码
 (Alt + u) 生成 urllib 请求代码，不包含过程(解析过程必依赖lxml,与无依赖理念冲突)
 (Esc)     开启/关闭 response 解析窗口

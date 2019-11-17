@@ -27,6 +27,7 @@ from .tab import (
     get_xpath_elements,
     get_auto_xpath,
     get_auto_json,
+    choice_auto_json,
     execute_code,
     execute_scrapy_code,
     create_js_parse,
@@ -85,7 +86,8 @@ bind_alt_key(create_test_code,          'c') # 生成代码
 bind_alt_key(get_html_pure_text,        'd') # 获取文本
 bind_alt_key(get_xpath_elements,        'x') # 获取xpath
 bind_alt_key(get_auto_xpath,            'f') # 解析路径xpath
-bind_alt_key(get_auto_json,             'z') # 解析json数据
+bind_alt_key(get_auto_json,             'z') # 分析json列表
+bind_alt_key(choice_auto_json,          'q') # 选则json列表
 bind_alt_key(execute_code,              'v') # 代码执行
 bind_alt_key(create_scrapy_code,        's') # 生成scrapy代码
 bind_alt_key(execute_scrapy_code,       'w') # 用自动生成的环境执行scrapy代码
