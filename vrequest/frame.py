@@ -573,7 +573,7 @@ def code_window(setting=None):
 
 
 
-
+# 暂时废弃"后验证代码的功能"
 post_verification_model = r"""
     '''
     # [后验证代码模板]
@@ -794,88 +794,8 @@ single_script_comment_part2 = r"""
 """.strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
 
 _main_2_list_2_info_model = r'''
-            # 当你使用该模板时，我将会默认你已经熟练使用scrapy
-            # 所以以下的模板本质上是对重复工作的一种消灭行为，请尝试读懂全部代码，
-            # 善用该功能可以减轻更多重复性质的网页数据收集的负担。（这种类型的网页实在是太多了）
-            # 该模板针对的网站结构是:
-            # 主页(大分类的页面) -> 
-            #     大分类页面(列表数据页面首页，总页码) -> 
-            #         1) 获取列表数据页面首页 ->
-            #              首页列表数据页 ->
-            #                  数据页面
-            #         2) 根据总页码迭代页码获取所有的列表数据页面 ->
-            #              其他的列表数据页 ->
-            #                  数据页面
-            # 如果第一页就是需要翻页的列表页，那就更简单了，
-            # 将 start_requests 内的请求的 callback = self.parse_first_list, 
-            # 同时将该处的函数中解析的部分剪贴到 parse_list 函数里面，其他部分包含该函数本身直接删除即可
-            part_url = ... # 这里传入需要传入的大分类的url片段，在 mk_url_headers 函数内统一处理
-            def mk_url_headers(part_url):
-                url = part_url
-                headers = {
-                    "accept-encoding": "gzip, deflate", # auto delete br encoding. cos requests and scrapy can not decode it.
-                    "accept-language": "zh-CN,zh;q=0.9",
-                    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
-                }
-                return url,headers
-            url,headers = mk_url_headers(part_url)
-            meta = {}
-            meta['_plusmeta'] = d
-            r = Request(
-                    url,
-                    headers  = headers,
-                    callback = self.parse_list,
-                    meta     = meta,
-                    # method   = 'POST', # 使用 POST 时请解开该处注释，并请生成body参数
-                    # body     = urlencode(body), 
-                )
-            yield r
-            break # for test.
-    def parse_first_list(self, response):
-        # 这种方式处理总页码数包含在首页爬虫类型，
-        # 因为需要根据情况获取一定的数据才能执行，所以这部分只是作为模板处理
-        for r in self.parse_list(response): yield r # 首页列表
-        _meta = response.meta.get('_plusmeta')
-        def mk_url_headers(page):
-            def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2))), url)
-            url = ... # 通常来说，这里会通过对原始的网页进行页码的修改来实现新列表页的请求
-            url = quote_val(url)
-            headers = {
-                "accept-encoding": "gzip, deflate",
-                "accept-language": "zh-CN,zh;q=0.9",
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
-            }
-            return url,headers
-        maxpage = ... # 这里需要处理！
-        for page in range(2, maxpage):
-            url,headers = mk_url_headers(page)
-            meta = {}
-            meta['_plusmeta'] = _meta # 继续传递，通常是传递最早的大分类
-            r = Request(
-                    url,
-                    headers  = headers,
-                    callback = self.parse_list,
-                    meta     = meta,
-                    # method   = 'POST', # 使用 POST 时请解开该处注释，并请生成body参数
-                    # body     = urlencode(body), 
-                )
-            yield r
-            break # for test.
-    def parse_list(self, response):
-        _meta = response.meta.get('_plusmeta')
-        # 以下 A-B 之间的代码通常是从列表解析页面获取的新的列表解析粘贴进来的，这里只是模板
-        # A ====================
-        for x in response.xpath('//div/div[@class="video_small_intro"]/parent::*'):
-            d = {}
-            d["href"] = x.xpath(...)
-            d["src"]  = x.xpath(...)
-            d["data"] = x.xpath(...)
-            # B ========================
             def mk_url_headers(d):
                 def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2))), url)
-                # 通常来说，这里需要从解析出的d中去获取数据页地址，并不一定是如下的字段，有时会稍稍有些复杂
                 url = response.urljoin(d['href'])
                 url = quote_val(url)
                 headers = {
@@ -887,29 +807,27 @@ _main_2_list_2_info_model = r'''
                 return url,headers
             url,headers = mk_url_headers(d)
             meta = {}
-            _meta.update(d)
-            meta['_plusmeta'] = _meta
+            meta['proxy'] = self.proxy
+            meta['_plusmeta'] = {**_meta, **d} # keys word transfer
             r = Request(
                     url,
                     headers  = headers,
                     callback = self.parse_info,
                     meta     = meta,
-                    # method   = 'POST', # 使用 POST 时请解开该处注释，并请生成body参数
+                    # method   = 'POST', # if post is used, pls uncomment here and create the body parameter
                     # body     = urlencode(body), 
                 )
             yield r
-            break # for test.
+
     def parse_info(self, response):
-        # 这里的 _plusmeta 已经是该条数据一路走来所获取的信息分类
-        # 筛选需要的加上数据页面收集的数据就可以拿走了
-        # 这里最后要说的是，把分类收集的这一部分放在最后会增强对数据管理的方便程度，
-        # 不需要的字段一开始就删掉或者在这里 pop 掉，或者开个新的字典进行收集。请按照喜好处理
-        d = response.meta.get('_plusmeta') 
-        d['...A'] = ...
-        d['...B'] = ...
-        d['...C'] = ...
+        d = response.meta.get('_plusmeta') or {}
+        d['someting1'] = 'pls fill in the fields collected on this page.'
+        d['someting2'] = 'pls fill in the fields collected on this page.'
+        d['someting3'] = 'pls fill in the fields collected on this page.'
+        import pprint
+        pprint.pprint(d)
         yield d
-''' + '\n\n\n\n\n'
+'''
 
 # 生成代码临时放在这里
 def scrapy_code_window(setting=None):
@@ -928,9 +846,9 @@ def scrapy_code_window(setting=None):
             with open(script,'w',encoding='utf-8') as f:
                 f.write(tx.get(0.,tkinter.END))
             shutil.copytree(scrapypath, desktop)
-            if hva.get():
-                with open(desktop + '\\v\\spiders\\v.py','a',encoding='utf-8') as f:
-                    f.write('\n'*10 + post_verification_model)
+            # if hva.get():
+            #     with open(desktop + '\\v\\spiders\\v.py','a',encoding='utf-8') as f:
+            #         f.write('\n'*10 + post_verification_model)
             toggle = tkinter.messagebox.askokcancel('创建成功',
                             '创建成功\n\n'
                             '注意！！！\n注意！！！\n注意！！！\n\n是否关闭当前工具并启动拷贝出的 shell 地址执行测试。\n'
@@ -991,14 +909,29 @@ def scrapy_code_window(setting=None):
 
     def _add_sceeper_in_list_model(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
-        tx.delete(0.,tkinter.END)
-        if "meta['_plusmeta'] = d" not in script:
-            temp1 = '            yield d'
-            temp2 = '# 配置在单脚本情况也能爬取的脚本的备选方案，使用项目启动则下面的代码无效'
-            script = script.replace(temp1, '')
-            script = script.replace(temp2, _main_2_list_2_info_model + temp2)
-        tx.insert(0.,script)
-        tx.see(tkinter.END)
+        if "meta['_plusmeta'] = {}" not in script:
+            q = re.findall(r'\n            d\["([^"]+)"\] *=', script)
+            if not q: return
+            from .tab import nb
+            from .tab import SimpleDialog
+            d = SimpleDialog(nb,
+                text="请选则作为下一级请求链接的字段",
+                buttons=q,
+                default=0,
+                cancel=-1,
+                title="选则")
+            id = d.go()
+            if id == -1: return
+            script = script.replace('''        # If you need to parse another string in the parsing function.''', 
+                                    '''        _meta = response.meta.get('_plusmeta') or {}\n        # If you need to parse another string in the parsing function.''')
+            script = script.replace('''meta = {}\n        meta['proxy'] = self.proxy\n        r = Request(''', 
+                                    '''meta = {}\n        meta['proxy'] = self.proxy\n        meta['_plusmeta'] = {} # keys word transfer\n        r = Request(''')
+            script = script.replace('''print('------------------------------ split ------------------------------')\n            import pprint\n            pprint.pprint(d)\n            yield d''', 
+                                    '''# print('------------------------------ split ------------------------------')\n            # import pprint\n            # pprint.pprint(d)\n            # yield d''' \
+                                    + _main_2_list_2_info_model.replace("response.urljoin(d['href'])", "response.urljoin(d['{}'])".format(q[id])))
+            tx.delete(0.,tkinter.END)
+            tx.insert(0.,script)
+            tx.see(tkinter.END)
 
     def pprint(*a):
         __org_stdout__.write(str(a)+'\n')
@@ -1016,14 +949,14 @@ def scrapy_code_window(setting=None):
     bt2.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='增加单脚本中间件注释', command=_add_single_script_comment)
+    btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
     btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='增加高级模板1', command=_add_sceeper_in_list_model)
+    btn2 = Button(temp_fr0, text='增加列表请求', command=_add_sceeper_in_list_model)
     btn2.pack(side=tkinter.LEFT)
-    hva = tkinter.IntVar()
-    hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)
-    hrb.deselect()
-    hrb.pack(side=tkinter.LEFT)
+    # hva = tkinter.IntVar()
+    # hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)
+    # hrb.deselect()
+    # hrb.pack(side=tkinter.LEFT)
     cbx = Combobox(temp_fr0,width=10,state='readonly')
     cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
     cbx.current(1)

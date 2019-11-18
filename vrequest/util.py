@@ -186,8 +186,9 @@ def get_info():
         $c_headers
         return url,headers
 
+    proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
     url,headers = mk_url_headers()
-    s = requests.get(url,headers=headers,verify=False)
+    s = requests.get(url,headers=headers,verify=False,proxies=proxies)
     tp, content = parse_content_type(s.content)
     print(s)
     print('decode type: {}'.format(tp))
@@ -246,9 +247,10 @@ def post_info():
         $c_body
         return url,headers,body
 
-    url,headers,body = mk_url_headers_body()    
+    proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
+    url,headers,body = mk_url_headers_body()
     #body = json.dumps(body) #极少情况需要data为string情况下的json数据，如需要解开该注释
-    s = requests.post(url,headers=headers,data=body,verify=False) 
+    s = requests.post(url,headers=headers,data=body,verify=False,proxies=proxies) 
     tp, content = parse_content_type(s.content)
     print(s)
     print('decode type: {}'.format(tp))
@@ -408,6 +410,7 @@ class VSpider(scrapy.Spider):
     custom_settings = {
         'COOKIES_ENABLED': False,  # use my create cookie in headers
     }
+    proxy = None # 'http://127.0.0.1:8888'
 
     def start_requests(self):
         def mk_url_headers():
@@ -418,6 +421,7 @@ class VSpider(scrapy.Spider):
             return url,headers
         url,headers = mk_url_headers()
         meta = {}
+        meta['proxy'] = self.proxy
         r = Request(
                 url,
                 headers  = headers,
@@ -449,6 +453,7 @@ class VSpider(scrapy.Spider):
     custom_settings = {
         'COOKIES_ENABLED': False,  # use my create cookie in headers
     }
+    proxy = None # 'http://127.0.0.1:8888'
 
     def start_requests(self):
         def mk_url_headers_body():
@@ -460,6 +465,7 @@ class VSpider(scrapy.Spider):
             return url,headers,body
         url,headers,body = mk_url_headers_body()
         meta = {}
+        meta['proxy'] = self.proxy
         r = Request(
                 url,
                 method   = 'POST',
