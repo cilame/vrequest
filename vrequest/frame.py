@@ -824,6 +824,7 @@ _main_2_list_2_info_model = r'''
         d['someting1'] = 'pls fill in the fields collected on this page.'
         d['someting2'] = 'pls fill in the fields collected on this page.'
         d['someting3'] = 'pls fill in the fields collected on this page.'
+        print('------------------------------ split ------------------------------')
         import pprint
         pprint.pprint(d)
         yield d
