@@ -705,7 +705,9 @@ r = request.Request(url, method=method)
 for k, v in headers.items():
     if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
     r.add_header(k, v)
-s = request.urlopen(r)
+proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
+opener = request.build_opener(request.ProxyHandler(proxies))
+s = opener.open(r)
 
 content = s.read()
 
@@ -742,7 +744,9 @@ r = request.Request(url, method=method)
 for k, v in headers.items():
     if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
     r.add_header(k, v)
-s = request.urlopen(r, data=body)
+proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
+opener = request.build_opener(request.ProxyHandler(proxies))
+s = opener.open(r, data=body)
 
 content = s.read()
 

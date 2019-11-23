@@ -731,7 +731,7 @@ single_script_comment_part2 = r"""
     #             'port':3306 ,        # int 【可选】 （默认 3306）
     #             'user':'user',       # str 该配置是必须的
     #             'password':'mypass', # str 该配置是必须的
-    #             'table':'mytable',   # str 该配置是必须的（如果没有会自动创建）注意！创建后的表结构不可改变。
+    #             'table':'mytable',   # str 该配置是必须的（如果数据库内没有该表则会自动创建）注意！创建后的表结构不可改变。
     #             'db':'mydb',         # str 【可选】 （默认vrequest）（如果没有则自动创建）
     #         }
     # 这个字段里面需要详细描述需要连接的数据库以及需要传入的表的名字，
@@ -773,7 +773,7 @@ single_script_comment_part2 = r"""
     #         # 需要注意的是，在一些非常老的版本的mysql 里面并不支持 utf8mb4。这是 mysql 的设计缺陷，赶紧使用大于 5.5 版本的 mysql !
     #         # 创建db，创建表名，所有字段都以 MEDIUMTEXT 存储，用 json.dumps 保证了数据类型也能存储，后续取出时只需要每个值 json.loads 这样就能获取数据类型
     #         # 例如一个数字类型    123 -> json.dumps -> '123' -> json.loads -> 123，统一类型存储，取出时又能保证数据类型，这种处理会很方便
-    #         # MEDIUMTEXT 最大能使用16M 的长度，所以对于一般的 html 文本也非常足够。
+    #         # MEDIUMTEXT 最大能使用16M 的长度，所以对于一般的 html 文本也非常足够。如有自定义字段类型的需求，请注意修改该处。
     #         db, charset = mysql_config.pop('db'), mysql_config.get('charset')
     #         try:
     #             conn = pool.dbapi.connect(**mysql_config)
@@ -787,8 +787,28 @@ single_script_comment_part2 = r"""
     # for i in p.crawlers: i.engine.scraper.itemproc._add_middleware(VMySQLPipeline())
 
 
+    # 【视频下载】 中间件介绍
+    # 以下包含了比较主流的下载器的使用代码片，请任选一个进行使用。you-get 或 youtube-dl
+    # 如果存在一些 m3u8 的视频需要下载，那么建议下载 ffmpeg，并使用 youtube-dl 进行下载。
+    # ffmpeg如果没有配置环境变量则请将 ffmpeg_location 设置为 ffmpeg.exe 文件的路径即可。
+    # 解开下面的代码块即可使用该功能
+    # class VVideoPipeline(object):
+    #     def process_item(self, item, spider):
+    #         url = item['src']
+    #         ### 【you-get】
+    #         import you_get.common
+    #         you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
+    #         you_get.common.any_download(url, output_dir='./video', merge=True, info_only=False)
+    #         ### 【youtube-dl】
+    #         # from youtube_dl import YoutubeDL
+    #         # ytdl = YoutubeDL({'outtmpl': './video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
+    #         # info = ytdl.extract_info(url, download=True)
+    #         return item
+    # for i in p.crawlers: i.engine.scraper.itemproc._add_middleware(VVideoPipeline())
+
+
     # 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，那也很方便
-    # 将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。
+    # 将下面的一行内容拼接到 “pyinstaller -F $你的scrapy单脚本.py ” 命令的后面就可以了。（这里为纯scrapy打包，若还有额外第三方库请按照类似方式添加）
     # $pyinstaller_scrapy
     # 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib，如有需要引用请删除这里的部分 --exclude-module
 """.strip('\n').replace('$pyinstaller_scrapy', _pyinstaller_scrapy)
