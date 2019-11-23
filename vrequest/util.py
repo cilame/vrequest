@@ -270,19 +270,18 @@ post_info()
         _format = _format_get
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
-        _format = _format.replace('$x_urlenc',urlenc)
     elif method == 'POST':
         _format = _format_post
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
-        _format = _format.replace('$x_urlenc',urlenc)
     rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
           '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
     rep2 = '''from urllib.parse import unquote_plus, quote_plus''' if qplus == 'yes' else \
            '''from urllib.parse import unquote, quote'''
     _format = _format.replace('$x_qplus', rep)
     _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus''', rep2)
+    _format = _format.replace('$x_urlenc',urlenc)
     return _format.strip()
 
 
@@ -524,13 +523,11 @@ if __name__ == '__main__':
         _format = _format_get
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
-        _format = _format.replace('$x_urlenc',urlenc)
     elif method == 'POST':
         _format = _format_post
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
-        _format = _format.replace('$x_urlenc',urlenc)
         if not c_body.strip().endswith('}'):
             _format = _format.replace('= urlencode(body)','= body')
     rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
@@ -539,6 +536,7 @@ if __name__ == '__main__':
            '''from urllib.parse import unquote, quote'''
     _format = _format.replace('$x_qplus', rep)
     _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus''', rep2)
+    _format = _format.replace('$x_urlenc',urlenc)
     return _format.strip()
 
 
@@ -774,19 +772,18 @@ $plus
         _format = _format_get
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
-        _format = _format.replace('$x_urlenc',urlenc)
     elif method == 'POST':
         _format = _format_post
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
-        _format = _format.replace('$x_urlenc',urlenc)
     rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
           '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
     rep2 = '''from urllib.parse import unquote_plus, quote_plus, urlencode''' if qplus == 'yes' else \
            '''from urllib.parse import unquote, quote, urlencode'''
     _format = _format.replace('$x_qplus', rep)
     _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus, urlencode''', rep2)
+    _format = _format.replace('$x_urlenc',urlenc)
     return _format.strip()
 
 def del_plus_urllib(string):
