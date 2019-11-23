@@ -194,6 +194,7 @@ def set_request_config(name,setting):
     headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
     body    = setting.get('fr_body').get(0.,tkinter.END).strip()
     urlenc  = setting.get('fr_urlenc').get()
+    qplus   = setting.get('fr_qplus').get()
     config['set'][name] = {}
     config['set'][name]['type'] = 'request'
     config['set'][name]['method'] = method
@@ -201,11 +202,12 @@ def set_request_config(name,setting):
     config['set'][name]['headers'] = headers
     config['set'][name]['body'] = body
     config['set'][name]['urlenc'] = urlenc
+    config['set'][name]['qplus'] = qplus
     headers = format_headers_str(headers)
     body    = format_body_str(body)
     setting.get('fr_url').delete(0.,tkinter.END)
     setting.get('fr_url').insert(0.,format_url_show(url, urlenc))
-    return method,url,headers,body,urlenc
+    return method,url,headers,body,urlenc,qplus
 
 
 
@@ -216,10 +218,11 @@ def get_request_config(setting):
     headers = setting.get('fr_headers').get(0.,tkinter.END).strip()
     body    = setting.get('fr_body').get(0.,tkinter.END).strip()
     urlenc  = setting.get('fr_urlenc').get()
+    qplus   = setting.get('fr_qplus').get()
     c_headers = format_headers_code(headers)
     c_url = format_url_code(url, urlenc)
     c_body = format_body_code(body)
-    return method,c_url,c_headers,c_body,urlenc
+    return method,c_url,c_headers,c_body,urlenc,qplus
 
 
 
@@ -235,6 +238,7 @@ def get_response_config(setting):
     c_content = tx1.get(0.,tkinter.END).strip() # 配置，目前在解析json数据部分有用
     c_set     = tx2.get(0.,tkinter.END).strip() # 配置，用来配置生成代码的方式
     urlenc    = setting.get('fr_urlenc').get()
+    qplus     = setting.get('fr_qplus').get()
 
     r_setting = setting.get('fr_setting')
     if r_setting is not None:
@@ -246,7 +250,7 @@ def get_response_config(setting):
         c_headers = format_headers_code(headers)
         c_body    = format_body_code(body) if type(body) == dict else 'body = ' + json.dumps(body)
         r_setting = method,c_url,c_headers,c_body
-    return r_setting,c_set,c_content,tps,urlenc
+    return r_setting,c_set,c_content,tps,urlenc,qplus
 
 
 
@@ -259,13 +263,14 @@ def send_request():
     setting = nb_names[_select]['setting']
     foc_tog = True
     if setting.get('type') == 'request':
-        method,url,headers,body,urlenc = set_request_config(name,setting)
+        method,url,headers,body,urlenc,qplus = set_request_config(name,setting)
         _setting = {}
         _setting['method'] = method
         _setting['url'] = url
         _setting['headers'] = headers
         _setting['body'] = body
         _setting['urlenc'] = urlenc
+        _setting['qplus'] = qplus
         create_new_rsptab(_setting,reqname=name)
     else:
         foc_tog = False
@@ -311,11 +316,11 @@ def create_test_code(*a):
     setting = nb_names[_select]['setting']
     code_string = None
     if setting.get('type') == 'request':
-        method,c_url,c_headers,c_body,urlenc = get_request_config(setting)
-        code_string = format_request(method,c_url,c_headers,c_body,urlenc)
+        method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
+        code_string = format_request(method,c_url,c_headers,c_body,urlenc,qplus)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content,tps,urlenc = get_response_config(setting)
-        code_string = format_response(r_setting,c_set,c_content,urlenc)
+        r_setting,c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
+        code_string = format_response(r_setting,c_set,c_content,urlenc,qplus)
     if setting.get('type') == 'js':
         setting.get('execute_func0')()
 
@@ -331,14 +336,14 @@ def create_test_code_urllib(*a):
     name    = nb_names[_select]['name']
     setting = nb_names[_select]['setting']
     if setting.get('type') == 'request':
-        method,c_url,c_headers,c_body,urlenc = get_request_config(setting)
-        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc)
+        method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
+        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus)
         setting = {}
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
     if setting.get('type') == 'response':
-        (method,c_url,c_headers,c_body),c_set,c_content,tps,urlenc = get_response_config(setting)
-        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc)
+        (method,c_url,c_headers,c_body),c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
+        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus)
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
 
@@ -371,11 +376,11 @@ def create_scrapy_code(*a):
         else: return
     code_string = None
     if setting.get('type') == 'request':
-        method,c_url,c_headers,c_body,urlenc = get_request_config(setting)
-        code_string = format_scrapy_request(method,c_url,c_headers,c_body,urlenc)
+        method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
+        code_string = format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content,tps,urlenc = get_response_config(setting)
-        code_string = format_scrapy_response(r_setting,c_set,c_content,tps,urlenc)
+        r_setting,c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
+        code_string = format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus)
     if code_string:
         setting = {}
         setting['code_string'] = code_string

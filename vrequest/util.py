@@ -138,7 +138,7 @@ def format_url_code(url:str, urlenc):
 
 
 
-def format_req(method,c_url,c_headers,c_body,urlenc):
+def format_req(method,c_url,c_headers,c_body,urlenc,qplus):
 
     _format_get = '''
 try:
@@ -180,7 +180,7 @@ def get_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers():
-        def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+        $x_qplus
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -240,7 +240,7 @@ def post_info():
                 continue
     # 生成请求参数函数
     def mk_url_headers_body():
-        def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+        $x_qplus
         $c_url
         url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
         $c_headers
@@ -277,6 +277,12 @@ post_info()
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
         _format = _format.replace('$x_urlenc',urlenc)
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+          '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
+    rep2 = '''from urllib.parse import unquote_plus, quote_plus''' if qplus == 'yes' else \
+           '''from urllib.parse import unquote, quote'''
+    _format = _format.replace('$x_qplus', rep)
+    _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus''', rep2)
     return _format.strip()
 
 
@@ -327,15 +333,15 @@ def del_plus(string):
     return string.replace('$plus',pas).strip()
 
 
-def format_request(method,c_url,c_headers,c_body,urlenc):
-    return del_plus(format_req(method,c_url,c_headers,c_body,urlenc))
+def format_request(method,c_url,c_headers,c_body,urlenc,qplus):
+    return del_plus(format_req(method,c_url,c_headers,c_body,urlenc,qplus))
 
 
-def format_response(r_setting,c_set,c_content,urlenc):
+def format_response(r_setting,c_set,c_content,urlenc,qplus):
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
-        _format = format_req(method,c_url,c_headers,c_body,urlenc)
+        _format = format_req(method,c_url,c_headers,c_body,urlenc,qplus)
     else:
         tkinter.messagebox.showinfo('Error','Canot create code without request.')
         raise TypeError('Canot create code without request.')
@@ -393,7 +399,7 @@ def format_response(r_setting,c_set,c_content,urlenc):
 
 
 
-def format_scrapy_req(method,c_url,c_headers,c_body,urlenc):
+def format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus):
     _format_get = '''
 # -*- coding: utf-8 -*-
 import scrapy
@@ -414,7 +420,7 @@ class VSpider(scrapy.Spider):
 
     def start_requests(self):
         def mk_url_headers():
-            def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+            $x_qplus
             $c_url
             url = quote_val(url)
             $c_headers
@@ -457,7 +463,7 @@ class VSpider(scrapy.Spider):
 
     def start_requests(self):
         def mk_url_headers_body():
-            def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+            $x_qplus
             $c_url
             url = quote_val(url)
             $c_headers
@@ -527,10 +533,16 @@ if __name__ == '__main__':
         _format = _format.replace('$x_urlenc',urlenc)
         if not c_body.strip().endswith('}'):
             _format = _format.replace('= urlencode(body)','= body')
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+          '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
+    rep2 = '''from urllib.parse import unquote_plus, quote_plus''' if qplus == 'yes' else \
+           '''from urllib.parse import unquote, quote'''
+    _format = _format.replace('$x_qplus', rep)
+    _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus''', rep2)
     return _format.strip()
 
 
-def format_scrapy_request(method,c_url,c_headers,c_body,urlenc):
+def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
     pas = r'''print('\n'*2)
         def header_fprint(headers_dict):
             maxklen = len(repr(max(headers_dict,key=len)))
@@ -572,7 +584,7 @@ def format_scrapy_request(method,c_url,c_headers,c_body,urlenc):
         print('response body[:1000]:\n {}'.format(response.body[:1000]))
         print('=========================================================')
         print('\n'*2)'''
-    return format_scrapy_req(method,c_url,c_headers,c_body,urlenc).replace('$plus',pas)
+    return format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus).replace('$plus',pas)
 
 
 def normal_scrapy_content(content,
@@ -590,11 +602,11 @@ def normal_scrapy_content(content,
     t = e.xpath('normalize-space({})'.format(rootxpath))
     return re.sub(r'\s+',' ',t.strip())
 
-def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc):
+def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus):
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
-        _format = format_scrapy_req(method,c_url,c_headers,c_body,urlenc)
+        _format = format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus)
     else:
         tkinter.messagebox.showinfo('Error','Canot create code without request.')
         raise TypeError('Canot create code without request.')
@@ -676,7 +688,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc):
 
 
 
-def format_req_urllib(method,c_url,c_headers,c_body,urlenc):
+def format_req_urllib(method,c_url,c_headers,c_body,urlenc,qplus):
     _format_get = '''
 try:
     # 处理 sublime 执行时输出乱码
@@ -692,7 +704,7 @@ from urllib import request, parse
 from urllib.parse import unquote_plus, quote_plus, urlencode
 
 def mk_url_headers():
-    def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+    $x_qplus
     $c_url
     url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
     $c_headers
@@ -729,7 +741,7 @@ from urllib import request, parse
 from urllib.parse import unquote_plus, quote_plus, urlencode
 
 def mk_url_headers_body():
-    def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)
+    $x_qplus
     $c_url
     url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
     $c_headers
@@ -769,6 +781,12 @@ $plus
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
         _format = _format.replace('$x_urlenc',urlenc)
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+          '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
+    rep2 = '''from urllib.parse import unquote_plus, quote_plus, urlencode''' if qplus == 'yes' else \
+           '''from urllib.parse import unquote, quote, urlencode'''
+    _format = _format.replace('$x_qplus', rep)
+    _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus, urlencode''', rep2)
     return _format.strip()
 
 def del_plus_urllib(string):
@@ -877,8 +895,8 @@ class VHTML:
 '''
     return string.replace('$plus',pas).strip()
 
-def format_request_urllib(method,c_url,c_headers,c_body,urlenc):
-    return del_plus_urllib(format_req_urllib(method,c_url,c_headers,c_body,urlenc))
+def format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus):
+    return del_plus_urllib(format_req_urllib(method,c_url,c_headers,c_body,urlenc,qplus))
 
 
 

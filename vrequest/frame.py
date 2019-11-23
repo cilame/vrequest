@@ -90,6 +90,18 @@ def request_window(setting=None):
             ent1.delete(0,tkinter.END)
             ent1.insert(0,'utf-8')
 
+    def _swich_quote(*a):
+        s = ent2.get().strip()
+        if s == 'yes':
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'no')
+        elif s == 'no':
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'yes')
+        else:
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'yes')
+
     temp_fr0 = Frame(fr)
     methods = ('GET','POST')
     cbx = Combobox(temp_fr0,width=10,state='readonly')
@@ -104,6 +116,10 @@ def request_window(setting=None):
     ent1.pack(side=tkinter.RIGHT)
     btnurlencode = Button(temp_fr0, width=14, text='url中文编码格式', command=_swich_encd)
     btnurlencode.pack(side=tkinter.RIGHT)
+    ent2 = Entry(temp_fr0,width=4)
+    ent2.pack(side=tkinter.RIGHT)
+    btnurlencode1 = Button(temp_fr0, width=18, text='url是否编码“+”符号', command=_swich_quote)
+    btnurlencode1.pack(side=tkinter.RIGHT)
     lab1 = Label(temp_fr0, text='请尽量发送请求后生成代码，那样会有更多功能：')
     lab1.pack(side=tkinter.LEFT)
     btn6 = Button(temp_fr0, text='生成[requests]代码[Alt+c]', command=test_code)
@@ -144,9 +160,11 @@ def request_window(setting=None):
         tx2.insert(0.,setting['headers'].strip())
         tx3.insert(0.,setting['body'].strip())
         ent1.insert(0,setting.get('urlenc') or 'utf-8')
+        ent2.insert(0,setting.get('qplus') or 'no')
     else:
         tx2.insert(0.,DEFAULTS_HEADERS.strip())
         ent1.insert(0,'utf-8')
+        ent2.insert(0,'no')
 
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'request'
@@ -155,6 +173,7 @@ def request_window(setting=None):
     frame_setting[fr]['fr_headers'] = tx2
     frame_setting[fr]['fr_body'] = tx3
     frame_setting[fr]['fr_urlenc'] = ent1
+    frame_setting[fr]['fr_qplus'] = ent2
     return fr
 
 
@@ -335,12 +354,31 @@ eg.:
         else:
             ent1.delete(0,tkinter.END)
             ent1.insert(0,'utf-8')
+
+    def _swich_quote(*a):
+        s = ent2.get().strip()
+        if s == 'yes':
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'no')
+        elif s == 'no':
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'yes')
+        else:
+            ent2.delete(0,tkinter.END)
+            ent2.insert(0,'yes')
+
     ent1 = Entry(temp_fr0,width=6)
     ent1.pack(side=tkinter.RIGHT)
     btnurlencode = Button(temp_fr0, width=14, text='url中文编码格式', command=_swich_encd)
     btnurlencode.pack(side=tkinter.RIGHT)
     urlenc = (setting.get('urlenc') or 'utf-8') if setting is not None else 'utf-8'
     ent1.insert(0, urlenc)
+    ent2 = Entry(temp_fr0,width=4)
+    ent2.pack(side=tkinter.RIGHT)
+    btnurlencode1 = Button(temp_fr0, width=18, text='url是否编码“+”符号', command=_swich_quote)
+    btnurlencode1.pack(side=tkinter.RIGHT)
+    qplus = (setting.get('qplus') or 'no') if setting is not None else 'no'
+    ent2.insert(0, qplus)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -382,6 +420,7 @@ eg.:
     frame_setting[fr]['fr_parse_info'] = tx4
     frame_setting[fr]['fr_temp2'] = temp_fr2 # 解析输出的 Text 框，这里用外部frame是为了挂钩esc按键显示/关闭该窗口
     frame_setting[fr]['fr_urlenc'] = ent1
+    frame_setting[fr]['fr_qplus'] = ent2
 
     # 统一数据格式
     def format_content(content):
@@ -402,8 +441,14 @@ eg.:
             einfo = 'type:{} is not in type:[bytes]'.format(type(content))
             raise TypeError(einfo)
 
-    from urllib.parse import quote, unquote, unquote_plus, quote_plus
-    def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2), encoding=enc), encoding=enc), url)
+    from urllib import request
+    from urllib.parse import quote, unquote, unquote_plus, quote_plus, urlencode
+
+    if qplus == 'yes':
+        _quote,_unquote = quote_plus,unquote_plus
+    elif qplus == 'no':
+        _quote,_unquote = quote,unquote
+    def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+_quote(_unquote(i.group(2), encoding=enc), encoding=enc), url)
 
     tp = None
     if setting is not None:
@@ -413,21 +458,20 @@ eg.:
         body    = setting.get('body')
         try:
             if requests is not None:
+                rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
                 if method == 'GET':
-                    s = requests.get(quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc),headers=headers,verify=False)
+                    s = requests.get(rurl,headers=headers,verify=False)
                     tp,content = format_content(s.content)
                     insert_txt(tx1, content)
                 elif method == 'POST':
                     # 这里的post 里面的body 暂时还没有进行处理
-                    s = requests.post(quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc),headers=headers,data=body,verify=False)
+                    s = requests.post(rurl,headers=headers,data=body,verify=False)
                     tp,content = format_content(s.content)
                     insert_txt(tx1, content)
             else:
                 # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
-                from urllib import request, parse
-                from urllib.parse import quote_plus, unquote_plus, urlencode
+                url = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
                 if method == 'GET':
-                    url = quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc)
                     r = request.Request(url, method=method)
                     for k, v in headers.items(): 
                         # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
@@ -438,7 +482,6 @@ eg.:
                     tp, content = format_content(s.read())
                     insert_txt(tx1, content)
                 elif method == 'POST':
-                    url = quote_val(ps.unquote_plus(url, encoding=urlenc), enc=urlenc)
                     body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
                     r = request.Request(url, method=method)
                     for k, v in headers.items(): 
@@ -959,7 +1002,7 @@ def scrapy_code_window(setting=None):
         __org_stdout__.flush()
     temp_fr0 = Frame(fr)
     va = tkinter.IntVar()
-    rb = Checkbutton(temp_fr0,text='本地执行是否收集数据:',variable=va,command=local_collection)
+    rb = Checkbutton(temp_fr0,text='本地执行是否收集数据',variable=va,command=local_collection)
     rb.deselect()
     et = Entry (temp_fr0,width=60)
     
