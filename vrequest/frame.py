@@ -990,9 +990,13 @@ def scrapy_code_window(setting=None):
                                     '''        _meta = response.meta.get('_plusmeta') or {}\n        # If you need to parse another string in the parsing function.''')
             script = script.replace('''meta = {}\n        meta['proxy'] = self.proxy\n        r = Request(''', 
                                     '''meta = {}\n        meta['proxy'] = self.proxy\n        meta['_plusmeta'] = {} # keys word transfer\n        r = Request(''')
+            if 'from urllib.parse import unquote_plus, quote_plus' not in script:
+                _tempstring = _main_2_list_2_info_model.replace('lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2)))', 'lambda i:i.group(1)+quote(unquote(i.group(2)))')
+            else:
+                _tempstring = _main_2_list_2_info_model
             script = script.replace('''print('------------------------------ split ------------------------------')\n            import pprint\n            pprint.pprint(d)\n            yield d''', 
                                     '''# print('------------------------------ split ------------------------------')\n            # import pprint\n            # pprint.pprint(d)\n            # yield d''' \
-                                    + _main_2_list_2_info_model.replace("response.urljoin(d['href'])", "response.urljoin(d['{}'])".format(q[id])))
+                                    + _tempstring.replace("response.urljoin(d['href'])", "response.urljoin(d['{}'])".format(q[id])))
             tx.delete(0.,tkinter.END)
             tx.insert(0.,script)
             tx.see(tkinter.END)
