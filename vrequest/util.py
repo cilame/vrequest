@@ -388,6 +388,41 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus):
                     func_code = ''
             if i.startswith('<just_json:'):
                 func_code = "jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nimport pprint\npprint.pprint(jsondata, depth= None )"
+            if i.startswith('<just_info:'):
+                try:
+                    func_code = '''def normal_tree(content,
+        tags=['script','style','select','noscript']):
+    e, q = etree.HTML(content), []
+    for it in e.getiterator():
+        if it.tag in tags or type(it.tag) is not str:
+            q.append(it)
+    for it in q:
+        p = it.getparent()
+        if p is not None:
+            p.remove(it)
+    return e
+e = normal_tree(content)
+d = {}\n'''
+                    auton = 0
+                    mxlen = 0
+                    q = []
+                    for j in c_set.splitlines()[1:]:
+                        if j.strip():
+                            name = re.findall('"([^"]+)"', j)
+                            if name:
+                                name = re.sub(r'[/\\:\*"<>\|\?-]', '_', name[0])
+                            else:
+                                name = 'auto_{}'.format(auton)
+                                auton += 1
+                            mxlen = len(name) if len(name) > mxlen else mxlen
+                            q.append((name, j))
+                    for name,xps in q:
+                        left = ('{:<'+str(mxlen+6)+'}').format("d['{}']".format(name))
+                        right = r'''= re.sub(r'\s+',' ', e.xpath('string({})'))'''.format(xps)
+                        func_code += left + right + '\n'
+                    func_code += 'import pprint\npprint.pprint(d, depth= None )'
+                except:
+                    dprint(traceback.format_exc())
         func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
         _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
     # _format = _format if '$plus' not in _format else _format.replace('$plus','')
@@ -669,6 +704,42 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus):
                     return _format.strip().replace('$plus','pass')
             if i.startswith('<just_json:'):
                 func_code = 'content = response.body.decode("{}",errors="{}")\n'.format(tps,err) + "jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])\nimport pprint\npprint.pprint(jsondata, depth= None )"
+            if i.startswith('<just_info:'):
+                try:
+                    func_code = '''def normal_tree(content,
+        tags=['script','style','select','noscript']):
+    e, q = etree.HTML(content), []
+    for it in e.getiterator():
+        if it.tag in tags or type(it.tag) is not str:
+            q.append(it)
+    for it in q:
+        p = it.getparent()
+        if p is not None:
+            p.remove(it)
+    return e
+content = response.body.decode("{}",errors="{}")
+e = normal_tree(content)
+d = response.meta.get('_plusmeta') or {}\n'''.format(tps, err, {})
+                    auton = 0
+                    mxlen = 0
+                    q = []
+                    for j in c_set.splitlines()[1:]:
+                        if j.strip():
+                            name = re.findall('"([^"]+)"', j)
+                            if name:
+                                name = re.sub(r'[/\\:\*"<>\|\?-]', '_', name[0])
+                            else:
+                                name = 'auto_{}'.format(auton)
+                                auton += 1
+                            mxlen = len(name) if len(name) > mxlen else mxlen
+                            q.append((name, j))
+                    for name,xps in q:
+                        left = ('{:<'+str(mxlen+6)+'}').format("d['{}']".format(name))
+                        right = r'''= re.sub(r'\s+',' ', e.xpath('string({})'))'''.format(xps)
+                        func_code += left + right + '\n'
+                    func_code += 'import pprint\npprint.pprint(d, depth= None )\nyield d'
+                except:
+                    dprint(traceback.format_exc())
         func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
         _format = _format.replace('$plus', func(func_code)) if func_code is not None else _format
     pas = (

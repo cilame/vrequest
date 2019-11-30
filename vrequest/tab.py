@@ -836,3 +836,110 @@ oShellLink.Save
             print('create shortcut failed.')
             traceback.print_exc()
         shutil.rmtree(s)
+
+def create_xpath_finder(setting):
+    content = setting.get('content')
+    master = setting.get('master')
+
+    import tkinter
+    from tkinter import ttk
+    from tkinter import scrolledtext
+    from tkinter.font import Font
+    Text = scrolledtext.ScrolledText
+    Frame = tkinter.Frame
+    Entry = ttk.Entry
+    Label = ttk.Label
+    Listbox = tkinter.Listbox
+    top = tkinter.Toplevel(master)
+    ft = Font(family='Consolas',size=10)
+    def normal_etree(e, tags=['script','style','select','noscript'], rootxpath='//html'):
+        q = []
+        for it in e.getiterator():
+            if it.tag in tags or type(it.tag) is not str:
+                q.append(it)
+        for it in q:
+            p = it.getparent()
+            if p is not None:
+                p.remove(it)
+        return e
+    e = etree.HTML(content)
+    e = normal_etree(e)
+    ls = []
+    for i in e.xpath('//*'):
+        xps = get_simple_path_tail(i) 
+        if not xps: continue
+        xp, sxp, key = xps
+        v = e.xpath('string({})'.format(sxp))
+        v = re.sub(r'\s+',' ',v).strip()
+        if v and (sxp, v) not in ls:
+            ls.append((sxp, v))
+
+    fr0 = Frame(top)
+    fr0.pack(fill=tkinter.BOTH,expand=True)
+    def change_func(*content):
+        if content:
+            lbx.delete(0, tkinter.END)
+            mxl = 0
+            for sxp, v in ls: mxl = len(sxp) if len(sxp) > mxl else mxl
+            fmt = '{:<3}[len:{:>4}:{:>2}] {:<' + str(mxl + 3) + '}'
+            lens = 0
+            for idx, (sxp, v) in enumerate(ls, 1):
+                if content[0] in v:
+                    lbx.insert("end", fmt.format(idx, len(v), mxl, sxp) + (v[:20]+'...'+v[-20:] if len(v) > 40 else v))
+                    lens += 1
+            lb1['text'] = '过滤 当前解析数量 [{}]'.format(lens)
+            return True
+    ech = top.register(change_func)
+    fr1 = Frame(fr0)
+    lb1 = Label(fr1, text='过滤 当前解析数量 [{}]'.format(len(ls)))
+    en1 = Entry(fr1,validate='key',validatecommand=(ech, '%P'))
+    en1.bind('<Key>', ech)
+    fr1.pack(fill=tkinter.BOTH)
+    lb1.pack(fill=tkinter.BOTH)
+    en1.pack(fill=tkinter.BOTH)
+
+    def double_click(*a):
+        content = lbx.get(lbx.curselection())
+        mxl = int(re.findall(r'\[len: *\d+: *(\d+)\]', content)[0])
+        content = content[17:18+mxl].strip()
+        for sxp, v in ls:
+            if sxp == content:
+                tx1.delete(0., tkinter.END)
+                tx1.insert(tkinter.END, v)
+                tx2.insert(tkinter.END, content+'\n')
+    fr2 = Frame(fr0)
+    lbx = Listbox(fr2,width=180,height=30,font=ft)
+    fr2.pack(fill=tkinter.BOTH,expand=True)
+    lbx.pack(fill=tkinter.BOTH,expand=True)
+    lbx.bind('<Double-Button-1>', double_click)
+
+    fr3 = Frame(fr0)
+    tx1 = Text(fr3)
+    tx2 = Text(fr3)
+    fr3.pack(fill=tkinter.BOTH,expand=True)
+    tx1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    tx2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    mxl = 0
+    for sxp, v in ls: mxl = len(sxp) if len(sxp) > mxl else mxl
+    fmt = '{:<3}[len:{:>4}:{:>2}] {:<' + str(mxl + 3) + '}'
+    ls = sorted(ls, key=lambda i:len(i[1]))[::-1]
+    for idx, (sxp, v) in enumerate(ls, 1):
+        lbx.insert("end", fmt.format(idx, len(v), mxl, sxp) + (v[:20]+'...'+v[-20:] if len(v) > 40 else v))
+    ret = ''
+    def return_event(event):
+        nonlocal ret 
+        ret = tx2.get(0.,tkinter.END).strip()
+        top.quit()
+    def wm_delete_window(event=None): 
+        nonlocal ret
+        ret = tx2.get(0.,tkinter.END).strip()
+        top.quit()
+    top.title('双击选则需要的xpath，关闭该窗口时若xpath列表窗口中有则传入配置，后续生成代码中会增加相关代码。')
+    top.bind('<Return>', return_event)
+    top.bind('<Escape>', wm_delete_window)
+    top.protocol('WM_DELETE_WINDOW', wm_delete_window)
+    top.wait_visibility()
+    top.grab_set()
+    top.mainloop()
+    top.destroy()
+    return ret

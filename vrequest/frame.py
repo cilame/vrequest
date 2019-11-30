@@ -312,6 +312,16 @@ eg.:
         from .tab import response_jsonformat
         response_jsonformat()
 
+    def xpath_finder(*a):
+        from .tab import nb
+        from .tab import create_xpath_finder
+        setting = {}
+        setting['content'] = tx1.get(0.,tkinter.END).strip()
+        setting['master'] = nb
+        s = create_xpath_finder(setting)
+        tx2.delete(0., tkinter.END)
+        tx2.insert(0., '<just_info:>\n' + s)
+
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
@@ -334,6 +344,8 @@ eg.:
     btn2.pack(side=tkinter.LEFT)
     btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
     btn9.pack(side=tkinter.LEFT)
+    btn10 = Button(temp_fr0, text='xpath内容分析', command=xpath_finder)
+    btn10.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
     btn1.pack(side=tkinter.RIGHT)
     btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
