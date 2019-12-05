@@ -239,6 +239,7 @@ def get_response_config(setting):
     c_set     = tx2.get(0.,tkinter.END).strip() # 配置，用来配置生成代码的方式
     urlenc    = setting.get('fr_urlenc').get()
     qplus     = setting.get('fr_qplus').get()
+    extra     = setting.get('fr_extra')
 
     r_setting = setting.get('fr_setting')
     if r_setting is not None:
@@ -250,7 +251,7 @@ def get_response_config(setting):
         c_headers = format_headers_code(headers)
         c_body    = format_body_code(body) if type(body) == dict else 'body = ' + json.dumps(body)
         r_setting = method,c_url,c_headers,c_body
-    return r_setting,c_set,c_content,tps,urlenc,qplus
+    return r_setting,c_set,c_content,tps,urlenc,qplus,extra
 
 
 
@@ -319,8 +320,8 @@ def create_test_code(*a):
         method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
         code_string = format_request(method,c_url,c_headers,c_body,urlenc,qplus)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
-        code_string = format_response(r_setting,c_set,c_content,urlenc,qplus)
+        r_setting,c_set,c_content,tps,urlenc,qplus,extra = get_response_config(setting)
+        code_string = format_response(r_setting,c_set,c_content,urlenc,qplus,extra)
     if setting.get('type') == 'js':
         setting.get('execute_func0')()
 
@@ -342,8 +343,8 @@ def create_test_code_urllib(*a):
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
     if setting.get('type') == 'response':
-        (method,c_url,c_headers,c_body),c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
-        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus)
+        (method,c_url,c_headers,c_body),c_set,c_content,tps,urlenc,qplus,extra = get_response_config(setting)
+        code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus,extra)
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
 
@@ -379,8 +380,8 @@ def create_scrapy_code(*a):
         method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
         code_string = format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus)
     if setting.get('type') == 'response':
-        r_setting,c_set,c_content,tps,urlenc,qplus = get_response_config(setting)
-        code_string = format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus)
+        r_setting,c_set,c_content,tps,urlenc,qplus,extra = get_response_config(setting)
+        code_string = format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra)
     if code_string:
         setting = {}
         setting['code_string'] = code_string

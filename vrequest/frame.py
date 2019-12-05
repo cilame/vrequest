@@ -462,55 +462,75 @@ eg.:
         _quote,_unquote = quote,unquote
     def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+_quote(_unquote(i.group(2), encoding=enc), encoding=enc), url)
 
+    def _request(method,url,headers,body):
+        if requests is not None:
+            rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
+            if method == 'GET':
+                s = requests.get(rurl,headers=headers,verify=False)
+                tp,content = format_content(s.content)
+                insert_txt(tx1, content)
+            elif method == 'POST':
+                # 这里的post 里面的body 暂时还没有进行处理
+                s = requests.post(rurl,headers=headers,data=body,verify=False)
+                tp,content = format_content(s.content)
+                insert_txt(tx1, content)
+        else:
+            # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
+            url = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
+            if method == 'GET':
+                r = request.Request(url, method=method)
+                for k, v in headers.items(): 
+                    # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
+                    # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
+                    if k.lower() == 'accept-encoding': continue
+                    r.add_header(k, v)
+                s = request.urlopen(r)
+                tp, content = format_content(s.read())
+                insert_txt(tx1, content)
+            elif method == 'POST':
+                body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
+                r = request.Request(url, method=method)
+                for k, v in headers.items(): 
+                    # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
+                    # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
+                    if k.lower() == 'accept-encoding': continue
+                    r.add_header(k, v)
+                s = request.urlopen(r, data=body)
+                tp, content = format_content(s.read())
+                insert_txt(tx1, content)
+        return tp, content
+
+    def _handle_dh_key_too_small():
+        try:
+            requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+            requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += ':HIGH:!DH:!aNULL'
+        except AttributeError:
+            pass
+        import ssl
+        ssl._DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+
     tp = None
+    extra = []
     if setting is not None:
         method  = setting.get('method')
         url     = setting.get('url')
         headers = setting.get('headers')
         body    = setting.get('body')
         try:
-            if requests is not None:
-                rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
-                if method == 'GET':
-                    s = requests.get(rurl,headers=headers,verify=False)
-                    tp,content = format_content(s.content)
-                    insert_txt(tx1, content)
-                elif method == 'POST':
-                    # 这里的post 里面的body 暂时还没有进行处理
-                    s = requests.post(rurl,headers=headers,data=body,verify=False)
-                    tp,content = format_content(s.content)
-                    insert_txt(tx1, content)
-            else:
-                # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
-                url = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
-                if method == 'GET':
-                    r = request.Request(url, method=method)
-                    for k, v in headers.items(): 
-                        # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
-                        # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
-                        if k.lower() == 'accept-encoding': continue
-                        r.add_header(k, v)
-                    s = request.urlopen(r)
-                    tp, content = format_content(s.read())
-                    insert_txt(tx1, content)
-                elif method == 'POST':
-                    body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
-                    r = request.Request(url, method=method)
-                    for k, v in headers.items(): 
-                        # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
-                        # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
-                        if k.lower() == 'accept-encoding': continue
-                        r.add_header(k, v)
-                    s = request.urlopen(r, data=body)
-                    tp, content = format_content(s.read())
-                    insert_txt(tx1, content)
+            tp, content = _request(method,url,headers,body)
         except:
             einfo = traceback.format_exc()
-            tkinter.messagebox.showinfo('Error',einfo)
-            raise
+            if 'dh key too small' in einfo:
+                extra.append('dh key too small')
+                _handle_dh_key_too_small()
+                tp, content = _request(method,url,headers,body)
+            else:
+                tkinter.messagebox.showinfo('Error',einfo)
+                raise
             # insert_txt(tx1, traceback.format_exc())
 
     frame_setting[fr]['fr_parse_type'] = tp
+    frame_setting[fr]['fr_extra'] = extra
     return fr
 
 

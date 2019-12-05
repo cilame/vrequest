@@ -156,7 +156,7 @@ from urllib.parse import unquote_plus, quote_plus
 
 import requests
 from lxml import etree
-requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
+requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_dh_key_too_small
 
 def get_info():
     # 功能函数（解析解码格式）
@@ -216,7 +216,7 @@ from urllib.parse import unquote_plus, quote_plus
 
 import requests
 from lxml import etree
-requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告
+requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_dh_key_too_small
 
 def post_info():
     # 功能函数（解析解码格式）
@@ -286,7 +286,7 @@ post_info()
 
 
 
-def del_plus(string):
+def del_plus(string,extra=None):
     pas = r'''
     print('\n'*2)
     def header_fprint(headers_dict):
@@ -329,6 +329,24 @@ def del_plus(string):
     print('response content[:1000]:\n {}'.format(s.content[:1000]))
     print('=========================================================')
     print('\n'*2)'''
+    dhkey = '''
+try:
+    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+    requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += ':HIGH:!DH:!aNULL'
+except AttributeError:
+    pass'''
+    dhkeyc = '''
+# try: # 当请求出现 ssl(dh key too small) 异常时，可以尝试解该处注释
+#     requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+#     requests.packages.urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST += ':HIGH:!DH:!aNULL'
+# except AttributeError:
+#     pass'''
+    if extra and 'dh key too small' in extra:
+        string = string.replace('$handle_dh_key_too_small', dhkey)
+    elif extra is None:
+        string = string.replace('$handle_dh_key_too_small', dhkeyc)
+    else:
+        string = string.replace('$handle_dh_key_too_small', '')
     return string.replace('$plus',pas).strip()
 
 
@@ -336,7 +354,7 @@ def format_request(method,c_url,c_headers,c_body,urlenc,qplus):
     return del_plus(format_req(method,c_url,c_headers,c_body,urlenc,qplus))
 
 
-def format_response(r_setting,c_set,c_content,urlenc,qplus):
+def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
@@ -426,19 +444,19 @@ d = {}\n'''
         func = lambda c_:''.join(map(lambda i:'    '+i+'\n',c_.splitlines()))
         _format = _format.replace('$plus', '\n'+func(func_code)) if func_code is not None else _format
     # _format = _format if '$plus' not in _format else _format.replace('$plus','')
-    return del_plus(_format)
+    return del_plus(_format,extra)
 
 
 
 
 
 
-def format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus):
+def format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus,extra=None):
     _format_get = '''
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy import Request, Selector
-from lxml import etree
+from lxml import etree$handle_dh_key_too_small
 
 import re
 import json
@@ -481,7 +499,7 @@ class VSpider(scrapy.Spider):
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy import Request, Selector
-from lxml import etree
+from lxml import etree$handle_dh_key_too_small
 
 import re
 import json
@@ -572,10 +590,25 @@ if __name__ == '__main__':
     _format = _format.replace('$x_qplus', rep)
     _format = _format.replace('''from urllib.parse import unquote_plus, quote_plus''', rep2)
     _format = _format.replace('$x_urlenc',urlenc)
+    dhkey = """
+
+from twisted.internet.ssl import AcceptableCiphers
+from scrapy.core.downloader import contextfactory
+contextfactory.DEFAULT_CIPHERS = AcceptableCiphers.fromOpenSSLCipherString('DEFAULT:!DH')"""
+    dhkeyc = """
+
+# from twisted.internet.ssl import AcceptableCiphers # 当请求出现 ssl(dh key too small) 异常时，可以尝试解该处注释
+# from scrapy.core.downloader import contextfactory
+# contextfactory.DEFAULT_CIPHERS = AcceptableCiphers.fromOpenSSLCipherString('DEFAULT:!DH')"""
+    if extra and 'dh key too small' in extra:
+        _format = _format.replace('$handle_dh_key_too_small', dhkey)
+    elif extra is None:
+        _format = _format.replace('$handle_dh_key_too_small', dhkeyc)
+    else:
+        _format = _format.replace('$handle_dh_key_too_small', '')
     return _format.strip()
 
-
-def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
+def del_scrapy_plus(string):
     pas = r'''print('\n'*2)
         def header_fprint(headers_dict):
             maxklen = len(repr(max(headers_dict,key=len)))
@@ -617,8 +650,10 @@ def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
         print('response body[:1000]:\n {}'.format(response.body[:1000]))
         print('=========================================================')
         print('\n'*2)'''
-    return format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus).replace('$plus',pas)
+    return string.replace('$plus',pas)
 
+def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
+    return del_scrapy_plus(format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus))
 
 def normal_scrapy_content(content,
                    tags=['script','style','select','noscript'],
@@ -635,11 +670,11 @@ def normal_scrapy_content(content,
     t = e.xpath('normalize-space({})'.format(rootxpath))
     return re.sub(r'\s+',' ',t.strip())
 
-def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus):
+def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
     # 请求部分的代码
     if r_setting is not None:
         method,c_url,c_headers,c_body = r_setting
-        _format = format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus)
+        _format = format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus,extra)
     else:
         tkinter.messagebox.showinfo('Error','Canot create code without request.')
         raise TypeError('Canot create code without request.')
@@ -742,15 +777,7 @@ d = response.meta.get('_plusmeta') or {}\n'''.format(tps, err, {})
                     dprint(traceback.format_exc())
         func = lambda c_:''.join(map(lambda i:'        '+i+'\n',c_.splitlines())).strip()
         _format = _format.replace('$plus', func(func_code)) if func_code is not None else _format
-    pas = (
-        "print('============================== start ==============================')\n"
-        "        print('status:',response.status)\n"
-        "        print('decode type: {}')\n".format(tps) + 
-        "        print('response length: {}'.format(len(response.body)))\n"
-        "        print('response content[:1000]:\\n {}'.format(response.body[:1000]))\n"
-        "        print('==============================  end  ==============================')"
-    )
-    _format = _format if '$plus' not in _format else _format.replace('$plus',pas)
+    _format = _format if '$plus' not in _format else del_scrapy_plus(_format)
     return _format.strip()
 
 
@@ -766,7 +793,7 @@ try:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
-    pass
+    pass$handle_dh_key_too_small
 
 import re, json
 from urllib import request, parse
@@ -803,7 +830,7 @@ try:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
-    pass
+    pass$handle_dh_key_too_small
 
 import re, json
 from urllib import request, parse
@@ -857,7 +884,7 @@ $plus
     _format = _format.replace('$x_urlenc',urlenc)
     return _format.strip()
 
-def del_plus_urllib(string):
+def del_plus_urllib(string,extra=None):
     pas = r'''
 print('\n')
 print('生成 urllib 代码的功能本质就是用来解决无依赖的快速请求，用于简单的请求处理。')
@@ -961,10 +988,22 @@ class VHTML:
 # v = VHTML(content.decode())
 # for i in v.xpath('//*/@href'): print(i)
 '''
+    dhkey = """
+import ssl
+ssl._DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'"""
+    dhkeyc = """
+# import ssl # 当请求出现 ssl(dh key too small) 异常时，可以尝试解该处注释
+# ssl._DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'"""
+    if extra and 'dh key too small' in extra:
+        string = string.replace('$handle_dh_key_too_small', dhkey)
+    elif extra is None:
+        string = string.replace('$handle_dh_key_too_small', dhkeyc)
+    else:
+        string = string.replace('$handle_dh_key_too_small', '')
     return string.replace('$plus',pas).strip()
 
-def format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus):
-    return del_plus_urllib(format_req_urllib(method,c_url,c_headers,c_body,urlenc,qplus))
+def format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus,extra=None):
+    return del_plus_urllib(format_req_urllib(method,c_url,c_headers,c_body,urlenc,qplus),extra)
 
 
 
