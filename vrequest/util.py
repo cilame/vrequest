@@ -1087,8 +1087,11 @@ def get_simple_path_head(p,lilimit=5):
                         break
                 for idx,j in enumerate(p[i]):
                     a,b,c = j
-                    t = '/{}{}'.format(a.replace(v,''),c) + b.split(c,1)[1]
-                    t = t if t.startswith('//') else '/' + t
+                    if b.endswith(a.replace(v,'')): # 你看不懂这里的修改也不要在意，因为我也已经开始看不懂了，只要知道这里的修改是有用的就行。
+                        t = b
+                    else:
+                        t = '/{}{}'.format(a.replace(v,''),c) + b.split(c,1)[1]
+                        t = t if t.startswith('//') else '/' + t
                     p[i][idx][1] = t
                     p[i][idx].append(px)
                     yield j
