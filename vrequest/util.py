@@ -140,7 +140,7 @@ def format_url_code(url:str, urlenc):
 
 def format_req(method,c_url,c_headers,c_body,urlenc,qplus):
 
-    _format_get = '''
+    _head = '''
 try:
     # 处理 sublime 执行时输出乱码
     import io
@@ -157,27 +157,24 @@ from urllib.parse import unquote_plus, quote_plus
 import requests
 from lxml import etree
 requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_dh_key_too_small
+'''
+
+    _format_get = _head + '''
 
 def get_info():
     # 功能函数（解析解码格式）
     def parse_content_type(content, types=['utf-8','gbk']):
-        itype = iter(types)
-        while True:
-            try:
-                tp = next(itype)
-                content = content.decode(tp)
-                return tp, content
-            except StopIteration:
-                try:
-                    import chardet
-                    tp = chardet.detect(content)['encoding']
-                    types.append(tp)
-                    content = content.decode(tp)
-                    return tp, content
-                except:
-                    raise TypeError('not in {}'.format(types))
-            except:
-                continue
+        for tp in types:
+            try:    return tp, content.decode(tp)
+            except: pass
+        etp = types[:]
+        try:
+            import chardet
+            tp = chardet.detect(content)['encoding']
+            if tp not in etp: etp.append(tp); return tp, content.decode(tp)
+        except: pass
+        err = 'encoding not in :{}. Guess encoding is [utf-8,errors:ignore]'.format(etp)
+        return err, content.decode('utf-8', errors='ignore')
     # 生成请求参数函数
     def mk_url_headers():
         $x_qplus
@@ -200,44 +197,22 @@ get_info()
 #
 '''
 
-    _format_post = '''
-try:
-    # 处理 sublime 执行时输出乱码
-    import io
-    import sys
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-    sys.stdout._CHUNK_SIZE = 1
-except:
-    pass
-
-import re
-import json
-from urllib.parse import unquote_plus, quote_plus
-
-import requests
-from lxml import etree
-requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_dh_key_too_small
+    _format_post = _head + '''
 
 def post_info():
     # 功能函数（解析解码格式）
     def parse_content_type(content, types=['utf-8','gbk']):
-        itype = iter(types)
-        while True:
-            try:
-                tp = next(itype)
-                content = content.decode(tp)
-                return tp, content
-            except StopIteration:
-                try:
-                    import chardet
-                    tp = chardet.detect(content)['encoding']
-                    types.append(tp)
-                    content = content.decode(tp)
-                    return tp, content
-                except:
-                    raise TypeError('not in {}'.format(types))
-            except:
-                continue
+        for tp in types:
+            try:    return tp, content.decode(tp)
+            except: pass
+        etp = types[:]
+        try:
+            import chardet
+            tp = chardet.detect(content)['encoding']
+            if tp not in etp: etp.append(tp); return tp, content.decode(tp)
+        except: pass
+        err = 'encoding not in :{}. Guess encoding is [utf-8,errors:ignore]'.format(etp)
+        return err, content.decode('utf-8', errors='ignore')
     # 生成请求参数函数
     def mk_url_headers_body():
         $x_qplus
@@ -456,7 +431,7 @@ def format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus,extra=None):
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy import Request, Selector
-from lxml import etree$handle_dh_key_too_small
+from lxml import etree$handle_dh_key_too_small$handle_headers_non_standard
 
 import re
 import json
@@ -499,7 +474,7 @@ class VSpider(scrapy.Spider):
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy import Request, Selector
-from lxml import etree$handle_dh_key_too_small
+from lxml import etree$handle_dh_key_too_small$handle_headers_non_standard
 
 import re
 import json
@@ -606,6 +581,26 @@ contextfactory.DEFAULT_CIPHERS = AcceptableCiphers.fromOpenSSLCipherString('DEFA
         _format = _format.replace('$handle_dh_key_too_small', dhkeyc)
     else:
         _format = _format.replace('$handle_dh_key_too_small', '')
+
+    headers_non_standard = r'''
+
+# scrapy(twisted) 对极少数的某些网站返回的不规范 headers 无法正常处理，这里只是补丁代码，丝毫不会影响到正常代码。
+def lineReceived(self, line):
+    if line[-1:] == b'\r': line = line[:-1]
+    if self.state == u'STATUS': self.statusReceived(line); self.state = u'HEADER'
+    elif self.state == u'HEADER':
+        if not line or line[0] not in b' \t':
+            if self._partialHeader is not None:
+                _temp = b''.join(self._partialHeader).split(b':', 1)
+                name, value = _temp if len(_temp) == 2 else (_temp[0], b'')
+                self.headerReceived(name, value.strip())
+            if not line: self.allHeadersReceived()
+            else: self._partialHeader = [line]
+        else: self._partialHeader.append(line)
+import twisted.web._newclient
+twisted.web._newclient.HTTPParser.lineReceived = lineReceived'''
+
+    _format = _format.replace('$handle_headers_non_standard', headers_non_standard)
     return _format.strip()
 
 def del_scrapy_plus(string):
@@ -680,7 +675,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
         raise TypeError('Canot create code without request.')
     _format = _format.strip()
 
-    tps,err = tps.split(' ') if len(tps.split(' '))==2 else tps,'strict'
+    tps,err = tps.split(' ') if len(tps.split(' '))==2 else (tps,'strict')
     for i in c_set.splitlines():
         i = i.strip()
         if not i: continue
@@ -690,7 +685,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
                 rt = re.findall('<normal_content:(.*)>', i)[0].strip()
                 rt = rt if rt else '//html'
                 func_code = inspect.getsource(normal_scrapy_content).strip()
-                func_code += '''\ncontent = response.body.decode("{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,rt)
+                func_code += '''\ncontent = response.body.decode("{}",errors="{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,err,rt)
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
