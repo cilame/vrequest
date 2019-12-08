@@ -770,7 +770,10 @@ def response_jsonformat(*a):
         content = txt.get(0., tkinter.END)
         jsondata = json.loads(content[content.find('{'):content.rfind('}')+1])
         txt.delete(0., tkinter.END)
-        txt.insert(0., json.dumps(jsondata, ensure_ascii=False, indent=4))
+        try:
+            txt.insert(0., json.dumps(jsondata, ensure_ascii=False, indent=4))
+        except:
+            txt.insert(0., re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',json.dumps(jsondata, ensure_ascii=False, indent=4)))
         tx2.delete(0.,tkinter.END)
         tx2.insert(0.,'<just_json:>')
 

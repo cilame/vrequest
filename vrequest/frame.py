@@ -564,7 +564,11 @@ class stdhooker:
             self.cache = '' if len(_text) == 1 else _text[1]
             _text_ = _text[0] + '\n'
             if self.logtx:
-                self.logtx.insert(tkinter.END, _text_)
+                try:
+                    self.logtx.insert(tkinter.END, _text_)
+                except:
+                    self.logtx.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+                # self.logtx.insert(tkinter.END, _text_)
                 self.logtx.see(tkinter.END)
                 self.logtx.update()
 
