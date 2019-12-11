@@ -1315,7 +1315,8 @@ def scrapy_code_window(setting=None):
         if 'os.path.join(os.path.expanduser("~")' not in script:
             script = re.sub('\n    p = CrawlerProcess', '\n' + single_script_comment_part1 + '\n\n    p = CrawlerProcess', script)
         if 'VImagePipeline' not in script:
-            script = re.sub(r'p\.crawl\(VSpider\)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n', script)
+            # script = re.sub(r'p\.crawl\(VSpider\)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n', script)
+            script = script.replace(r'p.crawl(VSpider)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n')
         tx.insert(0.,script)
         tx.see(tkinter.END)
 
