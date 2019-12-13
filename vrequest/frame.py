@@ -755,7 +755,7 @@ single_script_comment_part1 = '''
 
 _pyinstaller_scrapy = r'--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
 _pyinstaller_scrapy = _pyinstaller_scrapy.replace('$sysexec', os.path.dirname(sys.executable))
-single_script_comment_part2 = r"""
+single_script_comment_part2 = """
     # 基础中间件介绍
     # 通过实例动态增加中间件（解耦了之前只能通过配置中间件字符串），方便单脚本实现增加中间件功能，例如数据库存储方面的内容。
     # 便于单脚本利用别人的中间件。（将别人的中间件脚本粘贴进该脚本，实例化添加即可。示例如下，解开注释到 #(1) 即可测试。）
@@ -796,7 +796,7 @@ single_script_comment_part2 = r"""
     #         item['image_path'] = v['path'] if k else None # 保留文件名地址
     #         return item
     # for i in p.crawlers: 
-    #     vimage = VImagePipeline('./image') # 生成的文件地址，默认跟随脚本路径下生成的一个 image文件夹
+    #     vimage = VImagePipeline('./image',settings=i.settings) # 生成的文件地址，默认跟随脚本路径下生成的一个 image文件夹
     #     vimage.spiderinfo = vimage.SpiderInfo(i.spider)
     #     vimage.crawler = i
     #     i.engine.scraper.itemproc._add_middleware(vimage)

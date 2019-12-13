@@ -2,7 +2,7 @@
 import os
 import sys
 p = os.path.split(os.getcwd())[0]
-sys.path.append(p)
+sys.path = [p] + sys.path
 import sys;print(sys.stdout.encoding)
 
 

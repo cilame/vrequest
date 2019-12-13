@@ -527,6 +527,7 @@ if __name__ == '__main__':
 
     p = CrawlerProcess({
         'TELNETCONSOLE_ENABLED':    False,        # 几乎没人使用到这个功能，直接关闭提高爬虫启动时间
+        'MEDIA_ALLOW_REDIRECTS':    True,         # 允许图片下载地址重定向，存在图片下载需求时，请尽量使用该设置
         'LOG_LEVEL':                'INFO',       # DEBUG , INFO , WARNING , ERROR , CRITICAL
         # 'JOBDIR':                   jobdir,     # 解开注释则增加断点续爬功能
                                                   # 任务队列、任务去重指纹、任务状态存储空间(简单来说就是一个文件夹)
