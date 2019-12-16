@@ -1220,14 +1220,14 @@ def hook_to_scrapy_redis(namespace='default'):
     import scrapy.core.scraper
     scrapy.core.scraper.Scraper.__init__ = __hook_scraper_init__
     EXTRA_SETTING = {
-        'persist': True,            # 任务(意外或正常)结束是否保留过滤池或任务队列
-        'flush_on_start': False,    # 任务开始时是否需要进行队列和过滤池的清空处理(测试时使用)
+        'persist': True,            # 任务(意外或正常)结束是否保留过滤池或任务队列(使用默认配置即可)
+        'flush_on_start': False,    # 任务开始时是否需要进行队列和过滤池的清空处理(使用默认配置即可)
         'idle_before_close': 0,     # 约等于redis中的(包括且不限于)函数 brpop(key,timeout) 中的参数 timeout
     }
     REDIS_PARAMS = {
-        'host':'127.0.0.1',
-        'port':6379,
-        'password': None,
+        'host':'127.0.0.1',         # 最需要主动配置的部分1
+        'port':6379,                # 最需要主动配置的部分2
+        'password': None,           # 最需要主动配置的部分3
         'socket_timeout': 30,
         'socket_connect_timeout': 30,
         'retry_on_timeout': True,
@@ -1238,7 +1238,10 @@ def hook_to_scrapy_redis(namespace='default'):
     TASK_STATS      = 'scrapy_redis:{}:TASK_STATS'.format(namespace)  # 任务状态日志
     TASK_COLLECTION = 'scrapy_redis:{}:COLLECTION'.format(namespace)  # 数据收集的地方(默认使用redis收集json.dumps的数据)，注释这行数据就不收集到redis
 
-hook_to_scrapy_redis(namespace='vilame') # 用函数将各类钩子处理包住，防止污染全局变量
+# 使用这个函数后爬虫自动变成分布式(注意要先设置好 redis 连接的配置)
+# 使用时尽量一个任务一个 namespace，因为一旦任务启动，相同 namespace 下的爬虫的 start_requests 函数只会执行一次。
+#     除非主动修改 TASK_STATS 中的 start_toggle_requests 字段为0，新的任务才会执行 start_requests
+hook_to_scrapy_redis(namespace='vilame') # 不想用分布式直接注释掉该行函数执行即可。
 ''' + '\n'*16
 
 # 生成代码临时放在这里
