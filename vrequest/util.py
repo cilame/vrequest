@@ -263,47 +263,50 @@ post_info()
 
 def del_plus(string,extra=None):
     pas = r'''
-    print('\n'*2)
-    def header_fprint(headers_dict):
-        maxklen = len(repr(max(headers_dict,key=len)))
-        for keystring in sorted(headers_dict):
-            valuestring = headers_dict[keystring]
-            if 'cookie' in keystring.lower():
-                vlist = sorted(valuestring.split('; '))
-                for idx,value in enumerate(vlist):
-                    lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
-                              ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
-                    if idx == len(vlist)-1: lstring += '),'
-                    print(lstring)
-            else:
-                print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
-
-    # 请求信息
-    print('===========')
-    print('| request |')
-    print('===========')
-    print('request method: {}'.format(s.request.method))
-    print('request url: {}'.format(s.url))
-    print('------------------- request headers ---------------------')
-    reqhead = s.request.headers
-    header_fprint(reqhead)
-    print('------------------- request body ------------------------')
-    print(s.request.body)
-    print('\n'*2)
-
-    # 返回信息
-    print('============')
-    print('| response |')
-    print('============')
-    print('status:',s.status_code)
-    print('response length: {}'.format(len(s.content)))
-    print('------------------- response headers --------------------')
-    reshead = s.headers
-    header_fprint(reshead)
-    print('------------------- response content[:1000] ----------------')
-    print('response content[:1000]:\n {}'.format(s.content[:1000]))
-    print('=========================================================')
-    print('\n'*2)'''
+    def show_info(s):
+        def show_info_by_response(s):
+            print('\n')
+            def header_fprint(headers_dict):
+                maxklen = len(repr(max(headers_dict,key=len)))
+                for keystring in sorted(headers_dict):
+                    valuestring = headers_dict[keystring]
+                    if 'cookie' in keystring.lower():
+                        vlist = sorted(valuestring.split('; '))
+                        for idx,value in enumerate(vlist):
+                            endsp = ('; ' if idx != len(vlist)-1 else '')
+                            lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+endsp)) if idx == 0 else \
+                                      ('{:<'+str(maxklen)+'}  {}').format('', repr(value+endsp))
+                            if idx == len(vlist)-1: lstring += '),'
+                            print(lstring)
+                    else:
+                        print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
+            # 请求信息
+            print('===========\n| request |\n===========')
+            print('request method: {}\nrequest url: {}'.format(s.request.method, s.url))
+            print('------------------- request headers ---------------------')
+            header_fprint(s.request.headers)
+            print('------------------- request body ------------------------')
+            print(s.request.body, end='\n')
+            # 返回信息
+            print('============\n| response |\n============')
+            print('status:', s.status_code, '\nresponse length: {}'.format(len(s.content)))
+            print('------------------- response headers --------------------')
+            header_fprint(s.headers)
+            print('------------------- response content[:1000] ----------------')
+            print('response content[:1000]:\n {}'.format(s.content[:1000]))
+            print('=========================================================')
+        if s.history:
+            chains = s.history + [s]
+            for i in chains: show_info_by_response(i)
+            print('redirect chain:')
+            for i in chains: print('{} <-- ({})'.format(i, i.url))
+            # 要打印域名的ip则注释上一行，并解开下面这块注释即可。
+            # import socket, urllib
+            # get_host_ip = lambda url:socket.gethostbyname(urllib.parse.splithost(urllib.parse.splittype(url)[1])[0])
+            # for i in chains: print('{} <-- ({:<15} {})'.format(i, get_host_ip(i.url), i.url))
+        else: show_info_by_response(s)
+        print('\n')
+    show_info(s)'''
     dhkey = '''
 try:
     requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
@@ -605,7 +608,7 @@ twisted.web._newclient.HTTPParser.lineReceived = lineReceived'''
     return _format.strip()
 
 def del_scrapy_plus(string):
-    pas = r'''print('\n'*2)
+    pas = r'''print('\n')
         def header_fprint(headers_dict):
             maxklen = len(repr(max(headers_dict,key=len)))
             for keystring in sorted(headers_dict):
@@ -613,39 +616,31 @@ def del_scrapy_plus(string):
                 if 'cookie' in keystring.lower():
                     vlist = sorted(valuestring.split('; '))
                     for idx,value in enumerate(vlist):
-                        lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
-                                  ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
+                        endsp = ('; ' if idx != len(vlist)-1 else '')
+                        lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+endsp)) if idx == 0 else \
+                                  ('{:<'+str(maxklen)+'}  {}').format('', repr(value+endsp))
                         if idx == len(vlist)-1: lstring += '),'
                         print(lstring)
                 else:
                     print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
-
         # 请求信息
-        print('===========')
-        print('| request |')
-        print('===========')
-        print('request method: {}'.format(response.request.method))
-        print('request url: {}'.format(response.url))
+        print('===========\n| request |\n===========')
+        print('request method: {}\nrequest url: {}'.format(response.request.method, response.url))
         print('------------------- request headers ---------------------')
-        reqhead = response.request.headers.to_unicode_dict()
-        header_fprint(reqhead)
+        header_fprint(response.request.headers.to_unicode_dict())
         print('------------------- request body ------------------------')
-        print(response.request.body)
-        print('\n'*2)
-
+        print(response.request.body, end='\n')
         # 返回信息
-        print('============')
-        print('| response |')
-        print('============')
-        print('status:',response.status)
-        print('response length: {}'.format(len(response.body)))
+        print('============\n| response |\n============')
+        print('status:', response.status, '\nresponse length: {}'.format(len(response.body)))
         print('------------------- response headers --------------------')
-        reshead = response.headers.to_unicode_dict()
-        header_fprint(reshead)
-        print('------------------- response body[:1000] ----------------')
-        print('response body[:1000]:\n {}'.format(response.body[:1000]))
+        header_fprint(response.headers.to_unicode_dict())
+        print('------------------- response content[:1000] ----------------')
+        print('response content[:1000]:\n {}'.format(response.body[:1000]))
         print('=========================================================')
-        print('\n'*2)'''
+        chains = response.meta.get('redirect_urls') or []
+        if chains: print('redirect chain:'); [print('    '+i) for i in chains+[response.url]]
+        print('\n')'''
     return string.replace('$plus',pas)
 
 def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
@@ -884,7 +879,7 @@ def del_plus_urllib(string,extra=None):
     pas = r'''
 print('\n')
 print('生成 urllib 代码的功能本质就是用来解决无依赖的快速请求，用于简单的请求处理。')
-print('暂无解码能力，所以自动将headers中的 accept-encoding 去除。')
+print('暂无解码能力，所以自动将headers中的 accept-encoding 去除。同时也不会给出重定向链的解析功能。')
 print('\n')
 def header_fprint(headers_dict):
     maxklen = len(repr(max(headers_dict,key=len)))
@@ -893,35 +888,25 @@ def header_fprint(headers_dict):
         if 'cookie' in keystring.lower():
             vlist = sorted(valuestring.split('; '))
             for idx,value in enumerate(vlist):
-                lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+'; ')) if idx == 0 else \
-                          ('{:<'+str(maxklen)+'}  {}').format('', repr(value+'; '))
+                endsp = ('; ' if idx != len(vlist)-1 else '')
+                lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+endsp)) if idx == 0 else \
+                          ('{:<'+str(maxklen)+'}  {}').format('', repr(value+endsp))
                 if idx == len(vlist)-1: lstring += '),'
                 print(lstring)
         else:
             print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
-
 # 请求信息
-print('===========')
-print('| request |')
-print('===========')
-print('request method: {}'.format(method))
-print('request url: {}'.format(url))
+print('===========\n| request |\n===========')
+print('request method: {}\nrequest url: {}'.format(method, url))
 print('------------------- request headers ---------------------')
-reqhead = headers
-header_fprint(reqhead)
+header_fprint(headers)
 print('------------------- request body ------------------------')
 print(body)
-print('\n'*2)
-
 # 返回信息
-print('============')
-print('| response |')
-print('============')
-print('status:',s.status)
-print('response length: {}'.format(len(content)))
+print('============\n| response |\n============')
+print('status:', s.status, '\nresponse length: {}'.format(len(content)))
 print('------------------- response headers --------------------')
-reshead = dict(s.getheaders())
-header_fprint(reshead)
+header_fprint(dict(s.getheaders()))
 print('------------------- response content[:1000] ----------------')
 print('response content[:1000]:\n {}'.format(content[:1000]))
 print('=========================================================')

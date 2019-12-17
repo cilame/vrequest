@@ -88,3 +88,5 @@ TELNETCONSOLE_ENABLED = False # 几乎用不到的功能默认关闭，提高任
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+MEDIA_ALLOW_REDIRECTS = True # 图片下载时默认打开该开关，一定程度上能规避一些图片下载的问题。

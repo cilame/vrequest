@@ -1296,6 +1296,17 @@ def scrapy_code_window(setting=None):
         else:
             tkinter.messagebox.showwarning('文件夹已存在','文件夹已存在')
 
+    def save_script_in_desktop(*a):
+        name = askstring('脚本名','请输入脚本文件名，尽量小写无空格。')
+        if not name: return
+        if not name.endswith('.py'): name += '.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                f.write(tx.get(0.,tkinter.END))
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+
     home = os.environ.get('HOME')
     home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
     filename = '.vscrapy'
@@ -1373,8 +1384,10 @@ def scrapy_code_window(setting=None):
     ltime = '%04d%02d%02d-%02d%02d%02d' % time.localtime()[:6]
     dtopfile = os.path.join('file:///' + os.path.expanduser("~"),'Desktop\\v{}.json'.format(ltime))
     et.insert(0,dtopfile)
-    bt2 = Button(temp_fr0,text='拷贝项目文件到桌面',command=save_project_in_desktop)
+    bt2 = Button(temp_fr0,text='拷贝单脚本到桌面',command=save_script_in_desktop)
     bt2.pack(side=tkinter.LEFT)
+    bt3 = Button(temp_fr0,text='拷贝项目文件到桌面',command=save_project_in_desktop)
+    bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
@@ -1391,7 +1404,7 @@ def scrapy_code_window(setting=None):
     cbx['values'] = ('DEBUG','INFO','WARNING','ERROR','CRITICAL')
     cbx.current(1)
     cbx.pack(side=tkinter.RIGHT)
-    lab1 = Label(temp_fr0, text='本地日志等级:')
+    lab1 = Label(temp_fr0, text='项目启动日志等级:')
     lab1.pack(side=tkinter.RIGHT)
     def open_test(*a):
         cmd = 'start explorer {}'.format(scrapypath)
