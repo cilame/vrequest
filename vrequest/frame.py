@@ -593,8 +593,24 @@ def code_window(setting=None):
         from .tab import execute_code
         execute_code()
 
-    btn1 = Button(fr, text='执行代码 [Alt+v]', command=_execute_code)
-    btn1.pack(side=tkinter.TOP)
+    def save_script_in_desktop(*a):
+        name = askstring('脚本名','请输入脚本文件名，尽量小写无空格。')
+        if not name: return
+        if not name.endswith('.py'): name += '.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                f.write(tx.get(0.,tkinter.END))
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+
+    tframe = Frame(fr)
+    tframe.pack(side=tkinter.TOP)
+
+    btn1 = Button(tframe, text='保存脚本到桌面', command=save_script_in_desktop)
+    btn1.pack(side=tkinter.LEFT)
+    btn2 = Button(tframe, text='执行代码 [Alt+v]', command=_execute_code)
+    btn2.pack(side=tkinter.LEFT)
     tx = Text(fr,height=1,width=1,font=ft)
     cs = setting.get('code_string')
     if cs:
@@ -1676,6 +1692,17 @@ print(js.func)
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,einfo)
 
+    def save_script_in_desktop(*a):
+        name = askstring('脚本名','请输入脚本文件名，尽量小写无空格。')
+        if not name: return
+        if not name.endswith('.py'): name += '.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                f.write(txt2.get(0.,tkinter.END))
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+
     # 查看常用的js解析器的引入状态
     support_modules = ['js2py', 'execjs']
     def get_js_import_stat(support_modules):
@@ -1712,6 +1739,8 @@ print(js.func)
     btn_translate_js2python = Button(temp_fr0,text='简单js代码翻译成[python]代码(可能有错误)',command=translate_js_python)
     btn_translate_js2python.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=_exec_javascript)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
     btn2.pack(side=tkinter.RIGHT)
 
 
