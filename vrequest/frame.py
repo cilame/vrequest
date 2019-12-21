@@ -769,7 +769,7 @@ single_script_comment_part1 = '''
     # jobdir      = os.path.join(desktoppath, jobdir)
 '''.strip('\n')
 
-_pyinstaller_scrapy = r'--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
+_pyinstaller_scrapy = '--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
 _pyinstaller_scrapy = _pyinstaller_scrapy.replace('$sysexec', os.path.dirname(sys.executable))
 single_script_comment_part2 = """
     # 基础中间件介绍
@@ -1400,9 +1400,9 @@ def scrapy_code_window(setting=None):
     ltime = '%04d%02d%02d-%02d%02d%02d' % time.localtime()[:6]
     dtopfile = os.path.join('file:///' + os.path.expanduser("~"),'Desktop\\v{}.json'.format(ltime))
     et.insert(0,dtopfile)
-    bt2 = Button(temp_fr0,text='拷贝单脚本到桌面',command=save_script_in_desktop)
+    bt2 = Button(temp_fr0,text='保存单脚本到桌面',command=save_script_in_desktop)
     bt2.pack(side=tkinter.LEFT)
-    bt3 = Button(temp_fr0,text='拷贝项目文件到桌面',command=save_project_in_desktop)
+    bt3 = Button(temp_fr0,text='保存项目文件到桌面',command=save_project_in_desktop)
     bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
