@@ -23,7 +23,7 @@ def format_headers_str(headers:str):
     # return dict
     headers = headers.splitlines()
     headers = [re.split(':|=',i,1) for i in headers if i.strip() and ':' in i or '=' in i]
-    headers = {k.strip():v.strip() for k,v in headers if k.lower() != "content-length"}
+    headers = {k.strip():v.strip() for k,v in headers if (k.lower() != "content-length" and k.strip())}
     for k,v in headers.items():
         if k.lower() == 'accept-encoding':
             headers[k] = v.replace('br','')
