@@ -763,10 +763,10 @@ post_verification_model = r"""
 
 single_script_comment_part1 = '''
     # 工具作者有时会偏向将某些临时生成的文件放到固定地址(例如桌面)，统一管理，便于工作
-    # 如果想要让单脚本运行的所有配置以及生成文件跟随脚本所在地址，则无需解开下列注释
-    # desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')  # 获取桌面地址的通用代码
-    # filename    = 'file:///' + os.path.join(desktoppath, filename) # 使用绝对地址时存文件需增加前缀，注意
-    # jobdir      = os.path.join(desktoppath, jobdir)
+    # 若使用相对路径存放文件，则无需添加 file:/// 的前缀
+    desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')  # 获取桌面地址的通用代码
+    filename    = 'file:///' + os.path.join(desktoppath, filename) # 使用绝对地址时存文件需增加前缀，注意
+    jobdir      = os.path.join(desktoppath, jobdir)
 '''.strip('\n')
 
 _pyinstaller_scrapy = '--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
@@ -1260,6 +1260,156 @@ def hook_to_scrapy_redis(namespace='default'):
 hook_to_scrapy_redis(namespace='vilame') # 不想用分布式直接注释掉该行函数执行即可。
 ''' + '\n'*16
 
+_single_script_middleware_new = '''# -*- coding: utf-8 -*-
+# 挂钩中间件加载的处理，让通过“字符串”加载中间件的函数能够同时兼容用“类”加载中间件
+import scrapy.utils.misc
+import scrapy.utils.deprecate
+_bak_load_object      = scrapy.utils.misc.load_object
+_bak_update_classpath = scrapy.utils.deprecate.update_classpath
+def _load_object(path_or_class):
+    try: return _bak_load_object(path_or_class)
+    except: return path_or_class
+def _update_classpath(path_or_class):
+    try: return _bak_update_classpath(path_or_class) # 
+    except: return path_or_class
+scrapy.utils.misc.load_object = _load_object
+scrapy.utils.deprecate.update_classpath = _update_classpath
+
+# 图片中间件
+import logging, hashlib
+from scrapy.pipelines.images import ImagesPipeline
+from scrapy.exceptions import DropItem
+class VImagePipeline(ImagesPipeline):
+    def get_media_requests(self, item, info):
+        yield Request(item['src'], meta=item) 
+    def file_path(self, request, response=None, info=None):
+        url = request if not isinstance(request, Request) else request.url
+        image_name = request.meta.get('image_name') # 使用 item中的 image_name 字段作为文件名进行存储，没有该字段则使用 url的 md5作为文件名存储
+        image_name = re.sub(r'[/\\\\:\\*"<>\\|\\?]', '_', image_name).strip()[:80] if image_name else hashlib.md5(url.encode()).hexdigest()
+        return '%s.jpg' % image_name # 生成的图片文件名字，此处可增加多级分类路径（路径不存在则自动创建），使用 image_name 请注意重名可能性。
+    def item_completed(self, results, item, info): # 判断下载是否成功
+        k, v = results[0]
+        if not k: logging.info('download fail {}'.format(item))
+        else:     logging.info('download success {}'.format(item))
+        item['image_download_stat'] = 'success' if k else 'fail'
+        item['image_path'] = v['path'] if k else None # 保留文件名地址
+        return item
+
+# 视频下载中间件
+class VVideoPipeline(object):
+    def process_item(self, item, spider):
+        url = item['src']
+        ### 【you-get】
+        import you_get.common
+        you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
+        you_get.common.any_download(url, output_dir='./video', merge=True, info_only=False)
+        ### 【youtube-dl】
+        # from youtube_dl import YoutubeDL
+        # ytdl = YoutubeDL({'outtmpl': './video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
+        # info = ytdl.extract_info(url, download=True)
+        return item
+
+# 数据库下载中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
+# 如果有数据库字段类型的个性化处理，请非常注意的修改 insert_item 和 init_database 两个函数中对于字段类型的初始化、插入的处理
+import hmac, logging, traceback
+from twisted.enterprise import adbapi
+class VMySQLPipeline(object):
+    dbn = {}
+    def process_item(self, item, spider):
+        mysql_config = item.pop('__mysql__', None) # 存储时自动删除配置
+        if mysql_config and item:
+            if type(mysql_config) is dict:
+                table = mysql_config.pop('table', None)
+                db = mysql_config.get('db', None) or 'vrequest'
+                mysql_config.setdefault('charset','utf8mb4')
+                mysql_config.setdefault('db', db)
+                dbk = hmac.new(b'',json.dumps(mysql_config, sort_keys=True).encode(),'md5').hexdigest()
+                if dbk not in self.dbn:
+                    self.dbn[dbk] = adbapi.ConnectionPool('pymysql', **mysql_config)
+                    self.init_database(self.dbn[dbk], mysql_config, db, table, item)
+                self.dbn[dbk].runInteraction(self.insert_item, db, table, item)
+                return item
+            else:
+                raise TypeError('Unable Parse mysql_config type:{}'.format(type(mysql_config)))
+        else:
+            return item
+    def insert_item(self, conn, db, table, item):
+        table_sql = ''.join(["'{}',".format(json.dumps(v, ensure_ascii=False).replace("'","\\\\'")) for k,v in item.items()])
+        insert_sql = 'INSERT INTO `{}`.`{}` VALUES({})'.format(db, table, table_sql.strip(','))
+        try: 
+            conn.execute(insert_sql)
+            logging.info('insert sql success')
+        except Exception as e: 
+            logging.info('insert sql fail: {}'.format(insert_sql))
+            logging.error(traceback.format_exc())
+    def init_database(self, pool, mysql_config, db, table, item):
+        # 需要注意的是，在一些非常老的版本的mysql 里面并不支持 utf8mb4。这是 mysql 的设计缺陷，赶紧使用大于 5.5 版本的 mysql !
+        # 创建db，创建表名，所有字段都以 MEDIUMTEXT 存储，用 json.dumps 保证了数据类型也能存储，后续取出时只需要每个值 json.loads 这样就能获取数据类型
+        # 例如一个数字类型    123 -> json.dumps -> '123' -> json.loads -> 123，统一类型存储，取出时又能保证数据类型，这种处理会很方便
+        # MEDIUMTEXT 最大能使用16M 的长度，所以对于一般的 html 文本也非常足够。如有自定义字段类型的需求，请注意修改该处。
+        db, charset = mysql_config.pop('db'), mysql_config.get('charset')
+        try:
+            conn = pool.dbapi.connect(**mysql_config)
+            cursor = conn.cursor()
+            table_sql = ''.join(['`{}` MEDIUMTEXT NULL,'.format(str(k)) for k,v in item.items()])
+            cursor.execute('Create Database If Not Exists {} Character Set {}'.format(db, charset))
+            cursor.execute('Create Table If Not Exists `{}`.`{}` ({})'.format(db, table, table_sql.strip(',')))
+            conn.commit(); cursor.close(); conn.close()
+        except Exception as e:
+            traceback.print_exc()
+
+# scrapy 默认项目中的 SPIDER_MIDDLEWARES，DOWNLOADER_MIDDLEWARES 中间件的模板，按需修改
+from scrapy import signals
+class VSpiderMiddleware(object):
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+    def process_spider_input(self, response, spider):
+        return None
+    def process_spider_output(self, response, result, spider):
+        for i in result:
+            yield i
+    def process_spider_exception(self, response, exception, spider):
+        pass
+    def process_start_requests(self, start_requests, spider):
+        for r in start_requests:
+            yield r
+    def spider_opened(self, spider):
+        spider.logger.info('Spider opened: %s' % spider.name)
+class VDownloaderMiddleware(object):
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+    def process_request(self, request, spider):
+        return None
+    def process_response(self, request, response, spider):
+        return response
+    def process_exception(self, request, exception, spider):
+        pass
+    def spider_opened(self, spider):
+        spider.logger.info('Spider opened: %s' % spider.name)
+'''
+
+_single_script_middleware_new2 = '''
+        # 这里使用中间件的方式和项目启动很相似，不过这里的第一个值可以用类传递，突破了原版只能用字符串的限制。
+        'IMAGES_STORE':             'image',      # 默认在脚本所在路径创建一个文件夹(该处配置为文件夹名字)，图片都会下载到文件夹内。
+        'ITEM_PIPELINES': {
+            # VPipeline:              101,        # 普通的中间件使用
+            # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 则自动将 src 字段作为图片地址下载到脚本路径下
+            # VVideoPipeline:         104,        # 视频下载中间件，同上
+            # VMySQLPipeline:         103,        # MySql 插入中间件，具体请看类的描述
+        },
+        'SPIDER_MIDDLEWARES': {
+            # VSpiderMiddleware:      543,        # 原版模板的单脚本插入方式
+        },
+        'DOWNLOADER_MIDDLEWARES': {
+            # VDownloaderMiddleware:  543,        # 原版模板的单脚本插入方式
+        },'''
+
 # 生成代码临时放在这里
 def scrapy_code_window(setting=None):
     fr = Frame()
@@ -1339,14 +1489,34 @@ def scrapy_code_window(setting=None):
                 pass
         _show(stat='show') if va.get() else _show(stat='hide')
 
-    def _add_single_script_comment(*a):
+    def _add_single_script_file_save(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
         tx.delete(0.,tkinter.END)
         if 'os.path.join(os.path.expanduser("~")' not in script:
             script = re.sub('\n    p = CrawlerProcess', '\n' + single_script_comment_part1 + '\n\n    p = CrawlerProcess', script)
+        tx.insert(0.,script)
+        tx.see(tkinter.END)
+
+    def _add_single_script_comment(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        tx.delete(0.,tkinter.END)
+        # if 'os.path.join(os.path.expanduser("~")' not in script:
+        #     script = re.sub('\n    p = CrawlerProcess', '\n' + single_script_comment_part1 + '\n\n    p = CrawlerProcess', script)
         if 'VImagePipeline' not in script:
             # script = re.sub(r'p\.crawl\(VSpider\)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n', script)
             script = script.replace(r'p.crawl(VSpider)', 'p.crawl(VSpider)\n\n' + single_script_comment_part2 + '\n')
+        tx.insert(0.,script)
+        tx.see(tkinter.END)
+
+    def _add_single_script_comment_new(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        tx.delete(0.,tkinter.END)
+        # if 'os.path.join(os.path.expanduser("~")' not in script:
+        #     script = re.sub('\n    p = CrawlerProcess', '\n' + single_script_comment_part1 + '\n\n    p = CrawlerProcess', script)
+        if 'scrapy.utils.deprecate.update_classpath = _update_classpath' not in script:
+            key = "'DOWNLOAD_DELAY':           1,          # 全局下载延迟，这个配置相较于其他的节流配置要直观很多"
+            script = script.replace(key, key+'\n'+_single_script_middleware_new2)
+            script = _single_script_middleware_new + '\n'*16 + script
         tx.insert(0.,script)
         tx.see(tkinter.END)
 
@@ -1357,6 +1527,28 @@ def scrapy_code_window(setting=None):
             script = _single_distributed + script
         tx.insert(0.,script)
         tx.see(tkinter.END)
+
+    def _add_middleware_script_and_so_on(*a):
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '【推荐】新版单脚本添加中间件方式(支持原版排序)', 
+                '【不推荐】旧版单脚本添加中间件方式(不支持用原版排序)', 
+                '增加单脚本分布式的处理(代码增加在头部,详细使用请看注释)', 
+                '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
+                '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)']
+        d = SimpleDialog(nb,
+            text="请选则作为下一级请求链接的字段",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="选则")
+        id = d.go()
+        if id == -1: return
+        if id == 0: _add_single_script_comment_new()
+        if id == 1: _add_single_script_comment()
+        if id == 2: _add_single_script_distributed_comment()
+        if id == 3: _add_sceeper_in_list_model()
+        if id == 4: _add_single_script_file_save()
 
     def _add_sceeper_in_list_model(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
@@ -1406,12 +1598,14 @@ def scrapy_code_window(setting=None):
     bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
+    btn2 = Button(temp_fr0, text='代码增强', command=_add_middleware_script_and_so_on)
     btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='增加单脚本分布式功能', command=_add_single_script_distributed_comment)
-    btn2.pack(side=tkinter.LEFT)
-    btn4 = Button(temp_fr0, text='增加列表请求', command=_add_sceeper_in_list_model)
-    btn4.pack(side=tkinter.LEFT)
+    # btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
+    # btn2.pack(side=tkinter.LEFT)
+    # btn2 = Button(temp_fr0, text='增加单脚本分布式功能', command=_add_single_script_distributed_comment)
+    # btn2.pack(side=tkinter.LEFT)
+    # btn4 = Button(temp_fr0, text='增加列表请求', command=_add_sceeper_in_list_model)
+    # btn4.pack(side=tkinter.LEFT)
     # hva = tkinter.IntVar()
     # hrb = Checkbutton(temp_fr0,text='拷贝项目增加后验证模板',variable=hva)
     # hrb.deselect()
