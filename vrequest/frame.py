@@ -193,7 +193,7 @@ def response_window(setting=None):
         fr_txt.delete(0.,tkinter.END)
         fr_txt.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
 
-    doc0 = '''选则列表解析路径方式
+    doc0 = '''选择列表解析路径方式
 冒号后面配置的的内容为 xpath
 <xpath:>
 *组合功能！
@@ -222,13 +222,13 @@ eg.:
 
     doc3 = '''简单分析json数据内容
 找出最长的list进行初步的迭代分析，并给出分析结果在输出框
-如果没有主动选则某一个json列表，则默认使用第一个最长的列表
+如果没有主动选择某一个json列表，则默认使用第一个最长的列表
 进行默认的代码生成
 <auto_list_json:>
 '''
 
-    doc4 = '''选则分析的json列表
-选则的json列表的解析方式放在auto_list_json配置的后面
+    doc4 = '''选择分析的json列表
+选择的json列表的解析方式放在auto_list_json配置的后面
 当你生成代码的时候将会使用这个进行对列表解析自动生成对应的代码
 下面是一个例子：
 <auto_list_json:jsondata["data"]["list"]>
@@ -325,7 +325,7 @@ eg.:
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
-    methods = ('(Alt+x) 选则xpath','(Alt+d) 获取纯文字','(Alt+f) 分析xpath','(Alt+z) 分析json','(Alt+q) 选则json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
+    methods = ('(Alt+x) 选择xpath','(Alt+d) 获取纯文字','(Alt+f) 分析xpath','(Alt+z) 分析json','(Alt+q) 选择json', '(Alt+s) 生成 scrapy代码', '(Alt+c) 生成 requests代码')
     cbx = Combobox(temp_fr0,width=18,state='readonly')
     cbx['values'] = methods     # 设置下拉列表的值
     cbx.current(0)
@@ -334,11 +334,11 @@ eg.:
     temp_fr0.pack(fill=tkinter.X)
     btn3 = Button(temp_fr0, text='(f)分析xpath', command=auto_xpath)
     btn3.pack(side=tkinter.LEFT)
-    btn4 = Button(temp_fr0, text='(x)选则xpath', command=xpath_elements)
+    btn4 = Button(temp_fr0, text='(x)选择xpath', command=xpath_elements)
     btn4.pack(side=tkinter.LEFT)
     btn5 = Button(temp_fr0, text='(z)分析json', command=auto_json)
     btn5.pack(side=tkinter.LEFT)
-    btn9 = Button(temp_fr0, text='(q)选则json', command=choice_json)
+    btn9 = Button(temp_fr0, text='(q)选择json', command=choice_json)
     btn9.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='(d)获取纯文字', command=html_pure_text)
     btn2.pack(side=tkinter.LEFT)
@@ -1394,27 +1394,94 @@ class VDownloaderMiddleware(object):
         spider.logger.info('Spider opened: %s' % spider.name)
 
 # selenium 配置 selenium 的使用方式
+import time
+from scrapy.http import HtmlResponse
 class VSeleniumMiddleware(object):
     @classmethod
     def from_crawler(cls, crawler):
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(s.spider_closed, signal=signals.spider_closed)
         return s
     def process_request(self, request, spider):
-        import time
-        from scrapy.http import HtmlResponse
-        self.webdriver.get(url=request.url)
-        time.sleep(3)
-        page_text = self.webdriver.page_source
-        return HtmlResponse(url=self.webdriver.current_url, body=page_text, encoding='utf-8', request=request)
+        try:
+            self.webdriver.get(url=request.url)
+            time.sleep(2)
+            # 部分智能等待的代码，提高浏览器效率的处理
+            # from selenium.webdriver.common.by import By
+            # from selenium.webdriver.support import expected_conditions as EC
+            # from selenium.webdriver.support.wait import WebDriverWait as wbw
+            # locator = (By.XPATH, '//img[@class="focus-item-img"]')
+            # # wbw(self.webdriver,10).until(EC.presence_of_element_located(locator)) # 判断某个元素是否被加到了dom树里
+            # wbw(self.webdriver,10).until(EC.visibility_of_element_located(locator)) # 判断某个元素是否被添加到了dom里并且可见，即宽和高都大于0
+            current_url = self.webdriver.current_url
+            page_source = self.webdriver.page_source
+        except Exception as e:
+            return self._parse_selenium_temp_exceptions(request, spider, e)
+        # 若是出现请求异常(验证码，或者重新登陆之类的处理)，请在这里判断 page_source 是否是异常情况，并在这里处理重新进行登录或其他
+        h = HtmlResponse(
+            url      = current_url,
+            headers  = {'Selenium':'Selenium cannot get a certain headers, This is the information created automatically by middleware.'},
+            body     = page_source,
+            encoding = 'utf-8',
+            request  = request
+        )
+        return h
     def process_response(self, request, response, spider):
         return response
-    def process_exception(self, request, exception, spider):
-        pass
     def spider_opened(self, spider):
+        spider.logger.info('Spider %s opened: %s' % (self.__class__.__name__, spider.name))
+        self._open_webdriver()
+        self._login()
+    def spider_closed(self):
+        if getattr(self, 'webdriver', None): self.webdriver.quit()
+    def _parse_selenium_temp_exceptions(self, request, spider, e):
+        stats = spider.crawler.stats
+        if 'Failed to establish a new connection' in str(e): # 仅仅捕捉浏览器异常关闭的异常，尝试重启，并重新将请求发送到队列
+            if getattr(self, 'restart_show_toggle', None) is None:
+                self.restart_show_toggle = True
+            if self.restart_show_toggle:
+                self.restart_show_toggle = False # 让 Catch webdriver 仅显示一次
+                spider.logger.info('Catch webdriver exception:{}, try to restart webdriver.'.format(e.__class__))
+            self._open_webdriver()
+            retries = request.meta.get('selenium_retry_times', 0) + 1 # 在 selenium 异常无法重启处理情况下一个请求最多尝试共3次请求
+            if retries <= 4:
+                retryreq = request.copy()
+                retryreq.meta['selenium_retry_times'] = retries
+                retryreq.dont_filter = True
+                stats.inc_value('selenium_retry/count')
+                return retryreq
+            else:
+                stats.inc_value('selenium_retry/max_reached')
+                spider.logger.info("Gave up selenium_retrying %(request)s (failed %(retries)d times)",
+                            {'request': request, 'retries': retries})
+        else:
+            stats.inc_value('selenium_unknow_error/count')
+            stats.inc_value('selenium_unknow_error/reason_count/%s' % e.__class__.__name__)
+            import traceback
+            spider.logger.info('\\n'+traceback.format_exc().strip())
+    def _open_webdriver(self): # 该函数同时作为重启 webdriver 功能使用
+        try: self.spider_closed()
+        except: pass
         from selenium import webdriver
-        self.webdriver = webdriver.Chrome('./chromedriver.exe')
-        spider.logger.info('Spider opened: %s' % spider.name)
+        option = webdriver.ChromeOptions()
+        extset = ['enable-automation', 'ignore-certificate-errors']
+        ignimg = "profile.managed_default_content_settings.images"
+        option.add_argument("--disable-infobars")                       # 旧版本关闭“chrome正受到自动测试软件的控制”信息
+        option.add_experimental_option("excludeSwitches", extset)       # 新版本关闭“chrome正受到自动测试软件的控制”信息
+        option.add_experimental_option("useAutomationExtension", False) # 新版本关闭“请停用以开发者模式运行的扩展程序”信息
+        # option.add_argument('--headless')                             # 无界面打开浏览器
+        # option.add_argument('--window-size=1920,1080')                # 无界面打开浏览器时候只能用这种方式实现最大化
+        # option.add_argument('--start-maximized')                      # 开启浏览器时是否最大化(headless模式该配置无效)
+        # option.add_experimental_option("prefs", {ignore_image: 2})    # 开启浏览器时不加载图片(headless模式该配置无效)
+        # option.add_argument('--disable-gpu')                          # 禁用 gpu 硬件加速
+        # option.add_argument("--auto-open-devtools-for-tabs")          # 开启浏览器时候是否打开开发者工具(F12)
+        # option.add_argument("--user-agent=Mozilla/5.0 HELL")          # 修改 UA 信息
+        # option.add_argument('--proxy-server=http://127.0.0.1:8888')   # 增加代理
+        self.webdriver = webdriver.Chrome(chrome_options=option)
+    def _login(self):
+        # 如果有登录处理，则写在这里
+        pass
 '''
 
 _single_script_middleware_new2 = '''
@@ -1561,11 +1628,11 @@ def scrapy_code_window(setting=None):
                 '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
                 '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)']
         d = SimpleDialog(nb,
-            text="请选则作为下一级请求链接的字段",
+            text="请选择一个增强功能",
             buttons=q,
             default=0,
             cancel=-1,
-            title="选则")
+            title="选择")
         id = d.go()
         if id == -1: return
         if id == 0: _add_single_script_comment_new()
@@ -1582,11 +1649,11 @@ def scrapy_code_window(setting=None):
             from .tab import nb
             from .tab import SimpleDialog
             d = SimpleDialog(nb,
-                text="请选则作为下一级请求链接的字段",
+                text="请选择作为下一级请求链接的字段",
                 buttons=q,
                 default=0,
                 cancel=-1,
-                title="选则")
+                title="选择")
             id = d.go()
             if id == -1: return
             script = script.replace('''        # If you need to parse another string in the parsing function.''', 
@@ -1622,7 +1689,7 @@ def scrapy_code_window(setting=None):
     bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='代码增强', command=_add_middleware_script_and_so_on)
+    btn2 = Button(temp_fr0, text='【单脚本中间件】', command=_add_middleware_script_and_so_on)
     btn2.pack(side=tkinter.LEFT)
     # btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
     # btn2.pack(side=tkinter.LEFT)
@@ -1738,7 +1805,7 @@ vrequest：
 (Alt + f) 智能解析列表路径，解析后使用 xpath 解析功能会自动弹出解析选择窗
 (Alt + x) <代码过程> 使用 xpath 解析
 (Alt + z) <代码过程> 智能提取 json 列表(由长到短顺序排列，不选默认第一条)
-(Alt + q) <代码过程> 选则一个 json 列表
+(Alt + q) <代码过程> 选择一个 json 列表
 (Alt + d) <代码过程> 获取纯文字内容
 (Alt + c) 生成请求代码，有<代码过程>则生成代码中包含过程代码
 (Alt + s) 生成 scrapy 请求代码，有<代码过程>则生成代码中包含过程代码
