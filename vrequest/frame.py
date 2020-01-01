@@ -1392,6 +1392,29 @@ class VDownloaderMiddleware(object):
         pass
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+# selenium 配置 selenium 的使用方式
+class VSeleniumMiddleware(object):
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+    def process_request(self, request, spider):
+        import time
+        from scrapy.http import HtmlResponse
+        self.webdriver.get(url=request.url)
+        time.sleep(3)
+        page_text = self.webdriver.page_source
+        return HtmlResponse(url=self.webdriver.current_url, body=page_text, encoding='utf-8', request=request)
+    def process_response(self, request, response, spider):
+        return response
+    def process_exception(self, request, exception, spider):
+        pass
+    def spider_opened(self, spider):
+        from selenium import webdriver
+        self.webdriver = webdriver.Chrome('./chromedriver.exe')
+        spider.logger.info('Spider opened: %s' % spider.name)
 '''
 
 _single_script_middleware_new2 = '''
@@ -1408,6 +1431,7 @@ _single_script_middleware_new2 = '''
         },
         'DOWNLOADER_MIDDLEWARES': {
             # VDownloaderMiddleware:  543,        # 原版模板的单脚本插入方式
+            # VSeleniumMiddleware:    544,        # 单脚本 Selenium 中间件配置
         },'''
 
 # 生成代码临时放在这里
