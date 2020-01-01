@@ -1270,7 +1270,7 @@ def _load_object(path_or_class):
     try: return _bak_load_object(path_or_class)
     except: return path_or_class
 def _update_classpath(path_or_class):
-    try: return _bak_update_classpath(path_or_class) # 
+    try: return _bak_update_classpath(path_or_class)
     except: return path_or_class
 scrapy.utils.misc.load_object = _load_object
 scrapy.utils.deprecate.update_classpath = _update_classpath
