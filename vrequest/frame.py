@@ -1499,6 +1499,11 @@ _single_script_middleware_new2 = '''
         'DOWNLOADER_MIDDLEWARES': {
             # VDownloaderMiddleware:  543,        # 原版模板的单脚本插入方式
             # VSeleniumMiddleware:    544,        # 单脚本 Selenium 中间件配置
+        },
+        'EXTENSIONS': {
+            # 'scrapy.extensions.logstats.LogStats': None, 
+            # 关闭默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需注释即可关闭
+            # 同理 SPIDER_MIDDLEWARES/DOWNLOADER_MIDDLEWARES 这两个中间件组也可以用相同的方式注释掉 scrapy 默认组件
         },'''
 
 # 生成代码临时放在这里
