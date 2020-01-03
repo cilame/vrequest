@@ -1275,7 +1275,13 @@ def _update_classpath(path_or_class):
 scrapy.utils.misc.load_object = _load_object
 scrapy.utils.deprecate.update_classpath = _update_classpath
 
-# 图片中间件
+# 基础 item 中间件模板
+class VPipeline(object):
+    def process_item(self, item, spider):
+        print('\\n==== 这里是动态增加的“下载中间件”部分 ====\\n')
+        return item
+
+# 图片 item 中间件
 import logging, hashlib
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exceptions import DropItem
@@ -1295,7 +1301,7 @@ class VImagePipeline(ImagesPipeline):
         item['image_path'] = v['path'] if k else None # 保留文件名地址
         return item
 
-# 视频下载中间件
+# 视频下载 item 中间件
 class VVideoPipeline(object):
     def process_item(self, item, spider):
         url = item['src']
@@ -1309,7 +1315,7 @@ class VVideoPipeline(object):
         # info = ytdl.extract_info(url, download=True)
         return item
 
-# 数据库下载中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
+# 数据库下载 item 中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
 # 如果有数据库字段类型的个性化处理，请非常注意的修改 insert_item 和 init_database 两个函数中对于字段类型的初始化、插入的处理
 import hmac, logging, traceback
 from twisted.enterprise import adbapi
@@ -1393,7 +1399,7 @@ class VDownloaderMiddleware(object):
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
 
-# selenium 配置 selenium 的使用方式
+# 配置 selenium 的使用方式
 import time
 from scrapy.http import HtmlResponse
 class VSeleniumMiddleware(object):
@@ -1445,7 +1451,7 @@ class VSeleniumMiddleware(object):
                 spider.logger.info('Catch webdriver exception:{}, try to restart webdriver.'.format(e.__class__))
             self._open_webdriver()
             retries = request.meta.get('selenium_retry_times', 0) + 1 # 在 selenium 异常无法重启处理情况下一个请求最多尝试共3次请求
-            if retries <= 4:
+            if retries <= 3:
                 retryreq = request.copy()
                 retryreq.meta['selenium_retry_times'] = retries
                 retryreq.dont_filter = True
@@ -1467,13 +1473,15 @@ class VSeleniumMiddleware(object):
         option = webdriver.ChromeOptions()
         extset = ['enable-automation', 'ignore-certificate-errors']
         ignimg = "profile.managed_default_content_settings.images"
+        mobile = {'deviceName':'Galaxy S5'}
         option.add_argument("--disable-infobars")                       # 旧版本关闭“chrome正受到自动测试软件的控制”信息
         option.add_experimental_option("excludeSwitches", extset)       # 新版本关闭“chrome正受到自动测试软件的控制”信息
         option.add_experimental_option("useAutomationExtension", False) # 新版本关闭“请停用以开发者模式运行的扩展程序”信息
+        # option.add_experimental_option('mobileEmulation', mobile)     # 是否使用手机模式打开浏览器
+        # option.add_experimental_option("prefs", {ignore_image: 2})    # 开启浏览器时不加载图片(headless模式该配置无效)
+        # option.add_argument('--start-maximized')                      # 开启浏览器时是否最大化(headless模式该配置无效)
         # option.add_argument('--headless')                             # 无界面打开浏览器
         # option.add_argument('--window-size=1920,1080')                # 无界面打开浏览器时候只能用这种方式实现最大化
-        # option.add_argument('--start-maximized')                      # 开启浏览器时是否最大化(headless模式该配置无效)
-        # option.add_experimental_option("prefs", {ignore_image: 2})    # 开启浏览器时不加载图片(headless模式该配置无效)
         # option.add_argument('--disable-gpu')                          # 禁用 gpu 硬件加速
         # option.add_argument("--auto-open-devtools-for-tabs")          # 开启浏览器时候是否打开开发者工具(F12)
         # option.add_argument("--user-agent=Mozilla/5.0 HELL")          # 修改 UA 信息
@@ -1486,23 +1494,23 @@ class VSeleniumMiddleware(object):
 
 _single_script_middleware_new2 = '''
         # 这里使用中间件的方式和项目启动很相似，不过这里的第一个值可以用类传递，突破了原版只能用字符串的限制。
-        'IMAGES_STORE':             'image',      # 默认在脚本所在路径创建一个文件夹(该处配置为文件夹名字)，图片都会下载到文件夹内。
+        'IMAGES_STORE':             'image',      # 默认在脚本路径文件夹内下载图片(配置为文件夹名字，使用时需解开 VImagePipeline 管道注释)
         'ITEM_PIPELINES': {
             # VPipeline:              101,        # 普通的中间件使用
             # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 则自动将 src 字段作为图片地址下载到脚本路径下
-            # VVideoPipeline:         104,        # 视频下载中间件，同上
-            # VMySQLPipeline:         103,        # MySql 插入中间件，具体请看类的描述
+            # VVideoPipeline:         103,        # 视频下载中间件，同上
+            # VMySQLPipeline:         104,        # MySql 插入中间件，具体请看类的描述
         },
         'SPIDER_MIDDLEWARES': {
             # VSpiderMiddleware:      543,        # 原版模板的单脚本插入方式
         },
         'DOWNLOADER_MIDDLEWARES': {
             # VDownloaderMiddleware:  543,        # 原版模板的单脚本插入方式
-            # VSeleniumMiddleware:    544,        # 单脚本 Selenium 中间件配置
+            # VSeleniumMiddleware:    544,        # 单脚本 Selenium 中间件配置，解开自动使用 Selenium，详细请看 VSeleniumMiddleware 类中间件代码。
         },
         'EXTENSIONS': {
             # 'scrapy.extensions.logstats.LogStats': None, 
-            # 关闭默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需注释即可关闭
+            # 关闭 scrapy 默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需注释即可关闭
             # 同理 SPIDER_MIDDLEWARES/DOWNLOADER_MIDDLEWARES 这两个中间件组也可以用相同的方式注释掉 scrapy 默认组件
         },'''
 
