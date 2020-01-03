@@ -1281,7 +1281,7 @@ class VPipeline(object):
         print('\\n==== 这里是动态增加的“下载中间件”部分 ====\\n')
         return item
 
-# 图片 item 中间件
+# 图片下载 item 中间件
 import logging, hashlib
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exceptions import DropItem
@@ -1292,7 +1292,7 @@ class VImagePipeline(ImagesPipeline):
         url = request if not isinstance(request, Request) else request.url
         image_name = request.meta.get('image_name') # 使用 item中的 image_name 字段作为文件名进行存储，没有该字段则使用 url的 md5作为文件名存储
         image_name = re.sub(r'[/\\\\:\\*"<>\\|\\?]', '_', image_name).strip()[:80] if image_name else hashlib.md5(url.encode()).hexdigest()
-        return '%s.jpg' % image_name # 生成的图片文件名字，此处可增加多级分类路径（路径不存在则自动创建），使用 image_name 请注意重名可能性。
+        return '%s.jpg' % image_name # 生成的图片文件名字，此处可用/符号增加多级分类路径（路径不存在则自动创建），使用 image_name 请注意重名可能性。
     def item_completed(self, results, item, info): # 判断下载是否成功
         k, v = results[0]
         if not k: logging.info('download fail {}'.format(item))
@@ -1315,8 +1315,8 @@ class VVideoPipeline(object):
         # info = ytdl.extract_info(url, download=True)
         return item
 
-# 数据库下载 item 中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
-# 如果有数据库字段类型的个性化处理，请非常注意的修改 insert_item 和 init_database 两个函数中对于字段类型的初始化、插入的处理
+# 数据库上传 item 中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
+# 如果有数据库字段类型的个性化处理，请非常注意的修改 insert_item 和 init_database 两个函数中对于字段类型的初始化、插入的处理，process_item无需修改。
 import hmac, logging, traceback
 from twisted.enterprise import adbapi
 class VMySQLPipeline(object):
@@ -1493,12 +1493,13 @@ class VSeleniumMiddleware(object):
 '''
 
 _single_script_middleware_new2 = '''
-        # 这里使用中间件的方式和项目启动很相似，不过这里的第一个值可以用类传递，突破了原版只能用字符串的限制。
-        'IMAGES_STORE':             'image',      # 默认在脚本路径文件夹内下载图片(配置为文件夹名字，使用时需解开 VImagePipeline 管道注释)
+        # 【中间件配置】
+        # 这里使用中间件的方式和项目启动很相似，我在头部打了补丁函数，现在管道配置的第一个值可以同时用字符串或类配置，突破了原版只能用字符串的限制。
+        'IMAGES_STORE':             'image',      # 默认在该脚本路径下创建文件夹、下载图片(不解开 VImagePipeline 管道注释则该配置无效)
         'ITEM_PIPELINES': {
-            # VPipeline:              101,        # 普通的中间件使用
-            # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 则自动将 src 字段作为图片地址下载到脚本路径下
-            # VVideoPipeline:         103,        # 视频下载中间件，同上
+            # VPipeline:              101,        # 普通的中间件使用(解开即可测试，如需魔改，请在脚本顶部找对应的类进行自定义处理)
+            # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
+            # VVideoPipeline:         103,        # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
             # VMySQLPipeline:         104,        # MySql 插入中间件，具体请看类的描述
         },
         'SPIDER_MIDDLEWARES': {
@@ -1510,8 +1511,9 @@ _single_script_middleware_new2 = '''
         },
         'EXTENSIONS': {
             # 'scrapy.extensions.logstats.LogStats': None, 
-            # 关闭 scrapy 默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需注释即可关闭
-            # 同理 SPIDER_MIDDLEWARES/DOWNLOADER_MIDDLEWARES 这两个中间件组也可以用相同的方式注释掉 scrapy 默认组件
+            # 关闭 scrapy EXTENSIONS默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需在对应管道中配置为 None 即可关闭
+            # 同理 SPIDER_MIDDLEWARES / DOWNLOADER_MIDDLEWARES 这两个“中间件配置”字典也可以用相同的方式关掉 scrapy 默认组件
+            # 【*】注意：不同分类的默认中间件需在对应分类的“中间件配置”字典中配置才能关闭，
         },'''
 
 # 生成代码临时放在这里
