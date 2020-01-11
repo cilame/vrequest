@@ -595,7 +595,7 @@ def get_xpath_elements(*a):
                     toggle = 1
                     break
                 if i.startswith('<auto_list_xpath:'):
-                    q = ['//html']
+                    q = ['//div', '//li', '//tr']
                     d = {}
                     p = None
                     for j in tx4.get(0.,tkinter.END).strip().splitlines():
@@ -609,8 +609,11 @@ def get_xpath_elements(*a):
                     m = sorted(d,key=lambda i:-d[i])[:show_num]
                     for i in m: q.append('[ cnt:{} ]'.format(d[i]) + i)
                     d = SimpleDialog(nb,
-                        text="是否选择自动解析出的xpath路径？\n"
-                             "（不选择，默认填充 “//html” ，最大显示{}条内容）".format(show_num),
+                        text=("是否选择自动解析出的xpath路径？\n"
+                              "前三条内容为备选分析项\n"
+                              "有时会有意想不到的效果\n"
+                              "\n"
+                              "（回车默认选择 “//div” ，最大展示{}条内容）".format(show_num)),
                         buttons=q,
                         default=0,
                         cancel=-1,

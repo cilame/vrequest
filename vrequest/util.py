@@ -367,6 +367,7 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
                     p.extend([' '*indent+func(i) for i in ax])
                     func_code ='\n'.join(p)
                 except:
+                    import traceback
                     traceback.print_exc()
                     func_code =("print('------------------------------ split ------------------------------')\n"
                                 "tree = etree.HTML(content)\n"
@@ -1025,9 +1026,11 @@ def get_simple_path_tail(e):
         if 'class' in ele:
             if ' ' in ele["class"] and not ele["class"].startswith(' '):
                 elass = ele["class"].split(' ',1)[0]
+                key = '[contains(@class, "{}")]'.format(elass)
+                # key = '[@class="{}"]'.format(elass)
             else:
                 elass = ele["class"]
-            key = '[@class="{}"]'.format(elass)
+                key = '[@class="{}"]'.format(elass)
             rke = '/'+rke if rke else ""
             val = '//{}{}{}'.format(xpa.rsplit('/',1)[1],key,rke)
             if not elass.strip():
@@ -1255,8 +1258,11 @@ def auto_xpath(oxp,content,_type=None):
         for i in e:
             v = '''x.xpath('{}')'''.format(i)
             k = (re.findall(r'@[^@"]*"([^@"]*)"[^@"]*$', i) or ['None'])[0]
-            k = func('str_' + re.findall('[a-zA-Z0-9]+', k)[0]) if i != 'string(.)' else 'str_all'
-            q.append((k,v,len(e[i])))
+            try:
+                k = func('str_' + re.findall('[a-zA-Z0-9]+', k)[0]) if i != 'string(.)' else 'str_all'
+                q.append((k,v,len(e[i])))
+            except:
+                pass
         return q
     def count_lu(q):
         l,u = 0,0
