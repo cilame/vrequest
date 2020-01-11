@@ -44,29 +44,26 @@ TELNETCONSOLE_ENABLED = False # 几乎用不到的功能默认关闭，提高任
 #   'Accept-Language': 'en',
 #}
 
-# Enable or disable spider middlewares
-# See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    'v.middlewares.VSpiderMiddleware': 543,
-#}
-
-# Enable or disable downloader middlewares
-# See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'v.middlewares.VDownloaderMiddleware': 543,
-#}
-
-# Enable or disable extensions
-# See https://doc.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-#}
-
-# Configure item pipelines
-# See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'v.pipelines.VPipeline': 300,
-#}
+IMAGES_STORE = 'image' # 默认在该脚本路径下创建文件夹、下载图片(不解开 VImagePipeline 管道注释则该配置无效)
+ITEM_PIPELINES = {
+    # 'v.pipelines.VPipeline':      101, # 普通的中间件使用(解开即可测试，如需魔改，请在脚本顶部找对应的类进行自定义处理)
+    # 'v.pipelines.VImagePipeline': 102, # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
+    # 'v.pipelines.VVideoPipeline': 103, # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
+    # 'v.pipelines.VMySQLPipeline': 104, # MySql 插入中间件，具体请看类的描述
+} 
+SPIDER_MIDDLEWARES = { 
+    # 'v.middlewares.VSpiderMiddleware': 543,     # 原版模板的单脚本插入方式
+} 
+DOWNLOADER_MIDDLEWARES = { 
+    # 'v.middlewares.VDownloaderMiddleware': 543, # 原版模板的单脚本插入方式
+    # 'v.middlewares.VSeleniumMiddleware': 544,   # 单脚本 Selenium 中间件配置，解开自动使用 Selenium，详细请看 VSeleniumMiddleware 类中间件代码。
+}
+EXTENSIONS = {
+    # 'scrapy.extensions.logstats.LogStats': None, 
+    # 关闭 scrapy EXTENSIONS默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需在对应管道中配置为 None 即可关闭
+    # 同理 SPIDER_MIDDLEWARES / DOWNLOADER_MIDDLEWARES 这两个“中间件配置”字典也可以用相同的方式关掉 scrapy 默认组件
+    # 【*】注意：不同分类的默认中间件需在对应分类的“中间件配置”字典中配置才能关闭，
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

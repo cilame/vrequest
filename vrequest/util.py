@@ -445,7 +445,7 @@ class VSpider(scrapy.Spider):
     name = 'v'
 
     custom_settings = {
-        'COOKIES_ENABLED': False,  # use my create cookie in headers
+        'COOKIES_ENABLED': False,  # Do not use automatic cookie caching(set 'dont_merge_cookies' as True in Request.meta is same)
     }
     proxy = None # 'http://127.0.0.1:8888'
 
@@ -488,7 +488,7 @@ class VSpider(scrapy.Spider):
     name = 'v'
 
     custom_settings = {
-        'COOKIES_ENABLED': False,  # use my create cookie in headers
+        'COOKIES_ENABLED': False,  # Do not use automatic cookie caching(set 'dont_merge_cookies' as True in Request.meta is same)
     }
     proxy = None # 'http://127.0.0.1:8888'
 
