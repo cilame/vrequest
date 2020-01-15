@@ -769,7 +769,7 @@ single_script_comment_part1 = '''
     jobdir      = os.path.join(desktoppath, jobdir)
 '''.strip('\n')
 
-_pyinstaller_scrapy = '--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib'
+_pyinstaller_scrapy = '--add-data "$sysexec\\Lib\\site-packages\\scrapy;scrapy" --add-data "$sysexec\\Lib\\email;email" --add-data "$sysexec\\Lib\\site-packages\\twisted;twisted" --add-data "$sysexec\\Lib\\site-packages\\queuelib;queuelib" --add-data "$sysexec\\Lib\\sqlite3;sqlite3" --add-binary "$sysexec\\DLLs\\_sqlite3.pyd;." --add-binary "$sysexec\\DLLs\\sqlite3.dll;." --exclude-module numpy --exclude-module scipy --exclude-module matplotlib --exclude-module PyQt5 --noupx'
 _pyinstaller_scrapy = _pyinstaller_scrapy.replace('$sysexec', os.path.dirname(sys.executable))
 single_script_comment_part2 = """
     # 基础中间件介绍
@@ -1301,17 +1301,24 @@ class VImagePipeline(ImagesPipeline):
         item['image_path'] = v['path'] if k else None # 保留文件名地址
         return item
 
+# 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，打包命令如下。（注意修改脚本名称）
+# pyinstaller -F $你的scrapy单脚本.py '''+_pyinstaller_scrapy+'''
+# 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib PyQt5，如有需要引用请删除这里的部分 --exclude-module
+# import you_get.extractors         # 使用 pyinstaller 打包 you-get    时，需要在全局环境显式导入该行代码，让 pyinstalelr 自动包含该库内容
+# from youtube_dl import YoutubeDL  # 使用 pyinstaller 打包 youtube-dl 时，需要在全局环境显式导入该行代码，让 pyinstalelr 自动包含该库内容
 # 视频下载 item 中间件
 class VVideoPipeline(object):
     def process_item(self, item, spider):
         url = item['src']
+        import os, sys
+        localpage = os.path.dirname(os.path.realpath(sys.argv[0])) # 确保下载路径为“该脚本”或“被pytinstaller打包时候的工具”路径下的video文件夹
         ### 【you-get】
         import you_get.common
         you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
-        you_get.common.any_download(url, output_dir='./video', merge=True, info_only=False)
+        you_get.common.any_download(url, output_dir=localpage+'/video', merge=True, info_only=False)
         ### 【youtube-dl】
         # from youtube_dl import YoutubeDL
-        # ytdl = YoutubeDL({'outtmpl': './video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
+        # ytdl = YoutubeDL({'outtmpl': localpage+'/video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
         # info = ytdl.extract_info(url, download=True)
         return item
 

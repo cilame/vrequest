@@ -1224,17 +1224,18 @@ def auto_xpath(oxp,content,_type=None):
             for idx,i in enumerate(x.getchildren(),1):
                 mk_attr_strs(i,s+1,idx,xp)
         mk_attr_strs(x)
-    f = {}
-    for i in e.items():
-        v = str(i[1])
-        if v not in f: f[v] = []
-        f[v].append(i[0])
-    p = []
-    for i in f.items():
-        if len(i[1]) > 1:
-            p.extend(sorted(i[1],key=lambda i:-len(i))[1:])
-    for i in p:
-        e.pop(i)
+    # 貌似这块的过滤没有起到作用，甚至妨碍了部分解析解析不到内容。
+    # f = {}
+    # for i in e.items():
+    #     v = str(i[1])
+    #     if v not in f: f[v] = []
+    #     f[v].append(i[0])
+    # p = []
+    # for i in f.items():
+    #     if len(i[1]) > 1:
+    #         p.extend(sorted(i[1],key=lambda i:-len(i))[1:])
+    # for i in p:
+    #     e.pop(i)
     m = set()
     def func(name):
         if name not in m:
