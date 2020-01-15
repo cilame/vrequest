@@ -1275,6 +1275,10 @@ def _update_classpath(path_or_class):
 scrapy.utils.misc.load_object = _load_object
 scrapy.utils.deprecate.update_classpath = _update_classpath
 
+# 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，打包命令如下。（注意修改脚本名称）
+# pyinstaller -F $你的scrapy单脚本.py '''+_pyinstaller_scrapy+'''
+# 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib PyQt5，如有需要引用请删除这里的部分 --exclude-module
+
 # 基础 item 中间件模板
 class VPipeline(object):
     def process_item(self, item, spider):
@@ -1301,9 +1305,6 @@ class VImagePipeline(ImagesPipeline):
         item['image_path'] = v['path'] if k else None # 保留文件名地址
         return item
 
-# 如果使用 pyinstaller 打包 scrapy 脚本成为单个 exe，打包命令如下。（注意修改脚本名称）
-# pyinstaller -F $你的scrapy单脚本.py '''+_pyinstaller_scrapy+'''
-# 注意，这里的打包默认去除最常见影响大小的库 numpy scipy matplotlib PyQt5，如有需要引用请删除这里的部分 --exclude-module
 # import you_get.extractors         # 使用 pyinstaller 打包 you-get    时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
 # from youtube_dl import YoutubeDL  # 使用 pyinstaller 打包 youtube-dl 时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
 # 视频下载 item 中间件
