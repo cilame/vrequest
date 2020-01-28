@@ -102,6 +102,24 @@ def request_window(setting=None):
             ent2.delete(0,tkinter.END)
             ent2.insert(0,'yes')
 
+    def _select_create_code(*a):
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '生成[requests]代码[Alt+c]', 
+                '生成[scrapy]代码[Alt+s]', 
+                '生成[urllib]代码[Alt+u]', ]
+        d = SimpleDialog(nb,
+            text="请选择生成的代码",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="生成代码")
+        id = d.go()
+        if id == -1: return
+        if id == 0: test_code()
+        if id == 1: scrapy_code()
+        if id == 2: urllib_code()
+
     temp_fr0 = Frame(fr)
     methods = ('GET','POST')
     cbx = Combobox(temp_fr0,width=10,state='readonly')
@@ -122,12 +140,14 @@ def request_window(setting=None):
     btnurlencode1.pack(side=tkinter.RIGHT)
     lab1 = Label(temp_fr0, text='请尽量发送请求后生成代码，那样会有更多功能：')
     lab1.pack(side=tkinter.LEFT)
-    btn6 = Button(temp_fr0, text='生成[requests]代码[Alt+c]', command=test_code)
-    btn6.pack(side=tkinter.LEFT)
-    btn7 = Button(temp_fr0, text='生成[scrapy]代码[Alt+s]', command=scrapy_code)
-    btn7.pack(side=tkinter.LEFT)
-    btn8 = Button(temp_fr0, text='生成[urllib]代码[Alt+u]', command=urllib_code)
-    btn8.pack(side=tkinter.LEFT)
+    # btn6 = Button(temp_fr0, text='生成[requests]代码[Alt+c]', command=test_code)
+    # btn6.pack(side=tkinter.LEFT)
+    # btn7 = Button(temp_fr0, text='生成[scrapy]代码[Alt+s]', command=scrapy_code)
+    # btn7.pack(side=tkinter.LEFT)
+    # btn8 = Button(temp_fr0, text='生成[urllib]代码[Alt+u]', command=urllib_code)
+    # btn8.pack(side=tkinter.LEFT)
+    btn9 = Button(temp_fr0, text='选择生成代码', command=_select_create_code)
+    btn9.pack(side=tkinter.LEFT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -322,6 +342,50 @@ eg.:
         tx2.delete(0., tkinter.END)
         tx2.insert(0., '<just_info:>\n' + s)
 
+    def _select_analysis(*a):
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '(Alt+f)分析xpath',
+                '(Alt+x)选择xpath',
+                '(Alt+z)分析json',
+                '(Alt+q)选择json',
+                '(Alt+d)获取纯文字',
+                'json格式化',
+                'xpath内容分析', ]
+        d = SimpleDialog(nb,
+            text="请选择分析内容的方式，分析后再生成代码，会自动在代码内带有分析处理的代码块。",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="分析内容")
+        id = d.go()
+        if id == -1: return
+        if id == 0: auto_xpath()
+        if id == 1: xpath_elements()
+        if id == 2: auto_json()
+        if id == 3: choice_json()
+        if id == 4: html_pure_text()
+        if id == 5: jsonformat()
+        if id == 6: xpath_finder()
+
+    def _select_create_code(*a):
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '生成[requests]代码[Alt+c]', 
+                '生成[scrapy]代码[Alt+s]', 
+                '生成[urllib]代码[Alt+u]', ]
+        d = SimpleDialog(nb,
+            text="请选择生成的代码",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="生成代码")
+        id = d.go()
+        if id == -1: return
+        if id == 0: test_code()
+        if id == 1: scrapy_code()
+        if id == 2: urllib_code()
+
     temp_fr0 = Frame(fr)
     lab1 = Label(temp_fr0, text='功能说明：')
     lab1.pack(side=tkinter.LEFT)
@@ -332,28 +396,32 @@ eg.:
     cbx.pack(side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', document)
     temp_fr0.pack(fill=tkinter.X)
-    btn3 = Button(temp_fr0, text='(f)分析xpath', command=auto_xpath)
-    btn3.pack(side=tkinter.LEFT)
-    btn4 = Button(temp_fr0, text='(x)选择xpath', command=xpath_elements)
-    btn4.pack(side=tkinter.LEFT)
-    btn5 = Button(temp_fr0, text='(z)分析json', command=auto_json)
-    btn5.pack(side=tkinter.LEFT)
-    btn9 = Button(temp_fr0, text='(q)选择json', command=choice_json)
-    btn9.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='(d)获取纯文字', command=html_pure_text)
-    btn2.pack(side=tkinter.LEFT)
-    btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
-    btn9.pack(side=tkinter.LEFT)
-    btn10 = Button(temp_fr0, text='xpath内容分析', command=xpath_finder)
-    btn10.pack(side=tkinter.LEFT)
+    # btn3 = Button(temp_fr0, text='(f)分析xpath', command=auto_xpath)
+    # btn3.pack(side=tkinter.LEFT)
+    # btn4 = Button(temp_fr0, text='(x)选择xpath', command=xpath_elements)
+    # btn4.pack(side=tkinter.LEFT)
+    # btn5 = Button(temp_fr0, text='(z)分析json', command=auto_json)
+    # btn5.pack(side=tkinter.LEFT)
+    # btn9 = Button(temp_fr0, text='(q)选择json', command=choice_json)
+    # btn9.pack(side=tkinter.LEFT)
+    # btn2 = Button(temp_fr0, text='(d)获取纯文字', command=html_pure_text)
+    # btn2.pack(side=tkinter.LEFT)
+    # btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
+    # btn9.pack(side=tkinter.LEFT)
+    # btn10 = Button(temp_fr0, text='xpath内容分析', command=xpath_finder)
+    # btn10.pack(side=tkinter.LEFT)
+    btn11 = Button(temp_fr0, text='选择内容分析', command=_select_analysis)
+    btn11.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
     btn1.pack(side=tkinter.RIGHT)
-    btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
-    btn6.pack(side=tkinter.RIGHT)
-    btn7 = Button(temp_fr0, text='生成[scrapy]代码', command=scrapy_code)
-    btn7.pack(side=tkinter.RIGHT)
-    btn8 = Button(temp_fr0, text='生成[urllib]代码', command=urllib_code)
-    btn8.pack(side=tkinter.RIGHT)
+    # btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
+    # btn6.pack(side=tkinter.RIGHT)
+    # btn7 = Button(temp_fr0, text='生成[scrapy]代码', command=scrapy_code)
+    # btn7.pack(side=tkinter.RIGHT)
+    # btn8 = Button(temp_fr0, text='生成[urllib]代码', command=urllib_code)
+    # btn8.pack(side=tkinter.RIGHT)
+    btn9 = Button(temp_fr0, text='选择生成代码', command=_select_create_code)
+    btn9.pack(side=tkinter.RIGHT)
 
     def _swich_encd(*a):
         s = ent1.get().strip()
