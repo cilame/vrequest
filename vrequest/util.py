@@ -798,17 +798,18 @@ def mk_url_headers():
     $c_headers
     return url,headers
 
-method = 'GET'
+def myget(url, headers):
+    r = request.Request(url, method='GET')
+    for k, v in headers.items():
+        if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+        r.add_header(k, v)
+    proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
+    opener = request.build_opener(request.ProxyHandler(proxies))
+    return opener.open(r)
+
 url, headers = mk_url_headers()
 body = None
-r = request.Request(url, method=method)
-for k, v in headers.items():
-    if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
-    r.add_header(k, v)
-proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
-opener = request.build_opener(request.ProxyHandler(proxies))
-s = opener.open(r)
-
+s = myget(url, headers)
 content = s.read()
 
 $plus
@@ -834,20 +835,21 @@ def mk_url_headers_body():
     url = quote_val(url) # 解决部分网页需要请求参数中的 param 保持编码状态，如有异常考虑注释
     $c_headers
     $c_body
+    JSONString = False #，这里通常为False，极少情况需要data为string情况下的json数据，如需要，这里设置为True
+    body = json.dumps(body).encode('utf-8') if JSONString else urlencode(body).encode('utf-8')
     return url,headers,body
 
-method = 'POST'
-url, headers, body = mk_url_headers_body()
-JSONString = False #，这里通常为False，极少情况需要data为string情况下的json数据，如需要，这里设置为True
-body = json.dumps(body).encode('utf-8') if JSONString else urlencode(body).encode('utf-8')
-r = request.Request(url, method=method)
-for k, v in headers.items():
-    if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
-    r.add_header(k, v)
-proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
-opener = request.build_opener(request.ProxyHandler(proxies))
-s = opener.open(r, data=body)
+def mypost(url, headers, body):
+    r = request.Request(url, method='POST')
+    for k, v in headers.items():
+        if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+        r.add_header(k, v)
+    proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
+    opener = request.build_opener(request.ProxyHandler(proxies))
+    return opener.open(r, data=body)
 
+url, headers, body = mk_url_headers_body()
+s = mypost(url, headers, body)
 content = s.read()
 
 $plus
@@ -898,7 +900,7 @@ def header_fprint(headers_dict):
             print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
 # 请求信息
 print('===========\n| request |\n===========')
-print('request method: {}\nrequest url: {}'.format(method, url))
+print('request url: {}'.format(url))
 print('------------------- request headers ---------------------')
 header_fprint(headers)
 print('------------------- request body ------------------------')
@@ -912,7 +914,10 @@ print('------------------- response content[:1000] ----------------')
 print('response content[:1000]:\n {}'.format(content[:1000]))
 print('=========================================================')
 print('\n'*2)
+'''
 
+    # tail_xpath 这块貌似有一定的缺陷，目前就留在这里，以后有时间再看了。
+    tail_xpath = '''
 
 # 以下为 "简易xpath": 无依赖库的 xpath 解析代码，
 # 为了让分析工具分析出的 xpath 在一定程度上能被无依赖库的代码使用所开发的代码片，不使用删除即可。

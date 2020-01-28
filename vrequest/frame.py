@@ -349,8 +349,7 @@ eg.:
                 '(Alt+x)选择xpath',
                 '(Alt+z)分析json',
                 '(Alt+q)选择json',
-                '(Alt+d)获取纯文字',
-                'json格式化',
+                '(Alt+d)获取纯文字', 
                 'xpath内容分析', ]
         d = SimpleDialog(nb,
             text="请选择分析内容的方式，分析后再生成代码，会自动在代码内带有分析处理的代码块。",
@@ -365,8 +364,7 @@ eg.:
         if id == 2: auto_json()
         if id == 3: choice_json()
         if id == 4: html_pure_text()
-        if id == 5: jsonformat()
-        if id == 6: xpath_finder()
+        if id == 5: xpath_finder()
 
     def _select_create_code(*a):
         from .tab import nb
@@ -396,6 +394,8 @@ eg.:
     cbx.pack(side=tkinter.LEFT)
     cbx.bind('<<ComboboxSelected>>', document)
     temp_fr0.pack(fill=tkinter.X)
+    btn11 = Button(temp_fr0, text='选择内容分析', command=_select_analysis)
+    btn11.pack(side=tkinter.LEFT)
     # btn3 = Button(temp_fr0, text='(f)分析xpath', command=auto_xpath)
     # btn3.pack(side=tkinter.LEFT)
     # btn4 = Button(temp_fr0, text='(x)选择xpath', command=xpath_elements)
@@ -406,12 +406,10 @@ eg.:
     # btn9.pack(side=tkinter.LEFT)
     # btn2 = Button(temp_fr0, text='(d)获取纯文字', command=html_pure_text)
     # btn2.pack(side=tkinter.LEFT)
-    # btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
-    # btn9.pack(side=tkinter.LEFT)
     # btn10 = Button(temp_fr0, text='xpath内容分析', command=xpath_finder)
     # btn10.pack(side=tkinter.LEFT)
-    btn11 = Button(temp_fr0, text='选择内容分析', command=_select_analysis)
-    btn11.pack(side=tkinter.LEFT)
+    btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
+    btn9.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
     btn1.pack(side=tkinter.RIGHT)
     # btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
@@ -1571,7 +1569,7 @@ class VSeleniumMiddleware(object):
 '''
 
 _single_script_middleware_new2 = '''
-        # 【中间件配置】
+        # 【中间件/管道配置】
         # 这里使用中间件的方式和项目启动很相似，我在头部打了补丁函数，现在管道配置的第一个值可以同时用字符串或类配置，突破了原版只能用字符串的限制。
         'IMAGES_STORE':             'image',      # 默认在该脚本路径下创建文件夹、下载图片(不解开 VImagePipeline 管道注释则该配置无效)
         'ITEM_PIPELINES': {
@@ -1782,7 +1780,7 @@ def scrapy_code_window(setting=None):
     bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='【单脚本中间件】', command=_add_middleware_script_and_so_on)
+    btn2 = Button(temp_fr0, text='【单脚本中间件/管道】', command=_add_middleware_script_and_so_on)
     btn2.pack(side=tkinter.LEFT)
     # btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
     # btn2.pack(side=tkinter.LEFT)
@@ -1872,6 +1870,7 @@ vrequest：
 用于快速发起请求，快速生成且能执行的基于 requests 和 lxml 的代码
 也可以生成且能执行 scrapy 代码，不过由于scrapy库依赖过重，该工具不会依赖下载
 若需要执行 scrapy 代码，需额外下载 scrapy。
+*安装完整功能库(scrapy js2py jsbeautifier cryptography)
 
 通用快捷键 (该处多数功能右键窗口就能实现，只要记得右键窗口任意处即可)：
 (Ctrl + q) 创建新的请求标签
@@ -1885,8 +1884,8 @@ vrequest：
 请求窗口快捷键：
 (Ctrl + r) 发送请求任务并保存
 *(Alt + c) 生成请求代码(一般建议在请求后处理分析再生成代码，那样包含解析代码)
-           HEADERS 窗口接受 “:” 或 “=” 分割生成 字典参数
-           BODY    窗口接受 “:” 或 “=” 分割生成 字典参数
+           HEADERS 窗口接受 “:” 或 “=” 每行分割生成 字典参数
+           BODY    窗口接受 “:” 或 “=” 每行分割生成 字典参数
                 注意：对于 BODY 有时也会存在这里不需要对 dict 进行 urlencode 编码
                       的情况，这时候只要将传入的一行数据前后加上英文的双引号
                       程序会自动不对该 dict 进行编码，POST 请求时请留意该功能
@@ -1927,11 +1926,17 @@ https://github.com/cilame/vrequest
         from .tab import creat_windows_shortcut
         creat_windows_shortcut()
 
+    def pip_install_allfunc(*a):
+        from .tab import pipinstall_all
+        pipinstall_all()
+
     fr1 = Frame(fr)
     fr1.pack()
     btn = Button(fr1,text='创建请求窗口/[右键创建请求窗口]', command=create_req_window)
     btn.pack(side=tkinter.LEFT)
     btn = Button(fr1,text='创建桌面快捷方式', command=creat_shortcut)
+    btn.pack(side=tkinter.LEFT)
+    btn = Button(fr1,text='安装完整功能库', command=pip_install_allfunc)
     btn.pack(side=tkinter.LEFT)
     lb1 = ttk.Label(temp_fr1,font=ft,text=hp)
     lb1.pack()
