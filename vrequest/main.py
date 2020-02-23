@@ -32,6 +32,7 @@ from .tab import (
     execute_scrapy_code,
     create_js_parse,
     create_temp_idle,
+    create_cmd_idle,
     create_encoder,
     create_test_code_urllib,
 )
@@ -79,6 +80,7 @@ bind_ctl_key(save_config,       's')
 bind_ctl_key(send_request,      'r')
 bind_ctl_key(create_helper,     'h')
 bind_ctl_key(create_js_parse,   'j')
+bind_ctl_key(create_cmd_idle,   '`')
 
 # 绑定 response 事件
 bind_alt_key(create_new_rsptab,         'r')

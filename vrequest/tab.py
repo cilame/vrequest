@@ -799,6 +799,24 @@ def create_temp_idle():
     os.popen(cmd)
 
 
+def create_cmd_idle():
+    pythonexe = sys.executable
+    pypath = os.path.split(pythonexe)[0]
+    idlepyw = os.path.join(pypath,'Lib/idlelib/idle.pyw')
+    rundefault = [
+        'import os, sys, json, re, time, urllib',
+        'import pprint, difflib, hmac, hashlib, html',
+        'from urllib import request, parse',
+        'from urllib.parse import quote,unquote,urlencode',
+        'from urllib.request import urlopen'
+    ]
+    a = "print('default imports:')"
+    b = "[print('    '+i,end='\\n') for i in {}] or None".format(rundefault)
+    rundefault = ';'.join([a]+rundefault+[b])
+    cmd = '{} {} -c "{}"'.format(pythonexe, idlepyw, rundefault)
+    os.popen(cmd)
+
+
 def creat_windows_shortcut():
     # 创建 windows 的桌面快捷方式。
     import os
