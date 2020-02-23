@@ -29,7 +29,7 @@ setup(
             'ico.ico'
         ]
     },
-    python_requires=">=3.5",
+    python_requires=">=3.0",
     install_requires=[
        'requests',
        'lxml',

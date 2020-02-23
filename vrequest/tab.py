@@ -954,7 +954,7 @@ def create_xpath_finder(setting):
 def pipinstall_all(*a):
     import os, sys
     pip3_exe = os.path.join(os.path.split(sys.executable)[0], r'Scripts', r'pip3.exe')
-    libs = 'scrapy js2py jsbeautifier cryptography'
+    libs = 'scrapy js2py jsbeautifier cryptography pillow'
     try:
         cmd = 'start powershell -NoExit "{}" install {}'.format(pip3_exe, libs)
         os.system(cmd)

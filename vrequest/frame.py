@@ -1870,7 +1870,7 @@ vrequest：
 用于快速发起请求，快速生成且能执行的基于 requests 和 lxml 的代码
 也可以生成且能执行 scrapy 代码，不过由于scrapy库依赖过重，该工具不会依赖下载
 若需要执行 scrapy 代码，需额外下载 scrapy。
-*安装完整功能库(scrapy js2py jsbeautifier cryptography)
+*安装完整功能库(scrapy js2py jsbeautifier cryptography pillow)
 
 通用快捷键 (该处多数功能右键窗口就能实现，只要记得右键窗口任意处即可)：
 (Ctrl + q) 创建新的请求标签
