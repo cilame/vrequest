@@ -146,6 +146,22 @@ def request_window(setting=None):
     # btn7.pack(side=tkinter.LEFT)
     # btn8 = Button(temp_fr0, text='生成[urllib]代码[Alt+u]', command=urllib_code)
     # btn8.pack(side=tkinter.LEFT)
+
+    def local_collection(*a):
+        def _show(*a, stat='show'):
+            try:
+                if stat == 'show': et.pack(side=tkinter.RIGHT)
+                if stat == 'hide': et.pack_forget()
+            except:
+                pass
+        _show(stat='show') if va.get() else _show(stat='hide')
+    va = tkinter.IntVar()
+    rb = Checkbutton(temp_fr0,text='使用代理',variable=va,command=local_collection)
+    rb.deselect()
+    et = Entry (temp_fr0, width=16)
+    et.insert(0, '127.0.0.1:8888')
+    rb.pack(side=tkinter.RIGHT)
+
     btn9 = Button(temp_fr0, text='选择生成代码', command=_select_create_code)
     btn9.pack(side=tkinter.LEFT)
 
@@ -181,6 +197,11 @@ def request_window(setting=None):
         tx3.insert(0.,setting['body'].strip())
         ent1.insert(0,setting.get('urlenc') or 'utf-8')
         ent2.insert(0,setting.get('qplus') or 'no')
+        if setting.get('proxy'):
+            et.delete(0, tkinter.END)
+            et.insert(0, setting.get('proxy'))
+            et.pack(side=tkinter.RIGHT)
+            rb.select()
     else:
         tx2.insert(0.,DEFAULTS_HEADERS.strip())
         ent1.insert(0,'utf-8')
@@ -194,6 +215,7 @@ def request_window(setting=None):
     frame_setting[fr]['fr_body'] = tx3
     frame_setting[fr]['fr_urlenc'] = ent1
     frame_setting[fr]['fr_qplus'] = ent2
+    frame_setting[fr]['fr_proxy'] = va, et
     return fr
 
 
@@ -410,6 +432,12 @@ eg.:
     # btn10.pack(side=tkinter.LEFT)
     btn9 = Button(temp_fr0, text='json格式化', command=jsonformat)
     btn9.pack(side=tkinter.LEFT)
+    style = ttk.Style()
+    style.map("TEST.TButton",
+        foreground=[('!focus', '#EE6363')],
+    )
+    lab2 = Label(temp_fr0, text="正在请求", style='TEST.TButton')
+    lab2.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='显示/隐藏配置', command=switch_show)
     btn1.pack(side=tkinter.RIGHT)
     # btn6 = Button(temp_fr0, text='生成[requests]代码', command=test_code)
@@ -457,6 +485,16 @@ eg.:
     btnurlencode1.pack(side=tkinter.RIGHT)
     qplus = (setting.get('qplus') or 'no') if setting is not None else 'no'
     ent2.insert(0, qplus)
+    proxy = None
+    if setting.get('proxy'):
+        varify = re.findall(r'(\d+)\.(\d+)\.(\d+)\.(\d+):(\d+)', setting.get('proxy'))
+        if varify:
+            a,b,c,d,e = map(int, varify[0])
+            if a >= 0 and a <= 255 and b >= 0 and b <= 255 and c >= 0 and c <= 255 and d >= 0 and d <= 255 and e >= 0 and e <= 65535:
+                Label(temp_fr0, text='使用代理: {}'.format(setting.get('proxy'))).pack(side=tkinter.RIGHT)
+                proxy = setting.get('proxy').strip()
+            else:
+                Label(temp_fr0, text='错误的代理: {}'.format(setting.get('proxy'))).pack(side=tkinter.RIGHT)
 
     temp_fr1 = Frame(fr,highlightthickness=lin)
     temp_fold_fr1 = Frame(temp_fr1)
@@ -528,40 +566,46 @@ eg.:
         _quote,_unquote = quote,unquote
     def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+_quote(_unquote(i.group(2), encoding=enc), encoding=enc), url)
 
+    def urllib_myget(url, headers, proxies):
+        r = request.Request(url, method='GET')
+        for k, v in headers.items():
+            if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+            r.add_header(k, v)
+        opener = request.build_opener(request.ProxyHandler(proxies))
+        return opener.open(r)
+
+    def urllib_mypost(url, headers, body, proxies):
+        r = request.Request(url, method='POST')
+        for k, v in headers.items():
+            if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+            r.add_header(k, v)
+        opener = request.build_opener(request.ProxyHandler(proxies))
+        return opener.open(r, data=body)
+
+    proxies = {'http':'http://{}'.format(proxy), 'https':'http://{}'.format(proxy)} if proxy else None
     def _request(method,url,headers,body):
-        if requests is not None:
+        # from .tab import dprint
+        # dprint(requests)
+        if requests.__dict__.get('get') and requests is not None:
             rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
             if method == 'GET':
-                s = requests.get(rurl,headers=headers,verify=False)
+                s = requests.get(rurl,headers=headers,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
                 insert_txt(tx1, content)
             elif method == 'POST':
-                # 这里的post 里面的body 暂时还没有进行处理
-                s = requests.post(rurl,headers=headers,data=body,verify=False)
+                s = requests.post(rurl,headers=headers,data=body,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
                 insert_txt(tx1, content)
         else:
-            # 备用的请求工具，主要还是尽可能的不依赖来实现最最基础的功能。
+            # 备用的请求工具，主要还是考虑如果 requests 不能用的情况下依旧至少能够走完发包的流程
             url = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
             if method == 'GET':
-                r = request.Request(url, method=method)
-                for k, v in headers.items(): 
-                    # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
-                    # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
-                    if k.lower() == 'accept-encoding': continue
-                    r.add_header(k, v)
-                s = request.urlopen(r)
+                s = urllib_myget(url, headers, proxies)
                 tp, content = format_content(s.read())
                 insert_txt(tx1, content)
             elif method == 'POST':
-                body = json.dumps(body).encode('utf-8') if type(body) == dict else urlencode(body).encode('utf-8')
-                r = request.Request(url, method=method)
-                for k, v in headers.items(): 
-                    # 强制取消这个headers字段，因为urllib不解压任何压缩编码内容
-                    # 违背了一点点完全模拟请求的初衷，所以后续仍需考虑怎么解码
-                    if k.lower() == 'accept-encoding': continue
-                    r.add_header(k, v)
-                s = request.urlopen(r, data=body)
+                body = urlencode(body).encode('utf-8') if isinstance(body, dict) else body
+                s = urllib_mypost(url, headers, body, proxies)
                 tp, content = format_content(s.read())
                 insert_txt(tx1, content)
         return tp, content
@@ -577,26 +621,55 @@ eg.:
 
     tp = None
     extra = []
-    if setting is not None:
-        method  = setting.get('method')
-        url     = setting.get('url')
-        headers = setting.get('headers')
-        body    = setting.get('body')
-        try:
-            tp, content = _request(method,url,headers,body)
-        except:
-            einfo = traceback.format_exc()
-            if 'dh key too small' in einfo:
-                extra.append('dh key too small')
-                _handle_dh_key_too_small()
-                tp, content = _request(method,url,headers,body)
-            else:
-                tkinter.messagebox.showinfo('Error',einfo)
-                raise
-            # insert_txt(tx1, traceback.format_exc())
+    # 使用新增线程执行请求
+    def req_in_thead():
+        nonlocal tp, extra, fr
+        def inier_func():
+            if setting is not None:
+                method  = setting.get('method')
+                url     = setting.get('url')
+                headers = setting.get('headers')
+                body    = setting.get('body')
+                try:
+                    tp, content = _request(method,url,headers,body)
+                except:
+                    einfo = traceback.format_exc()
+                    if 'dh key too small' in einfo:
+                        extra.append('dh key too small')
+                        _handle_dh_key_too_small()
+                        tp, content = _request(method,url,headers,body)
+                    else:
+                        tkinter.messagebox.showinfo('Error',einfo)
+                        lab2['text'] = "请求失败"
+                        raise
+        inier_func()
+        lab2['text'] = "请求成功"
+        frame_setting[fr]['fr_parse_type'] = tp
+        frame_setting[fr]['fr_extra'] = extra
+    import threading
+    threading.Thread(target=req_in_thead).start()
 
-    frame_setting[fr]['fr_parse_type'] = tp
-    frame_setting[fr]['fr_extra'] = extra
+    # tp = None
+    # extra = []
+    # if setting is not None:
+    #     method  = setting.get('method')
+    #     url     = setting.get('url')
+    #     headers = setting.get('headers')
+    #     body    = setting.get('body')
+    #     try:
+    #         tp, content = _request(method,url,headers,body)
+    #     except:
+    #         einfo = traceback.format_exc()
+    #         if 'dh key too small' in einfo:
+    #             extra.append('dh key too small')
+    #             _handle_dh_key_too_small()
+    #             tp, content = _request(method,url,headers,body)
+    #         else:
+    #             tkinter.messagebox.showinfo('Error',einfo)
+    #             raise
+    #         # insert_txt(tx1, traceback.format_exc())
+    # frame_setting[fr]['fr_parse_type'] = tp
+    # frame_setting[fr]['fr_extra'] = extra
     return fr
 
 
@@ -1356,8 +1429,18 @@ import logging, hashlib
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exceptions import DropItem
 class VImagePipeline(ImagesPipeline):
+    IMAGES_STORE = None
+    def __init__(self, store_uri, download_func=None, settings=None):
+        super().__init__(store_uri, download_func, settings)
+        VImagePipeline.IMAGES_STORE = settings.get('IMAGES_STORE')
     def get_media_requests(self, item, info):
-        yield Request(item['src'], meta=item) 
+        headers = {
+            "accept-encoding": "gzip, deflate", # auto delete br encoding. cos requests and scrapy can not decode it.
+            "accept-language": "zh-CN,zh;q=0.9",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
+        }
+        yield Request(item['src'], headers=headers, meta=item) 
     def file_path(self, request, response=None, info=None):
         url = request if not isinstance(request, Request) else request.url
         image_name = request.meta.get('image_name') # 使用 item中的 image_name 字段作为文件名进行存储，没有该字段则使用 url的 md5作为文件名存储
@@ -1368,8 +1451,30 @@ class VImagePipeline(ImagesPipeline):
         if not k: logging.info('download fail {}'.format(item))
         else:     logging.info('download success {}'.format(item))
         item['image_download_stat'] = 'success' if k else 'fail'
-        item['image_path'] = v['path'] if k else None # 保留文件名地址
+        item['image_path'] = os.path.join(VImagePipeline.IMAGES_STORE, v['path']).replace('\\\\', '/') if k else None # 保留文件名地址
         return item
+
+# 阿里 Oss 文件上传中间件模板
+# 依赖 pip install oss2
+class VOssPipeline:
+    BUCKET_STORE = None
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        import oss2
+        aid = 'kkkkkkkkkkkkkkkkkkkkkkkk'
+        ack = 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'
+        enp = 'http://oss-cn-hangzhou.aliyuncs.com'
+        _bucket = '<bucket name>'
+        VOssPipeline.BUCKET_STORE = oss2.Bucket(oss2.Auth(aid,ack), enp, _bucket)
+        return s
+    def process_item(self, item, spider):
+        # 示例: 用于将下载到的图片上传到Oss的代码如下
+        # ipath = item.get('image_path')
+        # if ipath and os.path.isfile(ipath): self.update_data(ipath, ipath)
+        return item
+    def update_data(self, object_name, localfile_name):
+        VOssPipeline.BUCKET_STORE.put_object_from_file(object_name, localfile_name)
 
 # import you_get.extractors         # 使用 pyinstaller 打包 you-get    时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
 # from youtube_dl import YoutubeDL  # 使用 pyinstaller 打包 youtube-dl 时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
@@ -1577,6 +1682,7 @@ _single_script_middleware_new2 = '''
             # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
             # VVideoPipeline:         103,        # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
             # VMySQLPipeline:         104,        # MySql 插入中间件，具体请看类的描述
+            # VOssPipeline:           105,        # 将本地数据上传到 OSS 空间的管道模板，注意修改模板内 process_item 函数来指定上传文件地址
         },
         'SPIDER_MIDDLEWARES': {
             # VSpiderMiddleware:      543,        # 原版模板的单脚本插入方式

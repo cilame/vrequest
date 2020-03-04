@@ -83,7 +83,9 @@ def bind_frame(frame, name=None):
     tab_id = (set(nb.tabs())^v).pop() # 由于没有接口，只能用这种方式来获取新增的 tab_id
     nb_names[tab_id] = {}
     nb_names[tab_id]['name'] = name
-    nb_names[tab_id]['setting'] = frame_setting.pop(frame) if frame in frame_setting else {}
+    nb_names[tab_id]['setting'] = frame_setting.get(frame)# frame_setting.pop(frame) if frame in frame_setting else {}
+    # 本来还想着在这里清理 frame_setting 内关闭的窗口，但是实际上这个工具暂时不会开太多窗口
+    # 并且为了在某个地方优化一下请求时的卡顿，所以这里不能在窗口创建的时候就清除转移里面的数据，否则就无法优化。
     return tab_id
 
 
@@ -195,6 +197,8 @@ def set_request_config(name,setting):
     body    = setting.get('fr_body').get(0.,tkinter.END).strip()
     urlenc  = setting.get('fr_urlenc').get()
     qplus   = setting.get('fr_qplus').get()
+    va,prox = setting.get('fr_proxy')
+    proxy   = prox.get().strip() if va.get() else None
     config['set'][name] = {}
     config['set'][name]['type'] = 'request'
     config['set'][name]['method'] = method
@@ -203,11 +207,12 @@ def set_request_config(name,setting):
     config['set'][name]['body'] = body
     config['set'][name]['urlenc'] = urlenc
     config['set'][name]['qplus'] = qplus
+    config['set'][name]['proxy'] = proxy
     headers = format_headers_str(headers)
     body    = format_body_str(body)
     setting.get('fr_url').delete(0.,tkinter.END)
     setting.get('fr_url').insert(0.,format_url_show(url, urlenc))
-    return method,url,headers,body,urlenc,qplus
+    return method,url,headers,body,urlenc,qplus,proxy
 
 
 
@@ -264,7 +269,7 @@ def send_request():
     setting = nb_names[_select]['setting']
     foc_tog = True
     if setting.get('type') == 'request':
-        method,url,headers,body,urlenc,qplus = set_request_config(name,setting)
+        method,url,headers,body,urlenc,qplus,proxy = set_request_config(name,setting)
         _setting = {}
         _setting['method'] = method
         _setting['url'] = url
@@ -272,6 +277,7 @@ def send_request():
         _setting['body'] = body
         _setting['urlenc'] = urlenc
         _setting['qplus'] = qplus
+        _setting['proxy'] = proxy
         create_new_rsptab(_setting,reqname=name)
     else:
         foc_tog = False
