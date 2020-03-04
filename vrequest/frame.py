@@ -11,11 +11,13 @@ import json
 import zlib
 import time
 import hmac
+import queue
 import shutil
 import base64
 import hashlib
 import tempfile
 import traceback
+import threading
 import tkinter
 import inspect
 import zipfile
@@ -489,7 +491,7 @@ eg.:
     qplus = (setting.get('qplus') or 'no') if setting is not None else 'no'
     ent2.insert(0, qplus)
     proxy = None
-    if setting.get('proxy'):
+    if setting and setting.get('proxy'):
         varify = re.findall(r'(\d+)\.(\d+)\.(\d+)\.(\d+):(\d+)', setting.get('proxy'))
         if varify:
             a,b,c,d,e = map(int, varify[0])
@@ -594,23 +596,19 @@ eg.:
             if method == 'GET':
                 s = requests.get(rurl,headers=headers,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
-                insert_txt(tx1, content)
             elif method == 'POST':
                 s = requests.post(rurl,headers=headers,data=body,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
-                insert_txt(tx1, content)
         else:
             # 备用的请求工具，主要还是考虑如果 requests 不能用的情况下依旧至少能够走完发包的流程
             url = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
             if method == 'GET':
                 s = urllib_myget(url, headers, proxies)
                 tp, content = format_content(s.read())
-                insert_txt(tx1, content)
             elif method == 'POST':
                 body = urlencode(body).encode('utf-8') if isinstance(body, dict) else body
                 s = urllib_mypost(url, headers, body, proxies)
                 tp, content = format_content(s.read())
-                insert_txt(tx1, content)
         return tp, content
 
     def _handle_dh_key_too_small():
@@ -624,9 +622,11 @@ eg.:
 
     tp = None
     extra = []
+    import queue
+    Q = queue.Queue()
     # 使用新增线程执行请求，防止卡顿，优化。
     def req_in_thead():
-        nonlocal tp, extra, fr
+        nonlocal tp, extra, fr, Q
         def inier_func():
             nonlocal tp, extra, fr
             if setting is not None:
@@ -644,16 +644,24 @@ eg.:
                         tp, content = _request(method,url,headers,body)
                     else:
                         tkinter.messagebox.showinfo('Error',einfo)
-                        lab2['text'] = "请求失败"
-                        # raise
-        inier_func()
-        lab2['text'] = "请求成功"
+                        Q.put(["请求失败", einfo])
+                        raise
+                return content
+        Q.put(["请求成功", inier_func()])
         frame_setting[fr]['fr_parse_type'] = tp
         frame_setting[fr]['fr_extra'] = extra
-        from .tab import dprint
-    import threading
     threading.Thread(target=req_in_thead).start()
-
+    def loop_in_tkinter():
+        nonlocal Q, tx1
+        from .tab import nb
+        while Q.qsize():
+            try:
+                lab2['text'], content = Q.get_nowait()
+                insert_txt(tx1, content)
+            except queue.Empty:
+                pass
+        nb.after(200, loop_in_tkinter)
+    loop_in_tkinter()
     # tp = None
     # extra = []
     # if setting is not None:
@@ -778,32 +786,62 @@ def code_window(setting=None):
     lb.pack(side=tkinter.TOP)
     cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
+    # 在 tkinter 里面实现线程真的稍微有点累人的。
+    import queue
+    Q = queue.Queue() # 用来传递打印的数据
+    S = queue.Queue() # 用来传递脚本数据
     def execute_func_window():
-        __very_unique_cd__ = None
-        nonlocal cd
-        cd.delete(0.,tkinter.END)
+        # 额外的线程有一个非常需要注意的地方，就是涉及到任何使用 tkinter 内的结构的时候一定不能在这里实现
+        # 一定都要使用 Queue 来传递参数。窗口自己带一个超级递归的循环。
+        nonlocal Q, S
+        Q.put('V|GETSCRIPT')
+        cs = S.get()
         td = tempfile.mkdtemp()
         tf = os.path.join(td,'temp.py')
-        cs = tx.get(0.,tkinter.END)
         with open(tf,'w',encoding='utf-8') as f:
             f.write(cs)
         s = sys.executable
         s = s + ' ' + tf
         import subprocess
         p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
-        print('============================== start ==============================')
+        Q.put('V|DELETE')
+        Q.put('============================== start ==============================\n')
         for line in iter(p.stdout.readline, ''):
             if line:
-                print(line, end='')
+                Q.put(line)
             else:
                 break
-        print('==============================  end  ==============================')
+        Q.put('==============================  end  ==============================')
         p.wait()
         p.stdout.close()
         shutil.rmtree(td)
 
+    def loop_in_tkinter():
+        __very_unique_cd__ = None
+        nonlocal cd, Q, S
+        from .tab import nb
+        c = []
+        while Q.qsize():
+            try:
+                i = Q.get_nowait()
+                if i == 'V|DELETE':
+                    cd.delete(0., tkinter.END)
+                elif i == 'V|GETSCRIPT':
+                    cs = tx.get(0.,tkinter.END)
+                    S.put(cs)
+                else:
+                    try:
+                        cd.insert(tkinter.END, i)
+                    except:
+                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+                    cd.see(tkinter.END)
+                    cd.update()
+            except queue.Empty:
+                pass
+        nb.after(200, loop_in_tkinter)
+    loop_in_tkinter()
+
     def execute_func():
-        import threading
         threading.Thread(target=execute_func_window).start()
 
     frame_setting[fr] = {}
@@ -1995,32 +2033,63 @@ def scrapy_code_window(setting=None):
     cd = Text  (temp_fr2,height=1,width=1,font=ft)
     lb.pack(side=tkinter.TOP)
     cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
+
+    # 在 tkinter 里面实现线程真的稍微有点累人的。
+    import queue
+    Q = queue.Queue() # 用来传递打印的数据
+    S = queue.Queue() # 用来传递脚本数据
     def execute_func_window():
-        __very_unique_cd__ = None
-        nonlocal cd
-        cd.delete(0.,tkinter.END)
+        # 额外的线程有一个非常需要注意的地方，就是涉及到任何使用 tkinter 内的结构的时候一定不能在这里实现
+        # 一定都要使用 Queue 来传递参数。窗口自己带一个超级递归的循环。
+        nonlocal Q, S
+        Q.put('V|GETSCRIPT')
+        cs = S.get()
         td = tempfile.mkdtemp()
         tf = os.path.join(td,'temp.py')
-        cs = tx.get(0.,tkinter.END)
         with open(tf,'w',encoding='utf-8') as f:
             f.write(cs)
         s = sys.executable
         s = s + ' ' + tf
         import subprocess
         p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
-        print('============================== start ==============================')
+        Q.put('V|DELETE')
+        Q.put('============================== start ==============================\n')
         for line in iter(p.stdout.readline, ''):
             if line:
-                print(line, end='')
+                Q.put(line)
             else:
                 break
-        print('==============================  end  ==============================')
+        Q.put('==============================  end  ==============================')
         p.wait()
         p.stdout.close()
         shutil.rmtree(td)
 
+    def loop_in_tkinter():
+        __very_unique_cd__ = None
+        nonlocal cd, Q, S
+        from .tab import nb
+        c = []
+        while Q.qsize():
+            try:
+                i = Q.get_nowait()
+                if i == 'V|DELETE':
+                    cd.delete(0., tkinter.END)
+                elif i == 'V|GETSCRIPT':
+                    cs = tx.get(0.,tkinter.END)
+                    S.put(cs)
+                else:
+                    try:
+                        cd.insert(tkinter.END, i)
+                    except:
+                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+                    cd.see(tkinter.END)
+                    cd.update()
+            except queue.Empty:
+                pass
+        nb.after(200, loop_in_tkinter)
+    loop_in_tkinter()
+
     def execute_func():
-        import threading
         threading.Thread(target=execute_func_window).start()
 
     frame_setting[fr] = {}
