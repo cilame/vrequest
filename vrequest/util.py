@@ -673,7 +673,10 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
         raise TypeError('Canot create code without request.')
     _format = _format.strip()
 
-    tps,err = tps.split(' ') if len(tps.split(' '))==2 else (tps,'strict')
+    if tps:
+        tps,err = tps.split(' ') if len(tps.split(' '))==2 else (tps,'strict')
+    else:
+        tps,err = ('utf-8','strict')
     for i in c_set.splitlines():
         i = i.strip()
         if not i: continue

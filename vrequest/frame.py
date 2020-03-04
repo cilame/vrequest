@@ -232,8 +232,11 @@ def response_window(setting=None):
     '''
 
     def insert_txt(fr_txt, txt):
-        fr_txt.delete(0.,tkinter.END)
-        fr_txt.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
+        try:
+            fr_txt.delete(0.,tkinter.END)
+            fr_txt.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
+        except:
+            pass
 
     doc0 = '''选择列表解析路径方式
 冒号后面配置的的内容为 xpath
@@ -621,10 +624,11 @@ eg.:
 
     tp = None
     extra = []
-    # 使用新增线程执行请求
+    # 使用新增线程执行请求，防止卡顿，优化。
     def req_in_thead():
         nonlocal tp, extra, fr
         def inier_func():
+            nonlocal tp, extra, fr
             if setting is not None:
                 method  = setting.get('method')
                 url     = setting.get('url')
@@ -641,11 +645,12 @@ eg.:
                     else:
                         tkinter.messagebox.showinfo('Error',einfo)
                         lab2['text'] = "请求失败"
-                        raise
+                        # raise
         inier_func()
         lab2['text'] = "请求成功"
         frame_setting[fr]['fr_parse_type'] = tp
         frame_setting[fr]['fr_extra'] = extra
+        from .tab import dprint
     import threading
     threading.Thread(target=req_in_thead).start()
 
@@ -728,6 +733,16 @@ def code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
 
+    if setting.get('type') == 'request':
+        va,prox = setting.get('fr_proxy')
+        proxy   = prox.get().strip() if va.get() else None
+    if setting.get('type') == 'response':
+        proxy   = setting.get('fr_setting').get('proxy')
+    if proxy and setting.get('code_string'):
+        rep = "None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}"
+        rpl = "{'http':'http://" +proxy+ "', 'https':'http://" +proxy+ "'}"
+        setting['code_string'] = setting['code_string'].replace(rep, rpl)
+
     def _execute_code(*a):
         from .tab import execute_code
         execute_code()
@@ -763,7 +778,7 @@ def code_window(setting=None):
     lb.pack(side=tkinter.TOP)
     cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
 
-    def execute_func():
+    def execute_func_window():
         __very_unique_cd__ = None
         nonlocal cd
         cd.delete(0.,tkinter.END)
@@ -786,6 +801,10 @@ def code_window(setting=None):
         p.wait()
         p.stdout.close()
         shutil.rmtree(td)
+
+    def execute_func():
+        import threading
+        threading.Thread(target=execute_func_window).start()
 
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'code'
@@ -1703,9 +1722,23 @@ def scrapy_code_window(setting=None):
     fr = Frame()
     ft = Font(family='Consolas',size=10)
 
+    if setting.get('type') == 'request':
+        va,prox = setting.get('fr_proxy')
+        proxy   = prox.get().strip() if va.get() else None
+    if setting.get('type') == 'response':
+        proxy   = setting.get('fr_setting').get('proxy')
+    if proxy and setting.get('code_string'):
+        rep = "proxy = None # 'http://127.0.0.1:8888'"
+        rpl = "proxy = 'http://" +proxy+ "'"
+        setting['code_string'] = setting['code_string'].replace(rep, rpl)
+
     def _execute_scrapy_code(*a):
         from .tab import execute_scrapy_code
         execute_scrapy_code()
+
+    def _execute_code(*a):
+        from .tab import execute_code
+        execute_code()
 
     def save_project_in_desktop(*a):
         name = askstring('项目名称','请输入项目名称，尽量小写无空格。')
@@ -1886,6 +1919,8 @@ def scrapy_code_window(setting=None):
     bt3.pack(side=tkinter.LEFT)
     btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
     btn1.pack(side=tkinter.LEFT)
+    btn1_1 = Button(temp_fr0, text='窗口执行代码 [Alt+v]', command=_execute_code)
+    btn1_1.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='【单脚本中间件/管道】', command=_add_middleware_script_and_so_on)
     btn2.pack(side=tkinter.LEFT)
     # btn2 = Button(temp_fr0, text='增加单脚本中间件功能', command=_add_single_script_comment)
@@ -1928,7 +1963,7 @@ def scrapy_code_window(setting=None):
     except:
         traceback.print_exc()
 
-    def execute_func():
+    def execute_func_console():
         if os.path.isdir(scriptpath):
             with open(script,'w',encoding='utf-8') as f:
                 f.write(tx.get(0.,tkinter.END))
@@ -1954,9 +1989,45 @@ def scrapy_code_window(setting=None):
             einfo = 'cannot find path: {}'.format(scriptpath)
             tkinter.messagebox.showinfo('Error',einfo)
             raise EnvironmentError(einfo)
+
+    temp_fr2 = Frame(fr,highlightthickness=lin)
+    lb = Label (temp_fr2,text='执行结果[Esc 显示/隐藏执行结果]')
+    cd = Text  (temp_fr2,height=1,width=1,font=ft)
+    lb.pack(side=tkinter.TOP)
+    cd.pack(fill=tkinter.BOTH,expand=True,padx=pdx,pady=pdy)
+    def execute_func_window():
+        __very_unique_cd__ = None
+        nonlocal cd
+        cd.delete(0.,tkinter.END)
+        td = tempfile.mkdtemp()
+        tf = os.path.join(td,'temp.py')
+        cs = tx.get(0.,tkinter.END)
+        with open(tf,'w',encoding='utf-8') as f:
+            f.write(cs)
+        s = sys.executable
+        s = s + ' ' + tf
+        import subprocess
+        p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
+        print('============================== start ==============================')
+        for line in iter(p.stdout.readline, ''):
+            if line:
+                print(line, end='')
+            else:
+                break
+        print('==============================  end  ==============================')
+        p.wait()
+        p.stdout.close()
+        shutil.rmtree(td)
+
+    def execute_func():
+        import threading
+        threading.Thread(target=execute_func_window).start()
+
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'scrapy'
+    frame_setting[fr]['execute_func_console'] = execute_func_console
     frame_setting[fr]['execute_func'] = execute_func
+    frame_setting[fr]['fr_temp2'] = temp_fr2
     return fr
 
 
