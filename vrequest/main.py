@@ -120,6 +120,8 @@ def algo():
     fr.master.withdraw()
     fr.mainloop()
 
+
+escodegen = None
 def execute():
     argv = sys.argv
     if 'e' in argv:
@@ -127,11 +129,15 @@ def execute():
         return
 
     def preimport():
+        global escodegen
         import time
         time.sleep(.5) # 需要花点时间导包的部分，用别的线程进行预加载，增加工具顺滑度
         try: import js2py
         except: pass
         try: import execjs
+        except: pass
+        try: 
+            import js2py.py_node_modules.escodegen as escodegen
         except: pass
     import threading
     threading.Thread(target=preimport).start()

@@ -100,3 +100,25 @@ class VMySQLPipeline(object):
             conn.commit(); cursor.close(); conn.close()
         except Exception as e:
             traceback.print_exc()
+
+# 阿里 Oss 文件上传中间件模板
+# 依赖 pip install oss2
+class VOssPipeline:
+    BUCKET_STORE = None
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls()
+        import oss2
+        aid = 'kkkkkkkkkkkkkkkkkkkkkkkk'
+        ack = 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'
+        enp = 'http://oss-cn-hangzhou.aliyuncs.com'
+        _bucket = '<bucket name>'
+        VOssPipeline.BUCKET_STORE = oss2.Bucket(oss2.Auth(aid,ack), enp, _bucket)
+        return s
+    def process_item(self, item, spider):
+        # 示例: 用于将下载到的图片上传到Oss的代码如下
+        # ipath = item.get('image_path')
+        # if ipath and os.path.isfile(ipath): self.update_data(ipath, ipath)
+        return item
+    def update_data(self, object_name, localfile_name):
+        VOssPipeline.BUCKET_STORE.put_object_from_file(object_name, localfile_name)

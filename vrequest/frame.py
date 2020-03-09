@@ -725,7 +725,10 @@ class stdhooker:
                 self.logtx.update()
 
     def flush(self):
-        self.__org_func__.flush()
+        try:
+            self.__org_func__.flush()
+        except:
+            pass
 
 def get_tx():
     for i in inspect.stack():
@@ -2235,6 +2238,39 @@ def exec_js_window(setting=None):
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,e)
 
+    def get_script_from_tree(tree):
+        from .main import escodegen
+        if escodegen is None:
+            import js2py.py_node_modules.escodegen as escodegen
+        escodegen = escodegen.var.get('escodegen')
+        generate = escodegen.get('generate')
+        return generate(tree).to_python()
+
+    def make_js_tree():
+        try:
+            import pyjsparser
+            jscode = txt1.get(0.,tkinter.END)
+            tree = pyjsparser.parse(jscode)
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,json.dumps(tree, indent=4))
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
+    def make_js_script():
+        from .tab import show_code_log
+        show_code_log()
+        try:
+            jstree = txt2.get(0.,tkinter.END)
+            script = get_script_from_tree(json.loads(jstree))
+            cd.delete(0.,tkinter.END)
+            cd.insert(0.,script)
+        except:
+            e = traceback.format_exc()
+            cd.delete(0.,tkinter.END)
+            cd.insert(0.,e)
+
     def change_module(*a):
         tp = cbx.get().strip()
         btn_create_python_code['text'] = re.sub(r'\[[^\[\]+]*\]',tp,btn_create_python_code['text'])
@@ -2371,6 +2407,10 @@ print(js.func)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=_exec_javascript)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='用语法树生成代码', command=make_js_script)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='生成语法树', command=make_js_tree)
     btn2.pack(side=tkinter.RIGHT)
 
 
