@@ -2084,7 +2084,7 @@ def scrapy_code_window(setting=None):
                     try:
                         cd.insert(tkinter.END, i)
                     except:
-                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',i))
                     cd.see(tkinter.END)
                     cd.update()
             except queue.Empty:
