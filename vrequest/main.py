@@ -1,14 +1,3 @@
-try:
-    # 处理 IDLE 默认使用 cp936 编码时候在打印一些文本时会报错的尴尬
-    import io
-    import sys
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-    sys.stdout._CHUNK_SIZE = 1
-except:
-    pass
-
-
-
 import os
 import sys
 

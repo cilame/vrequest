@@ -690,52 +690,49 @@ eg.:
 
 # 暂时考虑用下面的方式来试着挂钩函数执行的状态。
 # 不过似乎还是有些漏洞，先就这样，后面再补充完整。
+# 当初我不知道我为啥要这么傻逼的使用这样的方式来处理，可能当时还没有找到怎么实现 tkinter 的多线程执行怎么处理吧
+# 现在已经明白了，所有 tkinter 的控件一定要在住线程内执行，可以使用无限递归的的函数来实现 重点是 after 函数，
 import sys
 __org_stdout__ = sys.stdout
 __org_stderr__ = sys.stderr
-class stdhooker:
-    def __init__(self, hook=None, style=None):
-        if hook.lower() == 'stdout':
-            self.__org_func__ = __org_stdout__
-        elif hook.lower() == 'stderr':
-            self.__org_func__ = __org_stderr__
-        else:
-            raise 'stdhooker init error'
-        self.cache = ''
-        self.style = style
-        self.predk = {}
-
-    def write(self,text):
-        self.logtx = get_tx()
-        if self.logtx not in self.predk:
-            self.predk[self.logtx] = 0
-
-        self.cache += text
-        if '\n' in self.cache:
-            _text = self.cache.rsplit('\n',1)
-            self.cache = '' if len(_text) == 1 else _text[1]
-            _text_ = _text[0] + '\n'
-            if self.logtx:
-                try:
-                    self.logtx.insert(tkinter.END, _text_)
-                except:
-                    self.logtx.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
-                # self.logtx.insert(tkinter.END, _text_)
-                self.logtx.see(tkinter.END)
-                self.logtx.update()
-
-    def flush(self):
-        try:
-            self.__org_func__.flush()
-        except:
-            pass
-
-def get_tx():
-    for i in inspect.stack():
-        if '__very_unique_cd__' in i[0].f_locals:
-            return i[0].f_locals['cd']
-
-sys.stdout = stdhooker('stdout',style='normal')
+# class stdhooker:
+#     def __init__(self, hook=None, style=None):
+#         if hook.lower() == 'stdout':
+#             self.__org_func__ = __org_stdout__
+#         elif hook.lower() == 'stderr':
+#             self.__org_func__ = __org_stderr__
+#         else:
+#             raise 'stdhooker init error'
+#         self.cache = ''
+#         self.style = style
+#         self.predk = {}
+#     def write(self,text):
+#         self.logtx = get_tx()
+#         if self.logtx not in self.predk:
+#             self.predk[self.logtx] = 0
+#         self.cache += text
+#         if '\n' in self.cache:
+#             _text = self.cache.rsplit('\n',1)
+#             self.cache = '' if len(_text) == 1 else _text[1]
+#             _text_ = _text[0] + '\n'
+#             if self.logtx:
+#                 try:
+#                     self.logtx.insert(tkinter.END, _text_)
+#                 except:
+#                     self.logtx.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+#                 # self.logtx.insert(tkinter.END, _text_)
+#                 self.logtx.see(tkinter.END)
+#                 self.logtx.update()
+#     def flush(self):
+#         try:
+#             self.__org_func__.flush()
+#         except:
+#             pass
+# def get_tx():
+#     for i in inspect.stack():
+#         if '__very_unique_cd__' in i[0].f_locals:
+#             return i[0].f_locals['cd']
+# sys.stdout = stdhooker('stdout',style='normal')
 
 
 
@@ -836,7 +833,7 @@ def code_window(setting=None):
                     try:
                         cd.insert(tkinter.END, i)
                     except:
-                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',_text_))
+                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',i))
                     cd.see(tkinter.END)
                     cd.update()
             except queue.Empty:
@@ -2088,7 +2085,8 @@ def scrapy_code_window(setting=None):
                     cd.see(tkinter.END)
                     cd.update()
             except queue.Empty:
-                pass
+                import traceback
+                tkinter.messagebox.showinfo('Error',traceback.format_exc())
         nb.after(200, loop_in_tkinter)
     loop_in_tkinter()
 
@@ -2312,29 +2310,63 @@ print(js.func)
         txt2.delete(0.,tkinter.END)
         txt2.insert(0.,pythoncode)
 
+
+    import queue
+    Q = queue.Queue()
+    S = queue.Queue()
     def exec_javascript(*a):
+        def _temp():
+            __very_unique_cd__ = None
+            nonlocal cd
+            nonlocal Q, S
+            Q.put('V|GETSCRIPT')
+            cs = S.get()
+            td = tempfile.mkdtemp()
+            tf = os.path.join(td,'temp.py')
+            with open(tf,'w',encoding='utf-8') as f:
+                f.write(cs)
+            s = sys.executable
+            s = s + ' ' + tf
+            import subprocess
+            p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
+            Q.put('V|DELETE')
+            Q.put('============================== start ==============================\n')
+            for line in iter(p.stdout.readline, ''):
+                if line:
+                    Q.put(line)
+                else:
+                    break
+            Q.put('==============================  end  ==============================')
+            p.wait()
+            p.stdout.close()
+            shutil.rmtree(td)
+        threading.Thread(target=_temp).start()
+
+    def loop_in_tkinter():
         __very_unique_cd__ = None
-        nonlocal cd
-        cd.delete(0.,tkinter.END)
-        td = tempfile.mkdtemp()
-        tf = os.path.join(td,'temp.py')
-        cs = txt2.get(0.,tkinter.END)
-        with open(tf,'w',encoding='utf-8') as f:
-            f.write(cs)
-        s = sys.executable
-        s = s + ' ' + tf
-        import subprocess
-        p = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, encoding='utf-8')
-        print('============================== start ==============================')
-        for line in iter(p.stdout.readline, ''):
-            if line:
-                print(line, end='')
-            else:
-                break
-        print('==============================  end  ==============================')
-        p.wait()
-        p.stdout.close()
-        shutil.rmtree(td)
+        nonlocal cd, Q, S
+        from .tab import nb
+        c = []
+        while Q.qsize():
+            try:
+                i = Q.get_nowait()
+                if i == 'V|DELETE':
+                    cd.delete(0., tkinter.END)
+                elif i == 'V|GETSCRIPT':
+                    cs = txt2.get(0.,tkinter.END)
+                    S.put(cs)
+                else:
+                    try:
+                        cd.insert(tkinter.END, i)
+                    except:
+                        cd.insert(tkinter.END, re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',i))
+                    cd.see(tkinter.END)
+                    cd.update()
+            except:
+                import traceback
+                tkinter.messagebox.showinfo('Error',traceback.format_exc())
+        nb.after(200, loop_in_tkinter)
+    loop_in_tkinter()
 
     def _exec_javascript(*a):
         from .tab import show_code_log
