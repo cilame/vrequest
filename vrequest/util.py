@@ -592,7 +592,7 @@ contextfactory.DEFAULT_CIPHERS = AcceptableCiphers.fromOpenSSLCipherString('DEFA
 
 # 以下补丁代码：用于预防有人可能会用 pythonw 执行 scrapy 单脚本时可能会出现的编码问题，如果直接用 python 执行该处则有无皆可。
 import io, sys; sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-# 以下补丁代码：用于 scrapy(twisted) 对极少数的某些网站返回的不规范 headers 无法正常处理，以下代码对正常代码无影响。
+# 以下补丁代码：用于预防处理 “scrapy(twisted) 对极少数的某些网站返回的不规范 headers 无法处理” 的异常情况
 def lineReceived(self, line):
     if line[-1:] == b'\r': line = line[:-1]
     if self.state == u'STATUS': self.statusReceived(line); self.state = u'HEADER'
