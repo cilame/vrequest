@@ -1834,7 +1834,7 @@ def scrapy_code_window(setting=None):
 
     home = os.environ.get('HOME')
     home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
-    filename = '.vscrapy'
+    filename = '.vrequest_scrapy'
     scrapypath = os.path.join(home,filename)
     scriptpath = os.path.join(scrapypath, 'v/spiders/')
     script = os.path.join(scriptpath, 'v.py')
@@ -2047,6 +2047,7 @@ def scrapy_code_window(setting=None):
         td = tempfile.mkdtemp()
         tf = os.path.join(td,'temp.py')
         with open(tf,'w',encoding='utf-8') as f:
+            cs = cs.replace("# import io, sys; sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')", "import io, sys; sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')")
             f.write(cs)
         s = sys.executable
         s = s + ' ' + tf
@@ -2256,6 +2257,21 @@ def exec_js_window(setting=None):
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,e)
 
+    def defusion_js_code():
+        try:
+            try:
+                from .pyjsdefusion import get_node_ctx
+            except:
+                from pyjsdefusion import get_node_ctx
+            jscode = txt1.get(0.,tkinter.END)
+            ctx = get_node_ctx()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,ctx.call('muti_process_defusion', jscode))
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
     def make_js_script():
         from .tab import show_code_log
         show_code_log()
@@ -2444,6 +2460,8 @@ print(js.func)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='生成语法树', command=make_js_tree)
     btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='使用node简单逆混肴代码', command=defusion_js_code)
+    btn2.pack(side=tkinter.RIGHT)
 
 
     temp_fr0 = Frame(fr)
@@ -2478,7 +2496,7 @@ function func(a,b){
     return a+b
 }
 
-var a = 123;
+var a = func(1,3);
 '''.strip()
     txt1.insert(0.,test_code)
 

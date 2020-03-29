@@ -366,7 +366,7 @@ def create_scrapy_code(*a):
     home = os.environ.get('HOME')
     home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
     model_path = os.path.join(os.path.split(__file__)[0],'template')
-    filename = '.vscrapy'
+    filename = '.vrequest_scrapy'
     scrapypath = os.path.join(home,filename)
     scriptpath = os.path.join(scrapypath, 'v/spiders/')
     if not os.path.isdir(scrapypath):
@@ -974,7 +974,7 @@ def create_xpath_finder(setting):
 def pipinstall_all(*a):
     import os, sys
     pip3_exe = os.path.join(os.path.split(sys.executable)[0], r'Scripts', r'pip3.exe')
-    libs = 'scrapy js2py jsbeautifier cryptography pillow'
+    libs = 'scrapy js2py jsbeautifier cryptography pillow pyzbar'
     try:
         cmd = 'start powershell -NoExit "{}" install {}'.format(pip3_exe, libs)
         os.system(cmd)
