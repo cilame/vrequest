@@ -1,5 +1,6 @@
 import os
 os.environ['EXECJS_RUNTIME'] = 'Node'
+ctx = None
 
 import execjs
 if not execjs._external_runtime.node().is_available():
@@ -24,6 +25,9 @@ else:
     unzip_single(astjs, hnode)
     # 加载代码到空间
     def get_node_ctx():
+        global ctx
+        if ctx:
+            return ctx
         filepath = hnode
         mainjs = os.path.join(filepath, 'main.js')
         with open(mainjs, encoding='utf-8') as f:
