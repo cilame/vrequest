@@ -22,17 +22,16 @@ else:
     home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
     hnode = os.path.join(home, '.vrequest_node')
     astjs = os.path.join(os.path.dirname(__file__), 'astjs.zip')
+    mainjs = os.path.join(os.path.dirname(__file__), 'main.js')
     unzip_single(astjs, hnode)
     # 加载代码到空间
     def get_node_ctx():
         global ctx
         if ctx:
             return ctx
-        filepath = hnode
-        mainjs = os.path.join(filepath, 'main.js')
         with open(mainjs, encoding='utf-8') as f:
             jscode = f.read()
-        ctx = execjs.compile(jscode, cwd=filepath)
+        ctx = execjs.compile(jscode, cwd=hnode)
         return ctx
 
 if __name__ == '__main__':
