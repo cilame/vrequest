@@ -28,6 +28,7 @@ setup(
             'template/v/spiders/*',
             'ico.ico',
             'astjs.zip',
+            'main.js',
         ]
     },
     python_requires=">=3.0",
