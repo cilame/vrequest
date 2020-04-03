@@ -5555,6 +5555,59 @@ if __name__ == '__main__':
 
 
 
+    zfcys = r'''
+            字符串或二进制的简单压缩，嵌入代码
+    使用有边框进行字符串的压缩处理并输出代码化的脚本
+    便于让二进制数据能更好更快的嵌入脚本之中（下面压缩算法均为py自带）
+'''.strip('\n')
+    zfcys = '\n' + zfcys
+    fss0015 = Frame(fss1)
+    fss0015.pack(side=tkinter.TOP,fill=tkinter.X)
+    Label(fss0015, text=zfcys, font=ft).pack(fill=tkinter.X,expand=True)
+
+    def _zipstring(*a):
+        try:
+            from . import pycompress
+        except:
+            import pycompress
+        w = int(eny0015.get())
+        b = cbx0015_1.get()
+        z = cbx0015_2.get()
+        e = cbx0015_3.get()
+        f = ibx0015.get()
+        string = fsstxt.get(0.,tkinter.END).strip('\n')
+        if f:
+            v = pycompress.format_compress_file(b, z, w, e)
+        else:
+            v = pycompress.format_compress_string(string, b, z, w, e)
+        fsstxt.delete(0.,tkinter.END)
+        print(v)
+    Label(fss0015, text='脚本宽度', font=ft).pack(side=tkinter.LEFT)
+    eny0015 = Entry(fss0015,width=4)
+    eny0015.pack(side=tkinter.LEFT)
+    eny0015.insert(0,'70')
+    Label(fss0015, text='base模式', font=ft).pack(side=tkinter.LEFT)
+    cbx0015_1 = Combobox(fss0015,width=6,state='readonly')
+    cbx0015_1['values'] = ['base64', 'base85']
+    cbx0015_1.pack(side=tkinter.LEFT)
+    cbx0015_1.current(0)
+    Label(fss0015, text='压缩方式', font=ft).pack(side=tkinter.LEFT)
+    cbx0015_2 = Combobox(fss0015,width=4,state='readonly')
+    cbx0015_2['values'] = ['zlib', 'lzma', 'None']
+    cbx0015_2.pack(side=tkinter.LEFT)
+    cbx0015_2.current(0)
+    Label(fss0015, text='编码', font=ft).pack(side=tkinter.LEFT)
+    cbx0015_3 = Combobox(fss0015,width=6,state='readonly')
+    cbx0015_3['values'] = ['utf-8', 'gbk']
+    cbx0015_3.pack(side=tkinter.LEFT)
+    cbx0015_3.current(0)
+    ibx0015 = tkinter.IntVar()
+    kbx0015 = Checkbutton(fss0015,text='压缩文件', variable=ibx0015, width=6)
+    kbx0015.pack(side=tkinter.LEFT)
+    bss0015_1 = Button(fss0015,text='开始压缩',command=_zipstring, width=9)
+    bss0015_1.pack(side=tkinter.RIGHT)
+
+
 
     _fpic = Frame(fr)
     enb.add(_fpic, text='图片相关')
