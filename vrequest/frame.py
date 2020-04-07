@@ -1497,6 +1497,8 @@ class VImagePipeline(ImagesPipeline):
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
         }
+        item = item.copy()
+        item['download_timeout'] = 180 # 下载单张文件的时间限制
         yield Request(item['src'], headers=headers, meta=item) 
     def file_path(self, request, response=None, info=None):
         url = request if not isinstance(request, Request) else request.url
@@ -1505,10 +1507,45 @@ class VImagePipeline(ImagesPipeline):
         return '%s.jpg' % image_name # 生成的图片文件名字，此处可用/符号增加多级分类路径（路径不存在则自动创建），使用 image_name 请注意重名可能性。
     def item_completed(self, results, item, info): # 判断下载是否成功
         k, v = results[0]
-        if not k: logging.info('download fail {}'.format(item))
-        else:     logging.info('download success {}'.format(item))
         item['image_download_stat'] = 'success' if k else 'fail'
         item['image_path'] = os.path.join(VImagePipeline.IMAGES_STORE, v['path']).replace('\\\\', '/') if k else None # 保留文件名地址
+        if not k: logging.info('download fail {}'.format(item))
+        else:     logging.info('download success {}'.format(item))
+        return item
+
+# 文件下载 item 中间件
+import logging, hashlib
+from scrapy.pipelines.files import FilesPipeline
+class VFilePipeline(FilesPipeline):
+    FILES_STORE = None
+    def __init__(self, store_uri, download_func=None, settings=None):
+        super().__init__(store_uri, download_func, settings)
+        VFilePipeline.FILES_STORE = settings.get('FILES_STORE')
+    def get_media_requests(self, item, info):
+        headers = {
+            "accept-encoding": "gzip, deflate", # auto delete br encoding. cos requests and scrapy can not decode it.
+            "accept-language": "zh-CN,zh;q=0.9",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
+        }
+        item = item.copy()
+        item['download_timeout'] = 180 # 下载单条文件的时间限制
+        yield Request(item['src'], headers=headers, meta=item) 
+    def file_path(self, request, response=None, info=None):
+        url = request if not isinstance(request, Request) else request.url
+        file_name = request.meta.get('file_name')
+        file_type = request.meta.get('file_type')
+        file_name = re.sub(r'[/\\\\:\\*"<>\\|\\?]', '_', file_name).strip()[:80] if file_name else hashlib.md5(url.encode()).hexdigest()
+        if not file_type:
+            file_type = request.url.rsplit('.', 1)[-1]
+            file_type = file_type if '/' not in file_type else 'unknown'
+        return '{}.{}'.format(file_name, file_type)
+    def item_completed(self, results, item, info): # 判断下载是否成功
+        k, v = results[0]
+        item['file_download_stat'] = 'success' if k else 'fail'
+        item['file_path'] = os.path.join(VFilePipeline.FILES_STORE, v['path']).replace('\\\\', '/') if k else None # 保留文件名地址
+        if not k: logging.info('download fail {}'.format(item))
+        else:     logging.info('download success {}'.format(item))
         return item
 
 # 阿里 Oss 文件上传中间件模板
@@ -1733,13 +1770,15 @@ class VSeleniumMiddleware(object):
 _single_script_middleware_new2 = '''
         # 【中间件/管道配置】
         # 这里使用中间件的方式和项目启动很相似，我在头部打了补丁函数，现在管道配置的第一个值可以同时用字符串或类配置，突破了原版只能用字符串的限制。
-        'IMAGES_STORE':             'image',      # 默认在该脚本路径下创建文件夹、下载图片(不解开 VImagePipeline 管道注释则该配置无效)
+        'IMAGES_STORE':             'image',      # 默认在该脚本路径下创建文件夹、下载【图片】(不解开 VImagePipeline 管道注释则该配置无效)
+        'FILES_STORE':              'file',       # 默认在该脚本路径下创建文件夹、下载【文件】(不解开 VFilePipeline 管道注释则该配置无效)
         'ITEM_PIPELINES': {
             # VPipeline:              101,        # 普通的中间件使用(解开即可测试，如需魔改，请在脚本顶部找对应的类进行自定义处理)
             # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
-            # VVideoPipeline:         103,        # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
-            # VMySQLPipeline:         104,        # MySql 插入中间件，具体请看类的描述
-            # VOssPipeline:           105,        # 将本地数据上传到 OSS 空间的管道模板，注意修改模板内 process_item 函数来指定上传文件地址
+            # VFilePipeline:          103,        # 文件下载中间件，item 带有 src 字段则以此作为文件地址下载到 FILES_STORE 地址的文件夹内
+            # VVideoPipeline:         104,        # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
+            # VMySQLPipeline:         105,        # MySql 插入中间件，具体请看类的描述
+            # VOssPipeline:           106,        # 将本地数据上传到 OSS 空间的管道模板，注意修改模板内 process_item 函数来指定上传文件地址
         },
         'SPIDER_MIDDLEWARES': {
             # VSpiderMiddleware:      543,        # 原版模板的单脚本插入方式
