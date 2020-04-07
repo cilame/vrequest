@@ -1573,19 +1573,52 @@ class VOssPipeline:
 # import you_get.extractors         # 使用 pyinstaller 打包 you-get    时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
 # from youtube_dl import YoutubeDL  # 使用 pyinstaller 打包 youtube-dl 时，需要在全局环境显式导入该行代码，让 pyinstaller 自动包含该库内容
 # 视频下载 item 中间件
+import os, sys
+import logging, hashlib, traceback
+from scrapy.exceptions import NotConfigured
 class VVideoPipeline(object):
+    MEDIAS_STORE = None
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls(crawler.settings)
+        return s
+    def __init__(self, settings=None):
+        VVideoPipeline.MEDIAS_STORE = settings.get('MEDIAS_STORE')
+        if not VVideoPipeline.MEDIAS_STORE:
+            err = 'before use VVideoPipeline. pls set MEDIAS_STORE first !!!'
+            logging.error('\\n--------------\\n{}\\n--------------'.format(err))
+            raise NotConfigured
     def process_item(self, item, spider):
         url = item['src']
-        import os, sys
-        localpage = os.path.dirname(os.path.realpath(sys.argv[0])) # 确保下载路径为“该脚本”或“被pytinstaller打包时候的工具”路径下的video文件夹
-        ### 【you-get】
-        import you_get.common
-        you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
-        you_get.common.any_download(url, output_dir=localpage+'/video', merge=True, info_only=False)
-        ### 【youtube-dl】
-        # from youtube_dl import YoutubeDL
-        # ytdl = YoutubeDL({'outtmpl': localpage+'/video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
-        # info = ytdl.extract_info(url, download=True)
+        localpage_ = os.path.dirname(os.path.realpath(sys.argv[0])) # 确保下载路径为“该脚本”或“被pytinstaller打包时候的工具”路径下的video文件夹
+        localpage  = os.path.join(localpage_, VVideoPipeline.MEDIAS_STORE)
+        try:
+            ### 【you-get】
+            # import you_get.common
+            # you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
+            # you_get.common.any_download(url, output_dir=localpage, merge=True, info_only=False)
+            ### 【youtube-dl】 （推荐使用这个，因为这个在存储的文件名字的自定义存储上会更强）
+            from youtube_dl import YoutubeDL
+            file_name, file_type = item.get('file_name'), item.get('file_type')
+            fpath = '{}/%(title)s.%(ext)s'.format(item.get('file_path').strip('/\\\\')) if item.get('file_path') else '%(title)s.%(ext)s'
+            fpath = os.path.join(localpage, fpath).replace('\\\\', '/')
+            fpath = fpath.replace('%(title)s', file_name) if file_name else fpath
+            fpath = fpath.replace('%(ext)s', file_type) if file_type else fpath
+            ytdl = YoutubeDL({'outtmpl': fpath, 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
+            info = ytdl.extract_info(url, download=True)
+            dpath = {}
+            if '%(title)s' in fpath: dpath['title'] = info['title']
+            if '%(ext)s'   in fpath: dpath['ext'] = info['ext']
+            path = fpath % dpath
+
+            item['media_download_stat'] = 'success'
+            item['media_path'] = path.replace(localpage_.replace('\\\\', '/'), '.') # 保留文件名地址
+            logging.info('download success {}'.format(item))
+        except:
+            item['media_download_stat'] = 'fail'
+            item['media_path'] = None
+            logging.info('download fail {}'.format(item))
+            logging.info('download reason {}'.format(traceback.format_exc()))
         return item
 
 # 数据库上传 item 中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)
@@ -1772,11 +1805,12 @@ _single_script_middleware_new2 = '''
         # 这里使用中间件的方式和项目启动很相似，我在头部打了补丁函数，现在管道配置的第一个值可以同时用字符串或类配置，突破了原版只能用字符串的限制。
         'IMAGES_STORE':             'image',      # 默认在该脚本路径下创建文件夹、下载【图片】(不解开 VImagePipeline 管道注释则该配置无效)
         'FILES_STORE':              'file',       # 默认在该脚本路径下创建文件夹、下载【文件】(不解开 VFilePipeline 管道注释则该配置无效)
+        'MEDIAS_STORE':             'media',      # 默认在该脚本路径下创建文件夹、下载【媒体】(不解开 VVideoPipeline 管道注释则该配置无效)
         'ITEM_PIPELINES': {
             # VPipeline:              101,        # 普通的中间件使用(解开即可测试，如需魔改，请在脚本顶部找对应的类进行自定义处理)
             # VImagePipeline:         102,        # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
             # VFilePipeline:          103,        # 文件下载中间件，item 带有 src 字段则以此作为文件地址下载到 FILES_STORE 地址的文件夹内
-            # VVideoPipeline:         104,        # 视频下载中间件，同上，以 src 作为下载地址，下载到当前路径下的 video 文件夹内
+            # VVideoPipeline:         104,        # 视频下载中间件，item 带有 src 字段则以此作为媒体地址下载到 MEDIAS_STORE 文件夹内
             # VMySQLPipeline:         105,        # MySql 插入中间件，具体请看类的描述
             # VOssPipeline:           106,        # 将本地数据上传到 OSS 空间的管道模板，注意修改模板内 process_item 函数来指定上传文件地址
         },

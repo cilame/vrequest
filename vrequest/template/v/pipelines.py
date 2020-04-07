@@ -74,17 +74,52 @@ class VFilePipeline(FilesPipeline):
         return item
 
 # 视频下载 item 中间件
+import os, sys
+import logging, hashlib, traceback
+from scrapy.exceptions import NotConfigured
 class VVideoPipeline(object):
+    MEDIAS_STORE = None
+    @classmethod
+    def from_crawler(cls, crawler):
+        s = cls(crawler.settings)
+        return s
+    def __init__(self, settings=None):
+        VVideoPipeline.MEDIAS_STORE = settings.get('MEDIAS_STORE')
+        if not VVideoPipeline.MEDIAS_STORE:
+            err = 'before use VVideoPipeline. pls set MEDIAS_STORE first !!!'
+            logging.error('\n--------------\n{}\n--------------'.format(err))
+            raise NotConfigured
     def process_item(self, item, spider):
         url = item['src']
-        ### 【you-get】
-        import you_get.common
-        you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
-        you_get.common.any_download(url, output_dir='./video', merge=True, info_only=False)
-        ### 【youtube-dl】
-        # from youtube_dl import YoutubeDL
-        # ytdl = YoutubeDL({'outtmpl': './video/%(title)s.%(ext)s', 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
-        # info = ytdl.extract_info(url, download=True)
+        localpage_ = os.path.dirname(os.path.realpath(sys.argv[0])) # 确保下载路径为“该脚本”或“被pytinstaller打包时候的工具”路径下的video文件夹
+        localpage  = os.path.join(localpage_, VVideoPipeline.MEDIAS_STORE)
+        try:
+            ### 【you-get】
+            # import you_get.common
+            # you_get.common.skip_existing_file_size_check = True # 防止发现重复视频时会强制要求输入“是否覆盖”，卡住程序，默认不覆盖
+            # you_get.common.any_download(url, output_dir=localpage, merge=True, info_only=False)
+            ### 【youtube-dl】 （推荐使用这个，因为这个在存储的文件名字的自定义存储上会更强）
+            from youtube_dl import YoutubeDL
+            file_name, file_type = item.get('file_name'), item.get('file_type')
+            fpath = '{}/%(title)s.%(ext)s'.format(item.get('file_path').strip('/\\')) if item.get('file_path') else '%(title)s.%(ext)s'
+            fpath = os.path.join(localpage, fpath).replace('\\', '/')
+            fpath = fpath.replace('%(title)s', file_name) if file_name else fpath
+            fpath = fpath.replace('%(ext)s', file_type) if file_type else fpath
+            ytdl = YoutubeDL({'outtmpl': fpath, 'ffmpeg_location':None}) # 如果已配置ffmpeg环境则不用修改
+            info = ytdl.extract_info(url, download=True)
+            dpath = {}
+            if '%(title)s' in fpath: dpath['title'] = info['title']
+            if '%(ext)s'   in fpath: dpath['ext'] = info['ext']
+            path = fpath % dpath
+
+            item['media_download_stat'] = 'success'
+            item['media_path'] = path.replace(localpage_.replace('\\', '/'), '.') # 保留文件名地址
+            logging.info('download success {}'.format(item))
+        except:
+            item['media_download_stat'] = 'fail'
+            item['media_path'] = None
+            logging.info('download fail {}'.format(item))
+            logging.info('download reason {}'.format(traceback.format_exc()))
         return item
 
 # 数据库上传 item 中间件(不考虑字段类型处理，每个字段统统使用 MEDIUMTEXT 类型存储 json.dumps 后的 value)

@@ -46,6 +46,7 @@ TELNETCONSOLE_ENABLED = False # 几乎用不到的功能默认关闭，提高任
 
 IMAGES_STORE = 'image' # 默认在该脚本路径下创建文件夹、下载图片(不解开 VImagePipeline 管道注释则该配置无效)
 FILES_STORE = 'file'   # 默认在该脚本路径下创建文件夹、下载文件(不解开 VFilePipeline 管道注释则该配置无效)
+MEDIAS_STORE = 'media' # 默认在该脚本路径下创建文件夹、下载【媒体】(不解开 VVideoPipeline 管道注释则该配置无效)
 ITEM_PIPELINES = {
     # 'v.pipelines.VPipeline':      101, # 普通的中间件使用(解开即可测试，如需魔改，请在脚本顶部找对应的类进行自定义处理)
     # 'v.pipelines.VImagePipeline': 102, # 图片下载中间件，item 带有 src 字段则以此作为图片地址下载到 IMAGES_STORE 地址的文件夹内
