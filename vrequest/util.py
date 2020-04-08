@@ -88,7 +88,7 @@ def format_url_show(url:str, urlenc='utf-8'):
     pls = re.findall('\?[^&]*|&[^&]*',url)
     pms = [None]
     for i in pls:
-        url = url.replace(i,'')
+        url = url.replace(i,'',1) # fix
         if len(i) > 50 and ',' in i:
             _pms = []
             for j in i.split(','):

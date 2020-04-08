@@ -5666,7 +5666,7 @@ if __name__ == '__main__':
     cbx0015_1.current(0)
     Label(fss0015, text='压缩方式', font=ft).pack(side=tkinter.LEFT)
     cbx0015_2 = Combobox(fss0015,width=4,state='readonly')
-    cbx0015_2['values'] = ['zlib', 'lzma', 'None']
+    cbx0015_2['values'] = ['zlib', 'lzma', 'gzip', 'None']
     cbx0015_2.pack(side=tkinter.LEFT)
     cbx0015_2.current(0)
     Label(fss0015, text='编码', font=ft).pack(side=tkinter.LEFT)
