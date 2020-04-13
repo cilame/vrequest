@@ -606,7 +606,14 @@ def lineReceived(self, line):
             else: self._partialHeader = [line]
         else: self._partialHeader.append(line)
 import twisted.web._newclient
-twisted.web._newclient.HTTPParser.lineReceived = lineReceived'''
+twisted.web._newclient.HTTPParser.lineReceived = lineReceived
+# 以下补丁代码：解决 idna 库过于严格，导致带有下划线的 hostname 无法验证通过的异常
+import idna.core
+_check_label_bak = idna.core.check_label
+def check_label(label):
+    try: return _check_label_bak(label)
+    except idna.core.InvalidCodepoint: pass
+idna.core.check_label = check_label'''
 
     _format = _format.replace('$handle_headers_non_standard', headers_non_standard)
     return _format.strip()
