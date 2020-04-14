@@ -1864,7 +1864,7 @@ _single_script_middleware_new2 = '''
         'TIMER_INTERVAL':             1,          # 定时执行任务的插件参数，打开 TimerRequest 插件注释即可使用，如未设置默认为3
         'EXTENSIONS': {
             # TimerRequest:           101,        # 定时间隔执行任务插件，在 spider 类中定义一个名为 timer_task 的函数，自动每n秒执行一次，脚本不停
-                                                  # 如果 timer_task 返回的结果是 scrapy.Request 对象则自动发出请求。是更方便的定时请求设置。
+                                                  # 如果 timer_task 返回的结果是 scrapy.Request 对象则自动发出请求。实现更方便的定时请求。
             # 'scrapy.extensions.logstats.LogStats': None, 
             # 关闭 scrapy EXTENSIONS默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需在对应管道中配置为 None 即可关闭
             # 同理 SPIDER_MIDDLEWARES / DOWNLOADER_MIDDLEWARES 这两个“中间件配置”字典也可以用相同的方式关掉 scrapy 默认组件
