@@ -1498,7 +1498,7 @@ class VImagePipeline(ImagesPipeline):
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.75 Safari/537.36"
         }
         item = item.copy()
-        item['download_timeout'] = 180 # 下载单张文件的时间限制
+        item['download_timeout'] = 180 # 下载单张图片的时间限制
         yield Request(item['src'], headers=headers, meta=item) 
     def file_path(self, request, response=None, info=None):
         url = request if not isinstance(request, Request) else request.url
@@ -1795,6 +1795,20 @@ class VSeleniumMiddleware(object):
         # option.add_argument("--user-agent=Mozilla/5.0 VILAME")        # 修改 UA 信息
         # option.add_argument('--proxy-server=http://127.0.0.1:8888')   # 增加代理
         self.webdriver = webdriver.Chrome(chrome_options=option)
+        try:
+            # 让每打开一个网页首先执行部分 js代码，下面 js代码可以绕过部分 webdriver 检测。
+            self.webdriver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+              "source": """
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+              """
+            })
+            self.webdriver.execute_cdp_cmd("Network.enable", {})
+        except:
+            import traceback
+            print('[ ERROR! ] error in selenium webdriver execute_cdp_cmd func.')
+            print(traceback.format_exc())
     def _login(self):
         # 如果有登录处理，则写在这里
         pass
