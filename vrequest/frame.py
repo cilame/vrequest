@@ -1798,6 +1798,46 @@ class VSeleniumMiddleware(object):
     def _login(self):
         # 如果有登录处理，则写在这里
         pass
+
+# 定时任务执行插件
+import types
+import scrapy
+from twisted.internet import task
+from scrapy.exceptions import DontCloseSpider
+from twisted.internet import defer, reactor
+from scrapy import signals
+class TimerRequest(object):
+    def __init__(self, crawler, interval):
+        self.interval = interval
+        self.task = None
+        self.crawler = crawler
+    @classmethod
+    def from_crawler(cls, crawler):
+        o = cls(crawler, crawler.settings.get('TIMER_INTERVAL') or 3)
+        crawler.signals.connect(o.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(o.spider_closed, signal=signals.spider_closed)
+        crawler.signals.connect(o.spider_idle, signal=signals.spider_idle)
+        return o
+    def spider_opened(self, spider):
+        self.task = task.LoopingCall(self.new_request, spider)
+        if getattr(spider, 'timer_task', None):
+            d = defer.Deferred()
+            reactor.callLater(self.interval, self.task.start, self.interval) 
+        else:
+            print('[ WARNING! ] Spider does not have timer_task function')
+    def new_request(self, spider):
+        r = getattr(spider, 'timer_task', None)()
+        if isinstance(r, scrapy.Spider):
+            self.crawler.engine.crawl(r, spider=spider)
+        elif isinstance(r, types.GeneratorType):
+            for i in r:
+                if isinstance(i, scrapy.Request):
+                    self.crawler.engine.crawl(i, spider=spider)
+    def spider_closed(self, spider, reason):
+        if self.task and self.task.running:
+            self.task.stop()
+    def spider_idle(self):
+        raise DontCloseSpider
 '''
 
 _single_script_middleware_new2 = '''
@@ -1821,7 +1861,10 @@ _single_script_middleware_new2 = '''
             # VDownloaderMiddleware:  543,        # 原版模板的单脚本插入方式
             # VSeleniumMiddleware:    544,        # 单脚本 Selenium 中间件配置，解开自动使用 Selenium，详细请看 VSeleniumMiddleware 类中间件代码。
         },
+        'TIMER_INTERVAL':             1,          # 定时执行任务的插件参数，打开 TimerRequest 插件注释即可使用，如未设置默认为3
         'EXTENSIONS': {
+            # TimerRequest:           101,        # 定时间隔执行任务插件，在 spider 类中定义一个名为 timer_task 的函数，自动每n秒执行一次，脚本不停
+                                                  # 如果 timer_task 返回的结果是 scrapy.Request 对象则自动发出请求。是更方便的定时请求设置。
             # 'scrapy.extensions.logstats.LogStats': None, 
             # 关闭 scrapy EXTENSIONS默认中间件方式如上，程序执行时，日志的头部有当前任务都有哪些中间件加载，按需在对应管道中配置为 None 即可关闭
             # 同理 SPIDER_MIDDLEWARES / DOWNLOADER_MIDDLEWARES 这两个“中间件配置”字典也可以用相同的方式关掉 scrapy 默认组件
