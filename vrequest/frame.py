@@ -1816,9 +1816,8 @@ class VSeleniumMiddleware(object):
 # 定时任务执行插件
 import types
 import scrapy
-from twisted.internet import task
 from scrapy.exceptions import DontCloseSpider
-from twisted.internet import defer, reactor
+from twisted.internet import task, defer, reactor
 from scrapy import signals
 class TimerRequest(object):
     def __init__(self, crawler, interval):
@@ -1841,9 +1840,9 @@ class TimerRequest(object):
             print('[ WARNING! ] Spider does not have timer_task function')
     def new_request(self, spider):
         r = getattr(spider, 'timer_task', None)()
-        if isinstance(r, scrapy.Spider):
+        if isinstance(r, scrapy.Request):
             self.crawler.engine.crawl(r, spider=spider)
-        elif isinstance(r, types.GeneratorType):
+        elif isinstance(r, (types.GeneratorType, list)):
             for i in r:
                 if isinstance(i, scrapy.Request):
                     self.crawler.engine.crawl(i, spider=spider)
