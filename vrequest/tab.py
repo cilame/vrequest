@@ -30,6 +30,7 @@ from .frame import (
     helper_window,
     frame_setting,
     exec_js_window,
+    selenium_test_window,
     encode_window,
     __org_stdout__,
 )
@@ -186,6 +187,9 @@ def create_helper():
 def create_js_parse(setting=None, prefix='js执行窗'):
     create_new_tab(setting, prefix, exec_js_window)
 
+def create_selenium_parse(setting=None, prefix='浏览器启动'):
+    create_new_tab(setting, prefix, selenium_test_window)
+
 def create_encoder(setting=None):
     encode_window()
 
@@ -302,7 +306,7 @@ def save_config():
 def switch_response_log(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') in ['response','code','js','scrapy']:
+    if setting.get('type') in ['response','code','js','scrapy','selenium']:
         temp_fr2 = setting.get('fr_temp2')
         try:
             temp_fr2.pack_info()
@@ -330,7 +334,8 @@ def create_test_code(*a):
         code_string = format_response(r_setting,c_set,c_content,urlenc,qplus,extra)
     if setting.get('type') == 'js':
         setting.get('execute_func0')()
-
+    if setting.get('type') == 'selenium':
+        setting.get('start_selenium')()
     if code_string:
         setting['code_string'] = code_string
         create_new_codetab(setting,reqname=name)
@@ -463,13 +468,13 @@ def get_html_pure_text(*a):
 def show_code_log():
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') == 'code' or setting.get('type') == 'js' or setting.get('type') == 'scrapy':
+    if setting.get('type') == 'code' or setting.get('type') == 'js' or setting.get('type') == 'scrapy' or setting.get('type') == 'selenium':
         setting.get('fr_temp2').pack(fill=tkinter.BOTH,expand=True,side=tkinter.BOTTOM)
 
 def execute_code(*a):
     _select = nb.select()
     setting = nb_names[_select]['setting']
-    if setting.get('type') == 'code' or setting.get('type') == 'js' or setting.get('type') == 'scrapy':
+    if setting.get('type') == 'code' or setting.get('type') == 'js' or setting.get('type') == 'scrapy' or setting.get('type') == 'selenium':
         execute_func = setting.get('execute_func')
         show_code_log()
         execute_func()

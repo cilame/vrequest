@@ -109,3 +109,7 @@ def change_siz():
         root.winfo_height(),
         root.winfo_x(),
         root.winfo_y(), )
+
+
+# 用于处理收尾的函数。
+tails = []

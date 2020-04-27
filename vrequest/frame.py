@@ -2656,6 +2656,239 @@ var a = func(1,3);
 
 
 
+
+
+
+
+
+def selenium_test_window(setting=None):
+    '''
+    快速使用临时的 selenium 启动浏览器并且快速将某些操作自动化处理
+    '''
+    fr = Frame()
+    ft = Font(family='Consolas',size=10)
+
+    def print(*a):
+        from .tab import show_code_log
+        try:
+            show_code_log()
+            txt = ' '.join(map(str,a)) + '\n'
+            cd.insert(tkinter.END,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
+        except:
+            pass
+
+    temp_fr0 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.X)
+
+    def get_webdriver():
+        local = {'get_driver_func':None}
+        exec(txt2.get(0.,tkinter.END)+'\nlocal["get_driver_func"] = get_driver', None, {'local':local})
+        get_driver_func = local['get_driver_func']
+        return get_driver_func()
+
+    driver = None
+    def start_selenium(*a):
+        nonlocal driver
+        def _():
+            nonlocal driver
+            if driver is None:
+                print('预备启动，请等待获取 driver 对象。')
+                driver = 'TempNotNone' # 启动浏览器为耗时操作，这里用了多线程，所以要防启动间隙多次启动
+                try:
+                    driver = get_webdriver()
+                    print('启动成功，可以在代码窗使用 driver 对象代码。')
+                except:
+                    print(traceback.format_exc())
+            else:
+                tkinter.messagebox.showwarning('警告','浏览器driver已启动，如需重启，先关闭。')
+        threading.Thread(target=_).start()
+                
+    def close_selenium(*a):
+        nonlocal driver
+        def _():
+            nonlocal driver
+            if driver is not None and driver != 'TempNotNone':
+                _driver = driver
+                try:
+                    try: print('正在关闭，请等待获片刻。')
+                    except: pass
+                    driver = 'TempNotNone'
+                    _driver.quit()
+                    driver = None
+                    print('关闭成功，代码窗口将不能使用 driver 对象。')
+                except:
+                    print(traceback.format_exc())
+            elif driver == 'TempNotNone':
+                clear_selenium_driver()
+            else:
+                print('警告','不存在已启动的浏览器')
+        threading.Thread(target=_).start()
+
+    def clear_selenium_driver(*a):
+        nonlocal driver
+        os.popen('taskkill /f /im chromedriver.exe /t')
+        driver = None
+
+    def execute_selenium_code(*a):
+        nonlocal print, driver
+        code = txt1.get(0., tkinter.END)
+        local = {'print':print, 'driver':driver}
+        try:
+            exec(code, None, local)
+        except:
+            print(traceback.format_exc())
+
+    def add_script(*a):
+        if '常见用法，某些窗口输入内容，并点击提交' not in txt1.get(0., tkinter.END):
+            txt1.insert(tkinter.END, '''
+# 常见用法，请求某个网页，在某个输入框输入内容，点击提交按钮
+driver.get('http://baidu.com')
+driver.find_element_by_xpath('//*[@id="kw"]').clear()
+driver.find_element_by_xpath('//*[@id="kw"]').send_keys('123123')
+driver.find_element_by_xpath('//*[@id="su"]').click()
+
+
+
+
+
+
+
+
+
+# 常用获取组件方式
+# 1 find_element_* 直接获取组件对象，如果获取不到直接报错
+#     driver.find_element_by_id
+#     driver.find_element_by_name
+#     driver.find_element_by_xpath
+# 2 find_elements_* 获取组件列表对象，如果获取不到不会报错，只会返回空
+#     driver.find_elements_by_id
+#     driver.find_elements_by_name
+#     driver.find_elements_by_xpath
+# 常用组件方法：
+#     send_keys click
+
+# 获取 window 桌面绝对路径的代码，用于快速保存数据到可见位置
+#     desktop = os.path.join(os.path.expanduser("~"),'Desktop')
+''')
+
+
+    btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='启动浏览器driver', command=start_selenium)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='关闭浏览器driver', command=close_selenium)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='执行代码模板', command=add_script)
+    btn2.pack(side=tkinter.RIGHT)
+
+    temp_fr0 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    temp_fr1 = Frame(temp_fr0)
+    temp_fr1_1 = Frame(temp_fr1)
+    temp_fr1_1.pack(side=tkinter.TOP)
+    temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    txt1 = Text(temp_fr1,height=1,width=1,font=ft)
+    lab1 = Label(temp_fr1_1,text='可执行 python 代码')
+    lab1.pack(side=tkinter.TOP)
+    txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    temp_fr2 = Frame(temp_fr0)
+    temp_fr2_1 = Frame(temp_fr2)
+    temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
+    temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+    lab1 = Label(temp_fr2_1,text='启动 driver 的 python 代码')
+    lab1.pack(side=tkinter.TOP)
+    txt2 = Text(temp_fr2,height=1,width=1,font=ft)
+    txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+
+    txt1.insert(tkinter.END, '''
+print(driver)
+'''.strip())
+
+    txt2.insert(tkinter.END, '''
+def get_driver():
+    from selenium import webdriver
+    option = webdriver.ChromeOptions()
+    extset = ['enable-automation', 'ignore-certificate-errors']
+    ignimg = "profile.managed_default_content_settings.images"
+    mobile = {'deviceName':'Galaxy S5'}
+
+    # 需要哪些 driver 功能，请解开对应的代码注释再启动
+    option.add_argument("--disable-infobars")                       # 关闭调试信息
+    option.add_experimental_option("excludeSwitches", extset)       # 关闭调试信息
+    option.add_experimental_option("useAutomationExtension", False) # 关闭调试信息
+    option.add_argument('--start-maximized')                        # 最大化
+    # option.add_experimental_option('mobileEmulation', mobile)     # 手机模式
+    # option.add_experimental_option("prefs", {ignore_image: 2})    # 不加载图片
+    # option.add_argument('--headless')                             # 【*】 无界面
+    # option.add_argument('--no-sandbox')                           # 【*】 沙箱模式
+    # option.add_argument('--disable-dev-shm-usage')                # 【*】 in linux
+    # option.add_argument('--window-size=1920,1080')                # 无界面最大化
+    # option.add_argument('--disable-gpu')                          # 禁用 gpu 加速
+    # option.add_argument("--auto-open-devtools-for-tabs")          # F12
+    # option.add_argument("--user-agent=Mozilla/5.0 VILAME")        # 修改 UA
+    # option.add_argument('--proxy-server=http://127.0.0.1:8888')   # 代理
+    webdriver = webdriver.Chrome(chrome_options=option)
+
+    # 指纹相关的处理，能处理部分检测。
+    webdriver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+      "source": """
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        Object.defineProperty(navigator, "plugins", { get: () => [1,2,3,4,5] });
+      """
+    })
+    webdriver.execute_cdp_cmd("Network.enable", {})
+    return webdriver
+'''.strip())
+
+    temp_fr3 = Frame(fr)
+    lab3 = Label(temp_fr3, text='代码结果 [Esc 切换显示状态]')
+    lab3.pack(side=tkinter.TOP)
+    cd = Text(temp_fr3,font=ft)
+    cd.pack(fill=tkinter.BOTH,expand=True)
+
+
+    try:
+        from idlelib.colorizer import ColorDelegator
+        from idlelib.percolator import Percolator
+        p = ColorDelegator()
+        Percolator(txt1).insertfilter(p)
+    except:
+        e = traceback.format_exc()
+        txt1.delete(0.,tkinter.END)
+        txt1.insert(0.,e)
+    try:
+        from idlelib.colorizer import ColorDelegator
+        from idlelib.percolator import Percolator
+        p = ColorDelegator()
+        Percolator(txt2).insertfilter(p)
+    except:
+        e = traceback.format_exc()
+        txt2.delete(0.,tkinter.END)
+        txt2.insert(0.,e)
+
+    # 确保强制退出时能关闭 webdriver 进程，防止幽灵进程
+    from .root import tails
+    tails.append(clear_selenium_driver)
+
+    frame_setting[fr] = {}
+    frame_setting[fr]['type'] = 'selenium'
+    frame_setting[fr]['execute_func'] = execute_selenium_code
+    frame_setting[fr]['start_selenium'] = start_selenium
+    frame_setting[fr]['fr_temp2'] = temp_fr3 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
+    return fr
+
+
+
+
+
+
+
+
+
+
+
+
+
 def encode_window(setting=None):
     '''
     处理简单的加密编码对比

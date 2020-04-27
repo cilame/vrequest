@@ -7,6 +7,7 @@ from .root import (
     root,
     config,
     change_siz,
+    tails,
 )
 from .menu import bind_menu
 from .tab import (
@@ -31,6 +32,7 @@ from .tab import (
     execute_code,
     execute_scrapy_code,
     create_js_parse,
+    create_selenium_parse,
     create_temp_idle,
     create_encoder,
     create_test_code_urllib,
@@ -61,13 +63,14 @@ else:
 
 # === 创建/删除/帮助 ===
 # 绑定右键菜单
-bind_menu(create_new_reqtab,'创建请求标签 [Ctrl+q]')
-bind_menu(delete_curr_tab,  '删除当前标签 [Ctrl+w]')
-bind_menu(change_tab_name,  '改当前标签名 [Ctrl+e]')
-bind_menu(save_config,      '保存配置快照 [Ctrl+s]')
-bind_menu(create_js_parse,  '创建 js解析页 [Ctrl+j]')
-bind_menu(create_helper,    '帮助文档标签 [Ctrl+h]')
-bind_menu(create_encoder,   '创建便捷加密编码窗口')
+bind_menu(create_new_reqtab,      '创建请求标签 [Ctrl+q]')
+bind_menu(delete_curr_tab,        '删除当前标签 [Ctrl+w]')
+bind_menu(change_tab_name,        '改当前标签名 [Ctrl+e]')
+bind_menu(save_config,            '保存配置快照 [Ctrl+s]')
+bind_menu(create_js_parse,        '创建 js解析页 [Ctrl+j]')
+bind_menu(create_helper,          '帮助文档标签 [Ctrl+h]')
+bind_menu(create_selenium_parse,  '创建便捷浏览器执行窗')
+bind_menu(create_encoder,         '创建便捷加密编码窗口')
 
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(create_new_reqtab, 'q')
@@ -137,6 +140,19 @@ def execute():
     root.geometry(config.get('siz') or '600x725+100+100')
     root.bind('<Configure>',lambda e:change_siz())
     root.bind('<Escape>',lambda e:switch_response_log())
+
+    def quit_():
+        try:
+            for tail in tails:
+                try:
+                    tail()
+                except:
+                    import traceback
+                    print(traceback.format_exc())
+        finally:
+            root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW",lambda *a: quit_())
     root.mainloop()
 
 if __name__ == '__main__':
