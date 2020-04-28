@@ -2674,6 +2674,8 @@ def selenium_test_window(setting=None):
             show_code_log()
             txt = ' '.join(map(str,a)) + '\n'
             cd.insert(tkinter.END,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',txt))
+            cd.see(tkinter.END)
+            cd.update()
         except:
             pass
 
@@ -2693,12 +2695,20 @@ def selenium_test_window(setting=None):
             nonlocal driver
             if driver is None:
                 print('预备启动，请等待获取 driver 对象。')
-                driver = 'TempNotNone' # 启动浏览器为耗时操作，这里用了多线程，所以要防启动间隙多次启动
+                driver = 'None' # 启动浏览器为耗时操作，这里用了多线程，所以要防启动间隙多次启动
                 try:
+                    import subprocess
+                    _bak_Popen = subprocess.Popen
+                    def _Popen(*a, **kw):
+                        kw['creationflags'] = 0x08000000
+                        return _bak_Popen(*a, **kw)
+                    subprocess.Popen = _Popen
                     driver = get_webdriver()
                     print('启动成功，可以在代码窗使用 driver 对象代码。')
                 except:
                     print(traceback.format_exc())
+                finally:
+                    subprocess.Popen = _bak_Popen
             else:
                 tkinter.messagebox.showwarning('警告','浏览器driver已启动，如需重启，先关闭。')
         threading.Thread(target=_).start()
@@ -2707,18 +2717,18 @@ def selenium_test_window(setting=None):
         nonlocal driver
         def _():
             nonlocal driver
-            if driver is not None and driver != 'TempNotNone':
+            if driver is not None and driver != 'None':
                 _driver = driver
                 try:
-                    try: print('正在关闭，请等待获片刻。')
+                    try: print('正在关闭，请等待片刻。')
                     except: pass
-                    driver = 'TempNotNone'
+                    driver = 'None'
                     _driver.quit()
                     driver = None
                     print('关闭成功，代码窗口将不能使用 driver 对象。')
                 except:
                     print(traceback.format_exc())
-            elif driver == 'TempNotNone':
+            elif driver == 'None':
                 clear_selenium_driver()
             else:
                 print('警告','不存在已启动的浏览器')
@@ -2738,6 +2748,19 @@ def selenium_test_window(setting=None):
         except:
             print(traceback.format_exc())
 
+    def save_script_in_desktop(*a):
+        name = askstring('脚本名','请输入脚本文件名，尽量小写无空格。')
+        if not name: return
+        if not name.endswith('.py'): name += '.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                script = txt2.get(0.,tkinter.END) + '\ndriver = get_driver()\n'
+                script += txt1.get(0.,tkinter.END) + '\ndriver.quit()'
+                f.write(script)
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+
     def add_script(*a):
         if '常见用法，某些窗口输入内容，并点击提交' not in txt1.get(0., tkinter.END):
             txt1.insert(tkinter.END, '''
@@ -2746,6 +2769,7 @@ driver.get('http://baidu.com')
 driver.find_element_by_xpath('//*[@id="kw"]').clear()
 driver.find_element_by_xpath('//*[@id="kw"]').send_keys('123123')
 driver.find_element_by_xpath('//*[@id="su"]').click()
+# driver.find_element_by_xpath('//*[@id="su"]').get_attribute() # 获取属性
 
 
 
@@ -2756,25 +2780,38 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 
 
 # 常用获取组件方式
-# 1 find_element_* 直接获取组件对象，如果获取不到直接报错
-#     driver.find_element_by_id
-#     driver.find_element_by_name
-#     driver.find_element_by_xpath
-# 2 find_elements_* 获取组件列表对象，如果获取不到不会报错，只会返回空
-#     driver.find_elements_by_id
-#     driver.find_elements_by_name
-#     driver.find_elements_by_xpath
-# 常用组件方法：
-#     send_keys click
-
+#     1 find_element_* 直接获取组件对象，如果获取不到直接报错
+#       driver.find_element_by_id
+#       driver.find_element_by_name
+#       driver.find_element_by_xpath
+#     2 find_elements_* 获取组件列表对象，如果获取不到不会报错，只会返回空
+#       driver.find_elements_by_id
+#       driver.find_elements_by_name
+#       driver.find_elements_by_xpath
 # 获取 window 桌面绝对路径的代码，用于快速保存数据到可见位置
 #     desktop = os.path.join(os.path.expanduser("~"),'Desktop')
+# 部分智能等待的代码，提高浏览器效率的处理，最好在生成的单独脚本中使用
+#     from selenium.webdriver.common.by import By
+#     from selenium.webdriver.support import expected_conditions as EC
+#     from selenium.webdriver.support.wait import WebDriverWait as wbw
+#     locator = (By.XPATH, '//img[@class="focus-item-img"]')
+#     # wbw(self.webdriver,10).until(EC.presence_of_element_located(locator)) # 判断某个元素是否被加到了dom树里
+#     wbw(self.webdriver,10).until(EC.visibility_of_element_located(locator)) # 判断某个元素是否被添加到了dom里并且可见，即宽和高都大于0
+# 当你打包脚本时，在 get_driver 函数执行前执行以下代码，打包的后的工具就不会因为 selenium启动服务自动开启黑窗口了
+#     import subprocess
+#     _bak_Popen = subprocess.Popen
+#     def _Popen(*a, **kw):
+#         kw['creationflags'] = 0x08000000
+#         return _bak_Popen(*a, **kw)
+#     subprocess.Popen = _Popen
 ''')
 
 
+    btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
     btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='启动浏览器driver', command=start_selenium)
+    btn2 = Button(temp_fr0, text='启动浏览器driver <Alt+c>', command=start_selenium)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='关闭浏览器driver', command=close_selenium)
     btn2.pack(side=tkinter.RIGHT)
