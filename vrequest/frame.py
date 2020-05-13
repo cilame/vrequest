@@ -3133,22 +3133,23 @@ def encode_window(setting=None):
         for i in s:
             print(i)
 
-    def print(*a):
+    def print(*a, end='\n'):
         # import pprint
         # pprint.pprint(enb_names)
         name = enb.select().rsplit('.')[-1]
         if enb_names[name] == 'hash':
-            txt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            txt.insert(tkinter.END,' '.join(map(str,a)) + end)
         elif enb_names[name] == '算法加解密':
-            ftxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            ftxt.insert(tkinter.END,' '.join(map(str,a)) + end)
         elif enb_names[name] == '依赖库加解密':
-            ctxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            ctxt.insert(tkinter.END,' '.join(map(str,a)) + end)
         elif enb_names[name] == '通用解密':
-            bbtxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            bbtxt.insert(tkinter.END,' '.join(map(str,a)) + end)
         elif enb_names[name] == '爆破;RSA;二维码':
-            fsstxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            fsstxt.insert(tkinter.END,' '.join(map(str,a)) + end)
         elif enb_names[name] == '图片相关':
-            fpictxt.insert(tkinter.END,' '.join(map(str,a)) + '\n')
+            fpictxt.insert(tkinter.END,' '.join(map(str,a)) + end)
+        fpictxt.update()
 
     def _analysis_diff(*a):
         txt.delete(0.,tkinter.END)
@@ -6391,7 +6392,6 @@ if __name__ == '__main__':
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
-            print('error decoding!!! check input data.')
 
     def _pycv2_code(*a):
         try:
@@ -6436,7 +6436,6 @@ if __name__ == '__main__':
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
-            print('error decoding!!! check input data.')
 
     def _pycv2_code(*a):
         try:
@@ -6490,7 +6489,6 @@ if __name__ == '__main__':
         except:
             fpictxt.delete(0.,tkinter.END)
             print(traceback.format_exc())
-            print('error decoding!!! check input data.')
 
     def _pycv2_code(*a):
         try:
@@ -6508,6 +6506,429 @@ if __name__ == '__main__':
     Label(fpic0082, text=' 背景图片，不填则默认桌面').pack(side=tkinter.LEFT)
     fpic008ent1 = Entry(fpic0082,width=10)
     fpic008ent1.pack(side=tkinter.LEFT)
+
+
+    fpic0090 = Frame(fpic1)
+    fpic0090.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0092 = Frame(fpic0090)
+    fpic0093 = Frame(fpic0090)
+    fpic0094 = Frame(fpic0090)
+    fpic0095 = Frame(fpic0090)
+    fpic0096 = Frame(fpic0090)
+    fpic0097 = Frame(fpic0090)
+    pichelp1 = '''
+ 
+    使用 pytorch 的模型快速训练简单的目标点选
+以下部分需要使用到两个第三方库 opencv，以及 pytorch 。
+之所以目前仅使用 voc 数据集是因为 labelimg 默认生成格式
+直接使用会非常方便，这种格式的数据也会很清晰
+*注意，voc数据的图片文件请尽量和 voc标注数据的xml文件保持一致
+ 因为代码在xml文件的path找不到图片就会在xml相同地址下找同名图片文件。
+'''.strip('\n')
+    Label(fpic0092, text=pichelp1).pack(side=tkinter.TOP,padx=10)
+    fpic0092.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0093.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0094.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0095.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0096.pack(side=tkinter.TOP,fill=tkinter.X)
+    fpic0097.pack(side=tkinter.TOP,fill=tkinter.X)
+
+    train_data, imginfos, class_types, anchors = None, None, None, None
+    def _load_voc_data(*a):
+        def load_voc_data(xmlpath, anchors):
+            files = [os.path.join(xmlpath, path) for path in os.listdir(xmlpath) if path.endswith('.xml')]
+            imginfos = []
+            print('use anchors:', anchors)
+            print('load xml file number:{}, start.'.format(len(files)))
+            for idx, file in enumerate(files, 1):
+                if idx % 1000 == 0: print('loading {}/{}'.format(idx, len(files)))
+                imginfos.extend(pymini_yolo.read_voc_xml(file, islist=True))
+            if idx % 1000 != 0: print('loading {}/{}'.format(idx, len(files)))
+            # 注意这里加载数据的方式是小批量加载处理，所以自动生成 class_types
+            # 如果有大量数据想要进行多批次训练，那么就需要注意 class_types 的生成。
+            class_types = [imginfo.get('cate') for imginfo in imginfos]
+            class_types = {typ:idx for idx,typ in enumerate(sorted(list(set(class_types))))}
+            print('class_types:', class_types)
+            train_data = []
+            print('make x_true,y_true. start.')
+            for idx, imginfo in enumerate(imginfos, 1):
+                if idx % 1000 == 0: print('makeing x_true,y_true. {}/{}'.format(idx, len(imginfos)))
+                x_true = pymini_yolo.torch.FloatTensor(imginfo['numpy'])
+                y_true = pymini_yolo.make_y_true(imginfo, 13, anchors, class_types)
+                train_data.append([x_true, y_true])
+            if idx % 1000 != 0: print('makeing x_true,y_true. {}/{}'.format(idx, len(imginfos)))
+            print('make x_true,y_true. ok.')
+            return train_data, imginfos, class_types
+        try:
+            xmlpath = fpic009ent1.get().strip()
+            if not os.path.isdir(xmlpath):
+                print('无效的 voc 文件地址。')
+                return
+            print('importing pytorch, opencv.')
+            try:
+                from . import pymini_yolo
+            except:
+                import pymini_yolo
+            print('import ok.')
+            nonlocal train_data, imginfos, class_types, anchors
+            anchors = [[60, 60]]
+            train_data, imginfos, class_types = load_voc_data(xmlpath, anchors)
+        except:
+            print(traceback.format_exc())
+        fpictxt.see(tkinter.END)
+
+    def _pymini_yolo_code(*a):
+        try:
+            from . import pymini_yolo
+        except:
+            import pymini_yolo
+        fpictxt.delete(0.,tkinter.END)
+        with open(pymini_yolo.__file__, encoding='utf-8') as f:
+            data = f.read().strip('\n')
+        print(data)
+
+    def _set_train_file_dir(*a):
+        import tkinter.filedialog
+        dirpath = tkinter.filedialog.askdirectory()
+        print(dirpath)
+        fpic009ent1.delete(0,tkinter.END)
+        fpic009ent1.insert(tkinter.END, dirpath)
+        if not fpic0095ent1.get().strip():
+            fpic0095ent1.insert(tkinter.END, dirpath)
+
+    def _save_train_model_dir(*a):
+        import tkinter.filedialog
+        dirpath = tkinter.filedialog.askdirectory()
+        print(dirpath)
+        fpic0094ent1.delete(0,tkinter.END)
+        fpic0094ent1.insert(tkinter.END, dirpath)
+
+    def _save_test_model_dir(*a):
+        import tkinter.filedialog
+        dirpath = tkinter.filedialog.askdirectory()
+        print(dirpath)
+        fpic0095ent1.delete(0,tkinter.END)
+        fpic0095ent1.insert(tkinter.END, dirpath)
+
+    stop = True
+    def _pystoptrain_mini_yolo(*a):
+        nonlocal stop
+        print(stop)
+        stop = True
+
+    def _pytrain_mini_yolo(*a):
+        nonlocal train_data, class_types
+        if train_data is None:
+            print('没有加载训练数据。')
+            return
+        print('importing pytorch, opencv.')
+        try:
+            from . import pymini_yolo
+        except:
+            import pymini_yolo
+        print('import ok.')
+        nonlocal stop
+        if stop == True:
+            stop = False
+        else:
+            print('正在训练')
+            return 
+        def train(train_data, anchors, class_types):
+            nonlocal stop
+            train_loader = pymini_yolo.Data.DataLoader(
+                dataset    = train_data,
+                batch_size = BATCH_SIZE,
+                shuffle    = True,
+            )
+            modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
+            try:
+                state = pymini_yolo.torch.load(modelfilepath)
+                net = state['net'].to(pymini_yolo.DEVICE)
+                optimizer = state['optimizer']
+                epoch = state['epoch']
+                print('load train.')
+            except:
+                net = pymini_yolo.Mini(anchors, class_types)
+                net.to(pymini_yolo.DEVICE)
+                optimizer = pymini_yolo.torch.optim.Adam(net.parameters(), lr=LR)
+                epoch = 0
+                print('new train.')
+            yloss = pymini_yolo.yoloLoss(13, anchors=anchors, class_types=class_types, )
+            net.train()
+            for epoch in range(epoch, epoch+EPOCH):
+                print('epoch', epoch)
+                for step, (x_true_, y_true_) in enumerate(train_loader):
+                    print('[{:<3}]'.format(step), end='')
+                    x_true = pymini_yolo.Variable(x_true_).to(pymini_yolo.DEVICE)
+                    y_true = pymini_yolo.Variable(y_true_).to(pymini_yolo.DEVICE)
+                    output = net(x_true)
+                    loss = yloss(output, y_true, print)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                    if stop: break
+                    fpictxt.see(tkinter.END)
+                if stop: break
+                state = {'net':net, 'optimizer':optimizer, 'epoch':epoch+1, 
+                         'anchors':anchors, 'class_types':class_types}
+                pymini_yolo.torch.save(state, modelfilepath)
+                print('save.')
+            print('end.')
+        try:
+            EPOCH = int(fpic0092ent1.get().strip())
+            BATCH_SIZE = int(fpic0092ent2.get().strip())
+            LR = float(fpic0092ent3.get().strip())
+            anchors = eval(fpic0092ent4.get().strip())
+            print('EPOCH:{}, BATCH_SIZE:{}, LR:{}, anchors:{}.'.format(EPOCH,BATCH_SIZE,LR,anchors))
+            threading.Thread(target=train, args=(train_data, anchors, class_types)).start()
+        except:
+            print(traceback.format_exc())
+
+    def _test_mini_yolo_data(*a):
+        filepath = fpic0095ent1.get().strip()
+        if not os.path.isdir(filepath):
+            print('无效的测试数据地址。')
+            return
+        if re.findall('[\u4e00-\u9fa5]', filepath):
+            print('无效的测试数据地址，opencv 加载图片地址不能含有中文。')
+            return
+        try:
+            try:
+                from . import pymini_yolo
+            except:
+                import pymini_yolo
+            modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
+            if not os.path.isfile(modelfilepath):
+                print('模型文件不存在 {}'.format(modelfilepath))
+                return
+            state = pymini_yolo.torch.load(modelfilepath)
+            idx = 0
+            for file in os.listdir(filepath):
+                if file.lower().endswith('jpg') or file.lower().endswith('png') or file.lower().endswith('jpeg'):
+                    _file = os.path.join(filepath, file)
+                    pymini_yolo.get_all_draw_rects(_file, state)
+                    idx += 1
+                    if idx == 5:
+                        return 
+        except:
+            print(traceback.format_exc())
+
+
+    def _create_use_mini_yolo_code(*a):
+        code = '''
+# 开发于 python3
+# 依赖 pytorch：（官网找安装方式）开发使用版本为 torch-1.4.0-cp36-cp36m-win_amd64.whl
+# 依赖 opencv： （pip install opencv-contrib-python==3.4.1.15）需要使用sift图像算法。所以注意安装版本。
+
+# 直接执行即可测试
+
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+
+import os
+import math
+
+USE_CUDA = True if torch.cuda.is_available() else False
+DEVICE = 'cuda' if USE_CUDA else 'cpu'
+
+# 将经过 backbone 的矩阵数据转换成坐标和分类名字
+def parse_y_pred(ypred, anchors, class_types, islist=False, threshold=0.2, nms_threshold=0):
+    ceillen = 5+len(class_types)
+    sigmoid = lambda x:1/(1+math.exp(-x))
+    infos = []
+    for idx in range(len(anchors)):
+        if USE_CUDA:
+            a = ypred[:,:,:,4+idx*ceillen].cpu().detach().numpy()
+        else:
+            a = ypred[:,:,:,4+idx*ceillen].detach().numpy()
+        for ii,i in enumerate(a[0]):
+            for jj,j in enumerate(i):
+                infos.append((ii,jj,idx,sigmoid(j)))
+    infos = sorted(infos, key=lambda i:-i[3])
+    def get_xyxy_clz_con(info):
+        gap = 416/ypred.shape[1]
+        x,y,idx,con = info
+        gp = idx*ceillen
+        contain = torch.sigmoid(ypred[0,x,y,gp+4])
+        pred_xy = torch.sigmoid(ypred[0,x,y,gp+0:gp+2])
+        pred_wh = ypred[0,x,y,gp+2:gp+4]
+        pred_clz = ypred[0,x,y,gp+5:gp+5+len(class_types)]
+        if USE_CUDA:
+            pred_xy = pred_xy.cpu().detach().numpy()
+            pred_wh = pred_wh.cpu().detach().numpy()
+            pred_clz = pred_clz.cpu().detach().numpy()
+        else:
+            pred_xy = pred_xy.detach().numpy()
+            pred_wh = pred_wh.detach().numpy()
+            pred_clz = pred_clz.detach().numpy()
+        exp = math.exp
+        cx, cy = map(float, pred_xy)
+        rx, ry = (cx + x)*gap, (cy + y)*gap
+        rw, rh = map(float, pred_wh)
+        rw, rh = exp(rw)*anchors[idx][0], exp(rh)*anchors[idx][1]
+        clz_   = list(map(float, pred_clz))
+        xx = rx - rw/2
+        _x = rx + rw/2
+        yy = ry - rh/2
+        _y = ry + rh/2
+        np.set_printoptions(precision=2, linewidth=200, suppress=True)
+        if USE_CUDA:
+            log_cons = torch.sigmoid(ypred[:,:,:,gp+4]).cpu().detach().numpy()
+        else:
+            log_cons = torch.sigmoid(ypred[:,:,:,gp+4]).detach().numpy()
+        log_cons = np.transpose(log_cons, (0, 2, 1))
+        for key in class_types:
+            if clz_.index(max(clz_)) == class_types[key]:
+                clz = key
+                break
+        return [xx, yy, _x, _y], clz, con, log_cons
+    def nms(infos):
+        if not infos: return infos
+        def iou(xyxyA,xyxyB):
+            ax1,ay1,ax2,ay2 = xyxyA
+            bx1,by1,bx2,by2 = xyxyB
+            minx, miny = max(ax1,bx1), max(ay1, by1)
+            maxx, maxy = min(ax2,bx2), min(ay2, by2)
+            intw, inth = max(maxx-minx, 0), max(maxy-miny, 0)
+            areaA = (ax2-ax1)*(ay2-ay1)
+            areaB = (bx2-bx1)*(by2-by1)
+            areaI = intw*inth
+            return areaI/(areaA+areaB-areaI)
+        rets = []
+        infos = infos[::-1]
+        while infos:
+            curr = infos.pop()
+            if rets and any([iou(r[0], curr[0]) > nms_threshold for r in rets]):
+                continue
+            rets.append(curr)
+        return rets
+    if islist:
+        v = [get_xyxy_clz_con(i) for i in infos if i[3] > threshold]
+        if nms_threshold:
+            return nms(v)
+        else:
+            return v
+    else:
+        return get_xyxy_clz_con(infos[0])
+
+class Mini(nn.Module):
+    class ConvBN(nn.Module):
+        def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
+            super().__init__()
+            padding   = (kernel_size - 1) // 2 if not padding else padding
+            self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
+            self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
+            self.relu = nn.LeakyReLU(0.1, inplace=True)
+        def forward(self, x): 
+            return self.relu(self.bn(self.conv(x)))
+    def __init__(self, anchors, class_types, inchennel=3):
+        super().__init__()
+        self.oceil = len(anchors)*(5+len(class_types))
+        self.model = nn.Sequential(
+            OrderedDict([
+                ('ConvBN_0',  self.ConvBN(inchennel, 32)),
+                ('Pool_0',    nn.MaxPool2d(2, 2)),
+                ('ConvBN_1',  self.ConvBN(32, 48)),
+                ('Pool_1',    nn.MaxPool2d(2, 2)),
+                ('ConvBN_2',  self.ConvBN(48, 64)),
+                ('Pool_2',    nn.MaxPool2d(2, 2)),
+                ('ConvBN_3',  self.ConvBN(64, 80)),
+                ('Pool_3',    nn.MaxPool2d(2, 2)),
+                ('ConvBN_4',  self.ConvBN(80, 96)),
+                ('Pool_4',    nn.MaxPool2d(2, 2)),
+                ('ConvBN_5',  self.ConvBN(96, 102)),
+                ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
+            ])
+        )
+    def forward(self, x):
+        return self.model(x).permute(0,2,3,1)
+
+def drawrect(img, rect, text):
+    cv2.rectangle(img, tuple(rect[:2]), tuple(rect[2:]), (10,250,10), 2, 1)
+    x, y = rect[:2]
+    def cv2ImgAddText(img, text, left, top, textColor=(0, 255, 0), textSize=20):
+        from PIL import Image, ImageDraw, ImageFont
+        img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        draw = ImageDraw.Draw(img)
+        fontText = ImageFont.truetype( "font/simsun.ttc", textSize, encoding="utf-8")
+        draw.text((left, top), text, textColor, font=fontText)
+        return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
+    import re
+    if re.findall('[\u4e00-\u9fa5]', text):
+        img = cv2ImgAddText(img, text, x, y-12, (10,10,250), 12) # 如果存在中文则使用这种方式绘制文字
+    else:
+        cv2.putText(img, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (10,10,250), 1)
+    return img
+def get_all_draw_rects(filename, state):
+    net = state['net'].to(DEVICE)
+    anchors = state['anchors']
+    class_types = state['class_types']
+    net.eval() # 重点中的重点，被坑了一整天。
+    npimg = cv2.imread(filename)
+    height, width = npimg.shape[:2]
+    npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB) # [y,x,c]
+    npimg = cv2.resize(npimg, (416, 416))
+    npimg_ = np.transpose(npimg, (2,1,0)) # [c,x,y]
+    y_pred = net(torch.FloatTensor(npimg_).unsqueeze(0).to(DEVICE))
+    v = parse_y_pred(y_pred, anchors, class_types, islist=True, threshold=0.2, nms_threshold=0.4)
+    r = []
+    for i in v:
+        rect, clz, con, log_cons = i
+        rw, rh = width/416, height/416
+        rect[0],rect[2] = int(rect[0]*rw),int(rect[2]*rw)
+        rect[1],rect[3] = int(rect[1]*rh),int(rect[3]*rh)
+        r.append([rect, clz, con, log_cons])
+    # 绘制所有定位的框
+    img = cv2.imread(filename)
+    for i in r:
+        rect, clz, con, log_cons = i
+        img = drawrect(img, rect, '{}|{:<.2f}'.format(clz,con))
+    cv2.imshow('test', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+'''
+
+    Button(fpic0093, text='加载数据',command=_load_voc_data,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0094, text='开始训练',command=_pytrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0095, text='停止训练',command=_pystoptrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0096, text='测试数据',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0097, text='生成使用代码',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
+
+    Button(fpic0092, text='[算法]',command=_pymini_yolo_code,width=5).pack(side=tkinter.LEFT)
+    # Label(fpic0093, text='voc数据集地址').pack(side=tkinter.LEFT)
+    Button(fpic0093, text='[打开文件] voc数据集地址: ',command=_set_train_file_dir).pack(side=tkinter.LEFT)
+    fpic009ent1 = Entry(fpic0093,width=40)
+    fpic009ent1.pack(side=tkinter.RIGHT)
+    desktoppath = os.path.join(os.path.expanduser("~"),'Desktop')
+    Button(fpic0094, text='[打开文件] 模型存放地址: ',command=_save_train_model_dir).pack(side=tkinter.LEFT)
+    fpic0094ent1 = Entry(fpic0094,width=40)
+    fpic0094ent1.insert(tkinter.END, desktoppath)
+    fpic0094ent1.pack(side=tkinter.RIGHT)
+    Button(fpic0095, text='[打开文件] 测试数据(默认测5张): ',command=_save_test_model_dir).pack(side=tkinter.LEFT)
+    fpic0095ent1 = Entry(fpic0095,width=40)
+    fpic0095ent1.pack(side=tkinter.RIGHT)
+
+    Label(fpic0092, text='EPOCH').pack(side=tkinter.LEFT)
+    fpic0092ent1 = Entry(fpic0092,width=5)
+    fpic0092ent1.pack(side=tkinter.LEFT)
+    fpic0092ent1.insert(tkinter.END, '1000')
+    Label(fpic0092, text='BATCH_SIZE').pack(side=tkinter.LEFT)
+    fpic0092ent2 = Entry(fpic0092,width=4)
+    fpic0092ent2.pack(side=tkinter.LEFT)
+    fpic0092ent2.insert(tkinter.END, '4')
+    Label(fpic0092, text='LR').pack(side=tkinter.LEFT)
+    fpic0092ent3 = Entry(fpic0092,width=7)
+    fpic0092ent3.pack(side=tkinter.LEFT)
+    fpic0092ent3.insert(tkinter.END, '0.001')
+    Label(fpic0092, text='anchors').pack(side=tkinter.LEFT)
+    fpic0092ent4 = Entry(fpic0092,width=20)
+    fpic0092ent4.pack(side=tkinter.LEFT)
+    fpic0092ent4.insert(tkinter.END, '[[60, 60]]')
+
+
+    # Label(fpic0093, text=' 背景图片，不填则默认桌面').pack(side=tkinter.LEFT)
     return fr # 开发时注意将该处放在该函数的最后部分
 
 
