@@ -11,7 +11,6 @@ import torch
 import os
 import math
 import xml.dom.minidom
-from collections import OrderedDict
 
 # 读取voc格式文件
 def read_voc_xml(file, islist=True):
@@ -193,6 +192,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as Data
 from torch.autograd import Variable
+from collections import OrderedDict
 
 USE_CUDA = True if torch.cuda.is_available() else False
 DEVICE = 'cuda' if USE_CUDA else 'cpu'
@@ -459,9 +459,9 @@ if __name__ == '__main__':
     train_data, imginfos, class_types = load_voc_data(xmlpath, anchors)
     train(train_data, anchors, class_types)
 
+    # state = torch.load('net.pkl')
     # v = [os.path.join(xmlpath, i) for i in os.listdir(xmlpath) if i.lower().endswith('.jpg') or i.lower().endswith('.png')]
     # v = v[::-1]
-    # for i in range(20):
-    #     print(v[i])
-    #     test3(v[i])
+    # for i in v:
+    #     get_all_draw_rects(i, state)
 

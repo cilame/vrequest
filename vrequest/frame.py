@@ -6642,13 +6642,49 @@ if __name__ == '__main__':
             )
             modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
             try:
+                import torch.nn as nn
+                from collections import OrderedDict
+                global Mini
+                class Mini(nn.Module):
+                    class ConvBN(nn.Module):
+                        def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
+                            super().__init__()
+                            padding   = (kernel_size - 1) // 2 if not padding else padding
+                            self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
+                            self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
+                            self.relu = nn.LeakyReLU(0.1, inplace=True)
+                        def forward(self, x): 
+                            return self.relu(self.bn(self.conv(x)))
+                    def __init__(self, anchors, class_types, inchennel=3):
+                        super().__init__()
+                        self.oceil = len(anchors)*(5+len(class_types))
+                        self.model = nn.Sequential(
+                            OrderedDict([
+                                ('ConvBN_0',  self.ConvBN(inchennel, 32)),
+                                ('Pool_0',    nn.MaxPool2d(2, 2)),
+                                ('ConvBN_1',  self.ConvBN(32, 48)),
+                                ('Pool_1',    nn.MaxPool2d(2, 2)),
+                                ('ConvBN_2',  self.ConvBN(48, 64)),
+                                ('Pool_2',    nn.MaxPool2d(2, 2)),
+                                ('ConvBN_3',  self.ConvBN(64, 80)),
+                                ('Pool_3',    nn.MaxPool2d(2, 2)),
+                                ('ConvBN_4',  self.ConvBN(80, 96)),
+                                ('Pool_4',    nn.MaxPool2d(2, 2)),
+                                ('ConvBN_5',  self.ConvBN(96, 102)),
+                                ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
+                            ])
+                        )
+                    def forward(self, x):
+                        return self.model(x).permute(0,2,3,1)
+
                 state = pymini_yolo.torch.load(modelfilepath)
                 net = state['net'].to(pymini_yolo.DEVICE)
                 optimizer = state['optimizer']
                 epoch = state['epoch']
                 print('load train.')
             except:
-                net = pymini_yolo.Mini(anchors, class_types)
+                print(traceback.format_exc())
+                net = Mini(anchors, class_types)
                 net.to(pymini_yolo.DEVICE)
                 optimizer = pymini_yolo.torch.optim.Adam(net.parameters(), lr=LR)
                 epoch = 0
@@ -6697,6 +6733,40 @@ if __name__ == '__main__':
                 from . import pymini_yolo
             except:
                 import pymini_yolo
+            import torch.nn as nn
+            from collections import OrderedDict
+            global Mini
+            class Mini(nn.Module):
+                class ConvBN(nn.Module):
+                    def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
+                        super().__init__()
+                        padding   = (kernel_size - 1) // 2 if not padding else padding
+                        self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
+                        self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
+                        self.relu = nn.LeakyReLU(0.1, inplace=True)
+                    def forward(self, x): 
+                        return self.relu(self.bn(self.conv(x)))
+                def __init__(self, anchors, class_types, inchennel=3):
+                    super().__init__()
+                    self.oceil = len(anchors)*(5+len(class_types))
+                    self.model = nn.Sequential(
+                        OrderedDict([
+                            ('ConvBN_0',  self.ConvBN(inchennel, 32)),
+                            ('Pool_0',    nn.MaxPool2d(2, 2)),
+                            ('ConvBN_1',  self.ConvBN(32, 48)),
+                            ('Pool_1',    nn.MaxPool2d(2, 2)),
+                            ('ConvBN_2',  self.ConvBN(48, 64)),
+                            ('Pool_2',    nn.MaxPool2d(2, 2)),
+                            ('ConvBN_3',  self.ConvBN(64, 80)),
+                            ('Pool_3',    nn.MaxPool2d(2, 2)),
+                            ('ConvBN_4',  self.ConvBN(80, 96)),
+                            ('Pool_4',    nn.MaxPool2d(2, 2)),
+                            ('ConvBN_5',  self.ConvBN(96, 102)),
+                            ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
+                        ])
+                    )
+                def forward(self, x):
+                    return self.model(x).permute(0,2,3,1)
             modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
             if not os.path.isfile(modelfilepath):
                 print('模型文件不存在 {}'.format(modelfilepath))
@@ -6713,188 +6783,67 @@ if __name__ == '__main__':
         except:
             print(traceback.format_exc())
 
-
     def _create_use_mini_yolo_code(*a):
-        code = '''
-# 开发于 python3
-# 依赖 pytorch：（官网找安装方式）开发使用版本为 torch-1.4.0-cp36-cp36m-win_amd64.whl
-# 依赖 opencv： （pip install opencv-contrib-python==3.4.1.15）需要使用sift图像算法。所以注意安装版本。
-
-# 直接执行即可测试
-
-import cv2
-import numpy as np
-import torch
-import torch.nn as nn
-
-import os
-import math
-
-USE_CUDA = True if torch.cuda.is_available() else False
-DEVICE = 'cuda' if USE_CUDA else 'cpu'
-
-# 将经过 backbone 的矩阵数据转换成坐标和分类名字
-def parse_y_pred(ypred, anchors, class_types, islist=False, threshold=0.2, nms_threshold=0):
-    ceillen = 5+len(class_types)
-    sigmoid = lambda x:1/(1+math.exp(-x))
-    infos = []
-    for idx in range(len(anchors)):
-        if USE_CUDA:
-            a = ypred[:,:,:,4+idx*ceillen].cpu().detach().numpy()
-        else:
-            a = ypred[:,:,:,4+idx*ceillen].detach().numpy()
-        for ii,i in enumerate(a[0]):
-            for jj,j in enumerate(i):
-                infos.append((ii,jj,idx,sigmoid(j)))
-    infos = sorted(infos, key=lambda i:-i[3])
-    def get_xyxy_clz_con(info):
-        gap = 416/ypred.shape[1]
-        x,y,idx,con = info
-        gp = idx*ceillen
-        contain = torch.sigmoid(ypred[0,x,y,gp+4])
-        pred_xy = torch.sigmoid(ypred[0,x,y,gp+0:gp+2])
-        pred_wh = ypred[0,x,y,gp+2:gp+4]
-        pred_clz = ypred[0,x,y,gp+5:gp+5+len(class_types)]
-        if USE_CUDA:
-            pred_xy = pred_xy.cpu().detach().numpy()
-            pred_wh = pred_wh.cpu().detach().numpy()
-            pred_clz = pred_clz.cpu().detach().numpy()
-        else:
-            pred_xy = pred_xy.detach().numpy()
-            pred_wh = pred_wh.detach().numpy()
-            pred_clz = pred_clz.detach().numpy()
-        exp = math.exp
-        cx, cy = map(float, pred_xy)
-        rx, ry = (cx + x)*gap, (cy + y)*gap
-        rw, rh = map(float, pred_wh)
-        rw, rh = exp(rw)*anchors[idx][0], exp(rh)*anchors[idx][1]
-        clz_   = list(map(float, pred_clz))
-        xx = rx - rw/2
-        _x = rx + rw/2
-        yy = ry - rh/2
-        _y = ry + rh/2
-        np.set_printoptions(precision=2, linewidth=200, suppress=True)
-        if USE_CUDA:
-            log_cons = torch.sigmoid(ypred[:,:,:,gp+4]).cpu().detach().numpy()
-        else:
-            log_cons = torch.sigmoid(ypred[:,:,:,gp+4]).detach().numpy()
-        log_cons = np.transpose(log_cons, (0, 2, 1))
-        for key in class_types:
-            if clz_.index(max(clz_)) == class_types[key]:
-                clz = key
-                break
-        return [xx, yy, _x, _y], clz, con, log_cons
-    def nms(infos):
-        if not infos: return infos
-        def iou(xyxyA,xyxyB):
-            ax1,ay1,ax2,ay2 = xyxyA
-            bx1,by1,bx2,by2 = xyxyB
-            minx, miny = max(ax1,bx1), max(ay1, by1)
-            maxx, maxy = min(ax2,bx2), min(ay2, by2)
-            intw, inth = max(maxx-minx, 0), max(maxy-miny, 0)
-            areaA = (ax2-ax1)*(ay2-ay1)
-            areaB = (bx2-bx1)*(by2-by1)
-            areaI = intw*inth
-            return areaI/(areaA+areaB-areaI)
-        rets = []
-        infos = infos[::-1]
-        while infos:
-            curr = infos.pop()
-            if rets and any([iou(r[0], curr[0]) > nms_threshold for r in rets]):
-                continue
-            rets.append(curr)
-        return rets
-    if islist:
-        v = [get_xyxy_clz_con(i) for i in infos if i[3] > threshold]
-        if nms_threshold:
-            return nms(v)
-        else:
-            return v
-    else:
-        return get_xyxy_clz_con(infos[0])
-
-class Mini(nn.Module):
-    class ConvBN(nn.Module):
-        def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
-            super().__init__()
-            padding   = (kernel_size - 1) // 2 if not padding else padding
-            self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
-            self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
-            self.relu = nn.LeakyReLU(0.1, inplace=True)
-        def forward(self, x): 
-            return self.relu(self.bn(self.conv(x)))
-    def __init__(self, anchors, class_types, inchennel=3):
-        super().__init__()
-        self.oceil = len(anchors)*(5+len(class_types))
-        self.model = nn.Sequential(
-            OrderedDict([
-                ('ConvBN_0',  self.ConvBN(inchennel, 32)),
-                ('Pool_0',    nn.MaxPool2d(2, 2)),
-                ('ConvBN_1',  self.ConvBN(32, 48)),
-                ('Pool_1',    nn.MaxPool2d(2, 2)),
-                ('ConvBN_2',  self.ConvBN(48, 64)),
-                ('Pool_2',    nn.MaxPool2d(2, 2)),
-                ('ConvBN_3',  self.ConvBN(64, 80)),
-                ('Pool_3',    nn.MaxPool2d(2, 2)),
-                ('ConvBN_4',  self.ConvBN(80, 96)),
-                ('Pool_4',    nn.MaxPool2d(2, 2)),
-                ('ConvBN_5',  self.ConvBN(96, 102)),
-                ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
-            ])
+        zstring = (
+        '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'
+        'v4Gsag896IUL7HQn70oQopqAOUN2zhtF8f8='
         )
-    def forward(self, x):
-        return self.model(x).permute(0,2,3,1)
-
-def drawrect(img, rect, text):
-    cv2.rectangle(img, tuple(rect[:2]), tuple(rect[2:]), (10,250,10), 2, 1)
-    x, y = rect[:2]
-    def cv2ImgAddText(img, text, left, top, textColor=(0, 255, 0), textSize=20):
-        from PIL import Image, ImageDraw, ImageFont
-        img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        draw = ImageDraw.Draw(img)
-        fontText = ImageFont.truetype( "font/simsun.ttc", textSize, encoding="utf-8")
-        draw.text((left, top), text, textColor, font=fontText)
-        return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
-    import re
-    if re.findall('[\u4e00-\u9fa5]', text):
-        img = cv2ImgAddText(img, text, x, y-12, (10,10,250), 12) # 如果存在中文则使用这种方式绘制文字
-    else:
-        cv2.putText(img, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (10,10,250), 1)
-    return img
-def get_all_draw_rects(filename, state):
-    net = state['net'].to(DEVICE)
-    anchors = state['anchors']
-    class_types = state['class_types']
-    net.eval() # 重点中的重点，被坑了一整天。
-    npimg = cv2.imread(filename)
-    height, width = npimg.shape[:2]
-    npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB) # [y,x,c]
-    npimg = cv2.resize(npimg, (416, 416))
-    npimg_ = np.transpose(npimg, (2,1,0)) # [c,x,y]
-    y_pred = net(torch.FloatTensor(npimg_).unsqueeze(0).to(DEVICE))
-    v = parse_y_pred(y_pred, anchors, class_types, islist=True, threshold=0.2, nms_threshold=0.4)
-    r = []
-    for i in v:
-        rect, clz, con, log_cons = i
-        rw, rh = width/416, height/416
-        rect[0],rect[2] = int(rect[0]*rw),int(rect[2]*rw)
-        rect[1],rect[3] = int(rect[1]*rh),int(rect[3]*rh)
-        r.append([rect, clz, con, log_cons])
-    # 绘制所有定位的框
-    img = cv2.imread(filename)
-    for i in r:
-        rect, clz, con, log_cons = i
-        img = drawrect(img, rect, '{}|{:<.2f}'.format(clz,con))
-    cv2.imshow('test', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-'''
+        import base64, zlib
+        zstring = base64.b64decode(zstring)
+        zstring = zlib.decompress(zstring,-15)
+        string = zstring.decode("utf-8")
+        testpath = fpic0095ent1.get().strip()
+        if not testpath:
+            print('没有指定测试文件路径。')
+            return 
+        testpath = repr(testpath)
+        code = string+'''
+if __name__ == '__main__':
+    for i in os.listdir({}):
+        if i.endswith('jpg'):
+            print(i)
+            get_all_draw_rects(os.path.join({}, i), state)
+'''.format(testpath, testpath)
+        name = askstring('脚本名','请输入脚本文件名，尽量小写无空格。\n(存放到桌面)')
+        if not name: return
+        if not name.endswith('.py'): name += '.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                f.write(code)
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
 
     Button(fpic0093, text='加载数据',command=_load_voc_data,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0094, text='开始训练',command=_pytrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0095, text='停止训练',command=_pystoptrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0096, text='测试数据',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
-    Button(fpic0097, text='生成使用代码',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0097, text='生成使用代码',command=_create_use_mini_yolo_code,width=16).pack(side=tkinter.RIGHT)
 
     Button(fpic0092, text='[算法]',command=_pymini_yolo_code,width=5).pack(side=tkinter.LEFT)
     # Label(fpic0093, text='voc数据集地址').pack(side=tkinter.LEFT)
