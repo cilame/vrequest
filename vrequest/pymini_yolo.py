@@ -297,7 +297,8 @@ class yoloLoss(nn.Module):
                 class_loss       += F.mse_loss(class_pred,class_targ,reduction='sum')
                 # print('[ ious ] :', ious)
         all_loss = (box_contain_loss + noo_contain_loss + loc_loss + class_loss)/N/self.B
-        # print = callback if callback else print
+        global print
+        print = callback if callback else print
         print(
             '[ loss ] (con|non){:>.3f}|{:>.3f},(xy|wh){:>.3f}|{:>.3f},(class){:>.3f},(all){:>.3f}.'.format(
                 box_contain_loss.item(),    noo_contain_loss.item(),    locxy_loss.item(),
