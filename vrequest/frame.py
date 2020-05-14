@@ -6652,7 +6652,7 @@ if __name__ == '__main__':
             except:
                 excp = traceback.format_exc()
                 if 'FileNotFoundError' not in excp:
-                    print(traceback.format_exc())
+                    print(excp)
                 net = pymini_yolo.Mini(anchors, class_types)
                 net.to(pymini_yolo.DEVICE)
                 optimizer = pymini_yolo.torch.optim.Adam(net.parameters(), lr=LR)
