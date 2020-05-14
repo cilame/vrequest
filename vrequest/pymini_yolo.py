@@ -297,7 +297,7 @@ class yoloLoss(nn.Module):
                 class_loss       += F.mse_loss(class_pred,class_targ,reduction='sum')
                 # print('[ ious ] :', ious)
         all_loss = (box_contain_loss + noo_contain_loss + loc_loss + class_loss)/N/self.B
-        if callback: print = callback
+        # print = callback if callback else print
         print(
             '[ loss ] (con|non){:>.3f}|{:>.3f},(xy|wh){:>.3f}|{:>.3f},(class){:>.3f},(all){:>.3f}.'.format(
                 box_contain_loss.item(),    noo_contain_loss.item(),    locxy_loss.item(),
@@ -317,11 +317,17 @@ def train(train_data, anchors, class_types):
     )
     try:
         state = torch.load('net.pkl')
-        net = state['net'].to(DEVICE)
+        net = Mini(anchors, class_types)
+        net.load_state_dict(state['net'])
+        net.to(DEVICE)
         optimizer = state['optimizer']
         epoch = state['epoch']
         print('load train.')
     except:
+        import traceback
+        excp = traceback.format_exc()
+        if 'FileNotFoundError' not in excp:
+            print(traceback.format_exc())
         net = Mini(anchors, class_types)
         net.to(DEVICE)
         optimizer = torch.optim.Adam(net.parameters(), lr=LR)
@@ -340,7 +346,7 @@ def train(train_data, anchors, class_types):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        state = {'net':net, 'optimizer':optimizer, 'epoch':epoch+1, 
+        state = {'net':net.state_dict(), 'optimizer':optimizer, 'epoch':epoch+1, 
                  'anchors':anchors, 'class_types':class_types}
         torch.save(state, 'net.pkl')
         print('save.')
@@ -467,8 +473,9 @@ if __name__ == '__main__':
     train_data, imginfos, class_types = load_voc_data(xmlpath, anchors)
     train(train_data, anchors, class_types)
 
+    # testpath = './train_img'
     # state = load_net('net.pkl')
-    # v = [os.path.join(xmlpath, i) for i in os.listdir(xmlpath) if i.lower().endswith('.jpg') or i.lower().endswith('.png')]
+    # v = [os.path.join(testpath, i) for i in os.listdir(testpath) if i.lower().endswith('.jpg') or i.lower().endswith('.png')]
     # v = v[::-1]
     # for i in v:
     #     get_all_draw_rects(i, state)
