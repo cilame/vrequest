@@ -378,10 +378,9 @@ def drawrect(img, rect, text):
         cv2.putText(img, text, (x,y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (10,10,250), 1)
     return img
 def get_all_draw_rects(filename, state):
-    net = state['net'].to(DEVICE)
+    net = state['net']
     anchors = state['anchors']
     class_types = state['class_types']
-    net.eval() # 重点中的重点，被坑了一整天。
     npimg = cv2.imread(filename)
     height, width = npimg.shape[:2]
     npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB) # [y,x,c]
@@ -405,7 +404,16 @@ def get_all_draw_rects(filename, state):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-
+def load_net(filename):
+    state = torch.load(filename)
+    anchors = state['anchors']
+    class_types = state['class_types']
+    net = Mini(anchors, class_types)
+    net.load_state_dict(state['net'])
+    net.to(DEVICE)
+    net.eval()
+    state['net'] = net
+    return state
 
 
 
@@ -459,7 +467,7 @@ if __name__ == '__main__':
     train_data, imginfos, class_types = load_voc_data(xmlpath, anchors)
     train(train_data, anchors, class_types)
 
-    # state = torch.load('net.pkl')
+    # state = load_net('net.pkl')
     # v = [os.path.join(xmlpath, i) for i in os.listdir(xmlpath) if i.lower().endswith('.jpg') or i.lower().endswith('.png')]
     # v = v[::-1]
     # for i in v:

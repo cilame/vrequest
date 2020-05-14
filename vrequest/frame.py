@@ -6642,49 +6642,18 @@ if __name__ == '__main__':
             )
             modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
             try:
-                import torch.nn as nn
-                from collections import OrderedDict
-                global Mini
-                class Mini(nn.Module):
-                    class ConvBN(nn.Module):
-                        def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
-                            super().__init__()
-                            padding   = (kernel_size - 1) // 2 if not padding else padding
-                            self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
-                            self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
-                            self.relu = nn.LeakyReLU(0.1, inplace=True)
-                        def forward(self, x): 
-                            return self.relu(self.bn(self.conv(x)))
-                    def __init__(self, anchors, class_types, inchennel=3):
-                        super().__init__()
-                        self.oceil = len(anchors)*(5+len(class_types))
-                        self.model = nn.Sequential(
-                            OrderedDict([
-                                ('ConvBN_0',  self.ConvBN(inchennel, 32)),
-                                ('Pool_0',    nn.MaxPool2d(2, 2)),
-                                ('ConvBN_1',  self.ConvBN(32, 48)),
-                                ('Pool_1',    nn.MaxPool2d(2, 2)),
-                                ('ConvBN_2',  self.ConvBN(48, 64)),
-                                ('Pool_2',    nn.MaxPool2d(2, 2)),
-                                ('ConvBN_3',  self.ConvBN(64, 80)),
-                                ('Pool_3',    nn.MaxPool2d(2, 2)),
-                                ('ConvBN_4',  self.ConvBN(80, 96)),
-                                ('Pool_4',    nn.MaxPool2d(2, 2)),
-                                ('ConvBN_5',  self.ConvBN(96, 102)),
-                                ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
-                            ])
-                        )
-                    def forward(self, x):
-                        return self.model(x).permute(0,2,3,1)
-
                 state = pymini_yolo.torch.load(modelfilepath)
-                net = state['net'].to(pymini_yolo.DEVICE)
+                net = pymini_yolo.Mini(anchors, class_types)
+                net.load_state_dict(state['net'])
+                net.to(pymini_yolo.DEVICE)
                 optimizer = state['optimizer']
                 epoch = state['epoch']
                 print('load train.')
             except:
-                print(traceback.format_exc())
-                net = Mini(anchors, class_types)
+                excp = traceback.format_exc()
+                if 'FileNotFoundError' not in excp:
+                    print(traceback.format_exc())
+                net = pymini_yolo.Mini(anchors, class_types)
                 net.to(pymini_yolo.DEVICE)
                 optimizer = pymini_yolo.torch.optim.Adam(net.parameters(), lr=LR)
                 epoch = 0
@@ -6705,7 +6674,7 @@ if __name__ == '__main__':
                     if stop: break
                     fpictxt.see(tkinter.END)
                 if stop: break
-                state = {'net':net, 'optimizer':optimizer, 'epoch':epoch+1, 
+                state = {'net':net.state_dict(), 'optimizer':optimizer, 'epoch':epoch+1, 
                          'anchors':anchors, 'class_types':class_types}
                 pymini_yolo.torch.save(state, modelfilepath)
                 print('save.')
@@ -6733,45 +6702,11 @@ if __name__ == '__main__':
                 from . import pymini_yolo
             except:
                 import pymini_yolo
-            import torch.nn as nn
-            from collections import OrderedDict
-            global Mini
-            class Mini(nn.Module):
-                class ConvBN(nn.Module):
-                    def __init__(self, cin, cout, kernel_size=3, stride=1, padding=None):
-                        super().__init__()
-                        padding   = (kernel_size - 1) // 2 if not padding else padding
-                        self.conv = nn.Conv2d(cin, cout, kernel_size, stride, padding, bias=False)
-                        self.bn   = nn.BatchNorm2d(cout, momentum=0.01)
-                        self.relu = nn.LeakyReLU(0.1, inplace=True)
-                    def forward(self, x): 
-                        return self.relu(self.bn(self.conv(x)))
-                def __init__(self, anchors, class_types, inchennel=3):
-                    super().__init__()
-                    self.oceil = len(anchors)*(5+len(class_types))
-                    self.model = nn.Sequential(
-                        OrderedDict([
-                            ('ConvBN_0',  self.ConvBN(inchennel, 32)),
-                            ('Pool_0',    nn.MaxPool2d(2, 2)),
-                            ('ConvBN_1',  self.ConvBN(32, 48)),
-                            ('Pool_1',    nn.MaxPool2d(2, 2)),
-                            ('ConvBN_2',  self.ConvBN(48, 64)),
-                            ('Pool_2',    nn.MaxPool2d(2, 2)),
-                            ('ConvBN_3',  self.ConvBN(64, 80)),
-                            ('Pool_3',    nn.MaxPool2d(2, 2)),
-                            ('ConvBN_4',  self.ConvBN(80, 96)),
-                            ('Pool_4',    nn.MaxPool2d(2, 2)),
-                            ('ConvBN_5',  self.ConvBN(96, 102)),
-                            ('ConvEND',   nn.Conv2d(102, self.oceil, 1)),
-                        ])
-                    )
-                def forward(self, x):
-                    return self.model(x).permute(0,2,3,1)
             modelfilepath = os.path.join(fpic0094ent1.get().strip(), 'net.pkl')
             if not os.path.isfile(modelfilepath):
                 print('模型文件不存在 {}'.format(modelfilepath))
                 return
-            state = pymini_yolo.torch.load(modelfilepath)
+            state = pymini_yolo.load_net(modelfilepath)
             idx = 0
             for file in os.listdir(filepath):
                 if file.lower().endswith('jpg') or file.lower().endswith('png') or file.lower().endswith('jpeg'):
@@ -6785,34 +6720,36 @@ if __name__ == '__main__':
 
     def _create_use_mini_yolo_code(*a):
         zstring = (
-        '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'
-        'v4Gsag896IUL7HQn70oQopqAOUN2zhtF8f8='
+        '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'
         )
+
+        # len(zstring): 3684
         import base64, zlib
         zstring = base64.b64decode(zstring)
         zstring = zlib.decompress(zstring,-15)
@@ -6823,7 +6760,9 @@ if __name__ == '__main__':
             return 
         testpath = repr(testpath)
         code = string+'''
+
 if __name__ == '__main__':
+    state = load_net('net.pkl')
     for i in os.listdir({}):
         if i.endswith('jpg'):
             print(i)
