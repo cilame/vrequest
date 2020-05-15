@@ -827,7 +827,7 @@ d = response.meta.get('_plusmeta') or {}\n'''.format(tps, err, {})
 
 
 def format_req_urllib(method,c_url,c_headers,c_body,urlenc,qplus):
-    _format_get = '''
+    _format_head = '''
 try:
     # 处理 sublime 执行时输出乱码
     import io
@@ -835,12 +835,13 @@ try:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
-    pass$handle_dh_key_too_small
+    pass$handle_3des_drop_out_stand$handle_dh_key_too_small
 
 import re, json
 from urllib import request, parse
 from urllib.parse import unquote_plus, quote_plus, urlencode
-
+'''
+    _format_get = _format_head+'''
 def mk_url_headers():
     $x_qplus
     $c_url
@@ -865,20 +866,7 @@ content = s.read()
 $plus
 #
 '''
-    _format_post = '''
-try:
-    # 处理 sublime 执行时输出乱码
-    import io
-    import sys
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
-    sys.stdout._CHUNK_SIZE = 1
-except:
-    pass$handle_dh_key_too_small
-
-import re, json
-from urllib import request, parse
-from urllib.parse import unquote_plus, quote_plus, urlencode
-
+    _format_post = _format_head+'''
 def mk_url_headers_body():
     $x_qplus
     $c_url
@@ -1037,6 +1025,21 @@ ssl._DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'"""
         string = string.replace('$handle_dh_key_too_small', dhkeyc)
     else:
         string = string.replace('$handle_dh_key_too_small', '')
+    desdrop = '''
+
+
+
+# 注意 ! ! ! 
+# 注意 ! ! ! 
+# 注意 ! ! ! 
+# 该请求的网页中存在非常旧的协议，可能导致请求失败，如果工具能正常请求到内容，请使用 requests 获取数据
+
+
+'''
+    if extra and '3des drop out stand' in extra:
+        string = string.replace('$handle_3des_drop_out_stand', desdrop)
+    else:
+        string = string.replace('$handle_3des_drop_out_stand', '')
     return string.replace('$plus',pas).strip()
 
 def format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus,extra=None):
