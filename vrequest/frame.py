@@ -620,6 +620,29 @@ eg.:
         import ssl
         ssl._DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
 
+    # 为了兼容旧的 3DES 传输，（新标准中删除是因为不安全，但是架不住有些服务器用，所以需要考虑兼容）
+    _bak_init_poolmanager = requests.adapters.HTTPAdapter.init_poolmanager
+    _bak_proxy_manager_for = requests.adapters.HTTPAdapter.proxy_manager_for
+    def create_ssl_context():
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.set_ciphers( 'ECDH+3DES:DH+3DES:RSA+3DES:!aNULL:!eNULL:!MD5' )
+        if getattr(ctx, 'check_hostname', None) is not None:
+            ctx.check_hostname = False
+        return ctx
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs['ssl_context'] = create_ssl_context()
+        return _bak_init_poolmanager(self, *args, **kwargs)
+    def proxy_manager_for(self, *args, **kwargs):
+        kwargs['ssl_context'] = create_ssl_context()
+        return _bak_proxy_manager_for(self, *args, **kwargs)
+    def _handle_3des_drop_out_stand():
+        requests.adapters.HTTPAdapter.init_poolmanager = init_poolmanager
+        requests.adapters.HTTPAdapter.proxy_manager_for = proxy_manager_for
+    def _unhook_handle_3des_drop_out_stand():
+        requests.adapters.HTTPAdapter.init_poolmanager = _bak_init_poolmanager
+        requests.adapters.HTTPAdapter.proxy_manager_for = _bak_proxy_manager_for
+
     tp = None
     extra = []
     import queue
@@ -642,6 +665,11 @@ eg.:
                         extra.append('dh key too small')
                         _handle_dh_key_too_small()
                         tp, content = _request(method,url,headers,body)
+                    elif '''SSLError("bad handshake: SysCallError(-1, 'Unexpected EOF')",)''' in einfo:
+                        extra.append('3des drop out stand')
+                        _handle_3des_drop_out_stand()
+                        tp, content = _request(method,url,headers,body)
+                        _unhook_handle_3des_drop_out_stand()
                     else:
                         tkinter.messagebox.showinfo('Error',einfo)
                         Q.put(["请求失败", einfo])
@@ -6583,12 +6611,9 @@ if __name__ == '__main__':
         fpictxt.see(tkinter.END)
 
     def _pymini_yolo_code(*a):
-        try:
-            from . import pymini_yolo
-        except:
-            import pymini_yolo
         fpictxt.delete(0.,tkinter.END)
-        with open(pymini_yolo.__file__, encoding='utf-8') as f:
+        path = os.path.join(os.path.split(__file__)[0], 'pymini_yolo.py')
+        with open(path, encoding='utf-8') as f:
             data = f.read().strip('\n')
         print(data)
 

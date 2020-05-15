@@ -156,7 +156,7 @@ from urllib.parse import unquote_plus, quote_plus
 
 import requests
 from lxml import etree
-requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_dh_key_too_small
+requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_3des_drop_out_stand$handle_dh_key_too_small
 '''
 
     _format_get = _head + '''
@@ -325,6 +325,30 @@ except AttributeError:
         string = string.replace('$handle_dh_key_too_small', dhkeyc)
     else:
         string = string.replace('$handle_dh_key_too_small', '')
+
+    desdrop = '''
+# 以下补丁代码：为了兼容旧的 3DES 传输，（新标准中删除是因为存在不安全，非 requests 问题）
+_bak_init_poolmanager = requests.adapters.HTTPAdapter.init_poolmanager
+_bak_proxy_manager_for = requests.adapters.HTTPAdapter.proxy_manager_for
+def create_ssl_context():
+    import ssl
+    ctx = ssl.create_default_context()
+    ctx.set_ciphers( 'ECDH+3DES:DH+3DES:RSA+3DES:!aNULL:!eNULL:!MD5' )
+    if getattr(ctx, 'check_hostname', None) is not None:
+        ctx.check_hostname = False
+    return ctx
+def init_poolmanager(self, *args, **kwargs):
+    kwargs['ssl_context'] = create_ssl_context()
+    return _bak_init_poolmanager(self, *args, **kwargs)
+def proxy_manager_for(self, *args, **kwargs):
+    kwargs['ssl_context'] = create_ssl_context()
+    return _bak_proxy_manager_for(self, *args, **kwargs)
+requests.adapters.HTTPAdapter.init_poolmanager = init_poolmanager
+requests.adapters.HTTPAdapter.proxy_manager_for = proxy_manager_for'''
+    if extra and '3des drop out stand' in extra:
+        string = string.replace('$handle_3des_drop_out_stand', desdrop)
+    else:
+        string = string.replace('$handle_3des_drop_out_stand', '')
     return string.replace('$plus',pas).strip()
 
 
@@ -431,12 +455,13 @@ d = {}\n'''
 
 
 def format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus,extra=None):
-    _format_get = '''
+    _format_head = '''
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy import Request, Selector
-from lxml import etree$handle_dh_key_too_small$handle_headers_non_standard
-
+from lxml import etree$handle_3des_drop_out_stand$handle_dh_key_too_small$handle_headers_non_standard
+'''
+    _format_get = _format_head + '''
 import re
 import json
 from urllib.parse import unquote_plus, quote_plus
@@ -474,12 +499,7 @@ class VSpider(scrapy.Spider):
         $plus
 '''
 
-    _format_post = '''
-# -*- coding: utf-8 -*-
-import scrapy
-from scrapy import Request, Selector
-from lxml import etree$handle_dh_key_too_small$handle_headers_non_standard
-
+    _format_post = _format_head + '''
 import re
 import json
 from urllib.parse import unquote_plus, quote_plus, urlencode
@@ -587,6 +607,23 @@ contextfactory.DEFAULT_CIPHERS = AcceptableCiphers.fromOpenSSLCipherString('DEFA
         _format = _format.replace('$handle_dh_key_too_small', dhkeyc)
     else:
         _format = _format.replace('$handle_dh_key_too_small', '')
+
+    desdrop = '''
+
+
+
+# 注意 ! ! ! 
+# 注意 ! ! ! 
+# 注意 ! ! ! 
+# 该请求的网页中存在非常旧的协议，导致 scrapy 有可能无法获取内容，问题源于 scrapy 依赖的 pyopenssl 库内部。
+# 目前 scrapy 因为 pyopenssl 的问题暂时无法解决， requests 可以请求到内容是因为不使用 pyopenssl 进行交互。
+
+
+'''
+    if extra and '3des drop out stand' in extra:
+        _format = _format.replace('$handle_3des_drop_out_stand', desdrop)
+    else:
+        _format = _format.replace('$handle_3des_drop_out_stand', '')
 
     headers_non_standard = r'''
 
