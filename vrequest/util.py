@@ -105,6 +105,7 @@ def format_url_show(url:str, urlenc='utf-8'):
 
 def format_url_code(url:str, urlenc):
     # return str
+    isr = 'r' if '\\' in url else ''
     indent = 4
     url = ps.unquote_plus(url, encoding=urlenc)
     pls = re.findall('\?[^&]*|&[^&]*',url)
@@ -118,21 +119,22 @@ def format_url_code(url:str, urlenc):
             return '\'\'\''
         return '"""'
     for i in pls:
-        url = url.replace(i,'')
+        url = url.replace(i,'',1)
         if len(i) > 50 and ',' in i:
             _pms = []
             for j in i.split(','):
                 j = (j + ',').join([symbol(j)]*2)
-                j = ' '*2*indent + j
+                j = ' '*2*indent + isr + j
                 _pms.append(j)
             _pms[-1] = _pms[-1][:-2] + _pms[-1][-1]
             pms += _pms
+            # dprint(_pms)
         else:
             i = i.join([symbol(i)]*2)
-            i = ' '*indent + i
+            i = ' '*indent + isr + i
             pms.append(i)
     u = symbol(url)
-    pms[1] = ' '*indent + '{}{}{}'.format(u,url,u)
+    pms[1] = ' '*indent + '{}{}{}{}'.format(isr, u,url,u)
     pms.append(')')
     return '\n'.join(pms)
 
@@ -250,7 +252,7 @@ post_info()
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
-    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc').replace('+', '%2B'), url)''' if qplus == 'yes' else \
           '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
     rep2 = '''from urllib.parse import unquote_plus, quote_plus''' if qplus == 'yes' else \
            '''from urllib.parse import unquote, quote'''
@@ -584,7 +586,7 @@ if __name__ == '__main__':
         _format = _format.replace('$c_body',c_body)
         if not c_body.strip().endswith('}'):
             _format = _format.replace('= urlencode(body)','= body')
-    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc').replace('+', '%2B'), url)''' if qplus == 'yes' else \
           '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
     rep2 = '''from urllib.parse import unquote_plus, quote_plus''' if qplus == 'yes' else \
            '''from urllib.parse import unquote, quote'''
@@ -907,7 +909,7 @@ $plus
         _format = _format.replace('$c_url',c_url)
         _format = _format.replace('$c_headers',c_headers)
         _format = _format.replace('$c_body',c_body)
-    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)''' if qplus == 'yes' else \
+    rep = '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote_plus(unquote_plus(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc').replace('+', '%2B'), url)''' if qplus == 'yes' else \
           '''def quote_val(url): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+quote(unquote(i.group(2),encoding='$x_urlenc'),encoding='$x_urlenc'), url)'''
     rep2 = '''from urllib.parse import unquote_plus, quote_plus, urlencode''' if qplus == 'yes' else \
            '''from urllib.parse import unquote, quote, urlencode'''

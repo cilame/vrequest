@@ -138,7 +138,7 @@ def request_window(setting=None):
     btnurlencode.pack(side=tkinter.RIGHT)
     ent2 = Entry(temp_fr0,width=4)
     ent2.pack(side=tkinter.RIGHT)
-    btnurlencode1 = Button(temp_fr0, width=18, text='url是否编码“+”符号', command=_swich_quote)
+    btnurlencode1 = Button(temp_fr0, width=32, text='url是否编码“+”符号(url中有base64编码)', command=_swich_quote)
     btnurlencode1.pack(side=tkinter.RIGHT)
     lab1 = Label(temp_fr0, text='请尽量发送请求后生成代码，那样会有更多功能：')
     lab1.pack(side=tkinter.LEFT)
@@ -567,9 +567,11 @@ eg.:
 
     if qplus == 'yes':
         _quote,_unquote = quote_plus,unquote_plus
+        _rep = '%2B'
     elif qplus == 'no':
         _quote,_unquote = quote,unquote
-    def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+_quote(_unquote(i.group(2), encoding=enc), encoding=enc), url)
+        _rep = '+'
+    def quote_val(url, enc): return re.sub(r'([\?&][^=&]*=)([^&]*)', lambda i:i.group(1)+_quote(_unquote(i.group(2), encoding=enc), encoding=enc).replace('+', _rep), url)
 
     def urllib_myget(url, headers, proxies):
         r = request.Request(url, method='GET')
@@ -589,8 +591,8 @@ eg.:
 
     proxies = {'http':'http://{}'.format(proxy), 'https':'http://{}'.format(proxy)} if proxy else None
     def _request(method,url,headers,body):
-        # from .tab import dprint
-        # dprint(requests)
+        from .tab import dprint
+        dprint(url)
         if requests.__dict__.get('get') and requests is not None:
             rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
             if method == 'GET':
