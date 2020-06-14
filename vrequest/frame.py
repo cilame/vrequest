@@ -591,8 +591,8 @@ eg.:
 
     proxies = {'http':'http://{}'.format(proxy), 'https':'http://{}'.format(proxy)} if proxy else None
     def _request(method,url,headers,body):
-        from .tab import dprint
-        dprint(url)
+        # from .tab import dprint
+        # dprint(url)
         if requests.__dict__.get('get') and requests is not None:
             rurl = quote_val(_unquote(url, encoding=urlenc), enc=urlenc)
             if method == 'GET':
