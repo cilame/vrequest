@@ -2047,14 +2047,24 @@ def scrapy_code_window(setting=None):
         tx.insert(0.,script)
         tx.see(tkinter.END)
 
+    def _get_single_script_scrapy_redis_server(*a):
+        scriptfile = os.path.join(os.path.split(__file__)[0],'py_my_scrapy_redis_server.py')
+        with open(scriptfile, encoding='utf-8') as f:
+            script = f.read()
+        tx.delete(0.,tkinter.END)
+        tx.insert(0.,script)
+        tx.see(tkinter.END)
+
     def _add_middleware_script_and_so_on(*a):
         from .tab import nb
         from .tab import SimpleDialog
         q = [   '【推荐】新版单脚本添加中间件方式(支持原版排序)', 
                 '【不推荐】旧版单脚本添加中间件方式(不支持用原版排序)', 
-                '增加单脚本分布式的处理(代码增加在头部,详细使用请看注释)', 
+                '单脚本[单任务]分布式的处理(代码增加在头部,详细使用请看注释)', 
+                '单脚本[多任务]分布式脚本代码，可控性更高，一次部署所有scrapy通用。',
                 '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
-                '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)']
+                '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)',
+            ]
         d = SimpleDialog(nb,
             text="请选择一个增强功能",
             buttons=q,
@@ -2066,8 +2076,9 @@ def scrapy_code_window(setting=None):
         if id == 0: _add_single_script_comment_new()
         if id == 1: _add_single_script_comment()
         if id == 2: _add_single_script_distributed_comment()
-        if id == 3: _add_sceeper_in_list_model()
-        if id == 4: _add_single_script_file_save()
+        if id == 3: _get_single_script_scrapy_redis_server()
+        if id == 4: _add_sceeper_in_list_model()
+        if id == 5: _add_single_script_file_save()
 
     def _add_sceeper_in_list_model(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
