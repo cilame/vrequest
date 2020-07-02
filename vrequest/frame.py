@@ -6807,9 +6807,9 @@ if __name__ == '__main__':
         if not os.path.isdir(filepath):
             print('无效的测试数据地址。')
             return
-        if re.findall('[\u4e00-\u9fa5]', filepath):
-            print('无效的测试数据地址，opencv 加载图片地址不能含有中文。')
-            return
+        # if re.findall('[\u4e00-\u9fa5]', filepath):
+        #     print('无效的测试数据地址，opencv 加载图片地址不能含有中文。')
+        #     return
         try:
             try:
                 from . import pymini_yolo
@@ -6833,34 +6833,39 @@ if __name__ == '__main__':
 
     def _create_use_mini_yolo_code(*a):
         zstring = (
-        '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'
-        )
+            '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'
+            'G/Vi1cyx8uzNQHQT+v3kP34KNLwqFMs3m/0f'
+            )
 
         # len(zstring): 3684
         import base64, zlib
@@ -6894,7 +6899,7 @@ if __name__ == '__main__':
     Button(fpic0093, text='加载数据',command=_load_voc_data,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0094, text='开始训练',command=_pytrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0095, text='停止训练',command=_pystoptrain_mini_yolo,width=16).pack(side=tkinter.RIGHT)
-    Button(fpic0096, text='测试数据',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
+    Button(fpic0096, text='测试数据(前五张)',command=_test_mini_yolo_data,width=16).pack(side=tkinter.RIGHT)
     Button(fpic0097, text='生成使用代码',command=_create_use_mini_yolo_code,width=16).pack(side=tkinter.RIGHT)
 
     Button(fpic0092, text='[算法]',command=_pymini_yolo_code,width=5).pack(side=tkinter.LEFT)

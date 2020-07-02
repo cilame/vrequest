@@ -26,7 +26,7 @@ def read_voc_xml(file, islist=True):
         if not os.path.isfile(f):
             raise 'fail load img: {}'.format(f)
     size = v.getElementsByTagName('size')[0]
-    npimg = cv2.imread(f)
+    npimg = cv2.imdecode(np.fromfile(f, dtype=np.uint8), -1)
     npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB) # [y,x,c]
     npimg = cv2.resize(npimg, (416, 416))
     npimg_ = np.transpose(npimg, (2,1,0)) # [c,x,y]
@@ -388,7 +388,7 @@ def get_all_draw_rects(filename, state):
     net = state['net']
     anchors = state['anchors']
     class_types = state['class_types']
-    npimg = cv2.imread(filename)
+    npimg = cv2.imdecode(np.fromfile(filename, dtype=np.uint8), -1)
     height, width = npimg.shape[:2]
     npimg = cv2.cvtColor(npimg, cv2.COLOR_BGR2RGB) # [y,x,c]
     npimg = cv2.resize(npimg, (416, 416))
@@ -403,7 +403,7 @@ def get_all_draw_rects(filename, state):
         rect[1],rect[3] = int(rect[1]*rh),int(rect[3]*rh)
         r.append([rect, clz, con, log_cons])
     # 绘制所有定位的框
-    img = cv2.imread(filename)
+    img = cv2.imdecode(np.fromfile(filename, dtype=np.uint8), -1)
     for i in r:
         rect, clz, con, log_cons = i
         img = drawrect(img, rect, '{}|{:<.2f}'.format(clz,con))
