@@ -143,14 +143,33 @@ def format_url_code(url:str, urlenc):
 def format_req(method,c_url,c_headers,c_body,urlenc,qplus):
 
     _head = '''
+# 处理部分 IDE 执行脚本时可能输出乱码的问题
 try:
-    # 处理 sublime 执行时输出乱码
-    import io
-    import sys
+    import io, sys
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='utf-8')
     sys.stdout._CHUNK_SIZE = 1
 except:
     pass
+# 解析 bytes 类型数据的编码格式（尾部有为中文编码兜底解析处理）
+def parse_content_type(content, types=['utf-8','gbk']):
+    for tp in types:
+        try:    return tp, content.decode(tp)
+        except: pass
+    etp = types[:]
+    try:
+        import chardet
+        tp = chardet.detect(content)['encoding']
+        if tp not in etp: etp.append(tp); return tp, content.decode(tp)
+    except: pass
+    import re # 有些网站明明就是gbk或utf-8编码但就是解析失败，所以用errors=ignore模式下中文数量来兜底编码格式
+    utf8len = len(re.findall('[\\u4e00-\\u9fa5]', content.decode('utf-8', errors='ignore')[:4096]))
+    gbklen  = len(re.findall('[\\u4e00-\\u9fa5]', content.decode('gbk', errors='ignore')[:4096]))
+    gtp = 'gb18030' if gbklen > utf8len else 'utf-8'
+    err = 'encoding not in :[{}]. Guess encoding is [{},errors:ignore]'.format(','.join(etp), gtp)
+    return err, content.decode(gtp, errors='ignore')
+
+
+
 
 import re
 import json
@@ -162,22 +181,7 @@ requests.packages.urllib3.disable_warnings() # 取消不验证ssl警告$handle_3
 '''
 
     _format_get = _head + '''
-
 def get_info():
-    # 功能函数（解析解码格式）
-    def parse_content_type(content, types=['utf-8','gbk']):
-        for tp in types:
-            try:    return tp, content.decode(tp)
-            except: pass
-        etp = types[:]
-        try:
-            import chardet
-            tp = chardet.detect(content)['encoding']
-            if tp not in etp: etp.append(tp); return tp, content.decode(tp)
-        except: pass
-        err = 'encoding not in :{}. Guess encoding is [utf-8,errors:ignore]'.format(etp)
-        return err, content.decode('utf-8', errors='ignore')
-    # 生成请求参数函数
     def mk_url_headers():
         $x_qplus
         $c_url
@@ -202,20 +206,6 @@ get_info()
     _format_post = _head + '''
 
 def post_info():
-    # 功能函数（解析解码格式）
-    def parse_content_type(content, types=['utf-8','gbk']):
-        for tp in types:
-            try:    return tp, content.decode(tp)
-            except: pass
-        etp = types[:]
-        try:
-            import chardet
-            tp = chardet.detect(content)['encoding']
-            if tp not in etp: etp.append(tp); return tp, content.decode(tp)
-        except: pass
-        err = 'encoding not in :{}. Guess encoding is [utf-8,errors:ignore]'.format(etp)
-        return err, content.decode('utf-8', errors='ignore')
-    # 生成请求参数函数
     def mk_url_headers_body():
         $x_qplus
         $c_url
@@ -388,9 +378,20 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
                     ax = sorted(auto_xpath(xp,c_content),key=skey)
                     func = lambda i:i.replace('\n',' ').strip()
                     p = []
+                    p.append("items = []")
                     p.append("tree = etree.HTML(content)")
                     p.append("for x in tree.xpath('{}'):".format(xp))
                     p.extend([' '*indent+func(i) for i in ax])
+                    p.append(' '*indent+'items.append(d)')
+
+                    p.append('')
+                    p.append(' '*(max(0,indent-4)) + '''import os, time, json''')
+                    p.append(' '*(max(0,indent-4)) + '''timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime()) # 年月日_时分秒''')
+                    p.append(' '*(max(0,indent-4)) + '''filename = 'v{}.json'.format(timestamp) # 输出文件名(这里使用jsonlines格式存储)''')
+                    p.append(' '*(max(0,indent-4)) + '#with open(filename, "a", encoding="utf-8") as f:')
+                    p.append(' '*(max(0,indent-4)) + '#    for idx, d in enumerate(items):')
+                    p.append(' '*(max(0,indent-4)) + '#        f.write(json.dumps(d, ensure_ascii=False)+"\\n")')
+                    p.append(' '*(max(0,indent-4)) + '#        if idx % 10000 == 0: print("curr idx:", idx)')
                     func_code ='\n'.join(p)
                 except:
                     import traceback

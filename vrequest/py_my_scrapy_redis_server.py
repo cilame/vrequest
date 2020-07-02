@@ -759,8 +759,6 @@ class VSpiderMiddleware(object):
         for i in result:
             yield i
     def process_spider_exception(self, response, exception, spider):
-        print(exception)
-        print('===================')
         pass
     def process_start_requests(self, start_requests, spider):
         for r in start_requests:
@@ -952,23 +950,23 @@ if __name__ == '__main__':
             'scrapy.extensions.corestats.CoreStats':  None, # 关闭这个日志处理，使用魔改的日志处理
             RedisCoreStats: True,
         },
-        'SCHEDULER':                defaults.SCHEDULER,
-        'STATS_CLASS':              defaults.STATS_CLASS,
-        'PIPELINE_KEY':             defaults.PIPELINE_KEY,
-        'SCHEDULER_QUEUE_KEY':      defaults.SCHEDULER_QUEUE_KEY,
-        'SCHEDULER_DUPEFILTER_KEY': defaults.SCHEDULER_DUPEFILTER_KEY,
-        'START_URLS_KEY':           defaults.START_URLS_KEY,
-        'DUPEFILTER_KEY':           defaults.DUPEFILTER_KEY,
-        'DEBUG_PC_FORMAT':          defaults.DEBUG_PC_FORMAT,
-        'TASK_ID_FORMAT':           defaults.TASK_ID_FORMAT,
-        'DEPTH_MAX_FORMAT':         defaults.DEPTH_MAX_FORMAT,
-        'REDIS_ITEMS_KEY':          defaults.REDIS_ITEMS_KEY,                    
-        'LOG_LEVEL':                defaults.LOG_LEVEL,               # 默认:DEBUG   # 日志等级
-        'CLEAR_DUPEFILTER':         defaults.CLEAR_DUPEFILTER,        # 默认:True    # 任务结束是否删除过滤池
-        'START_URLS_AS_SET':        defaults.START_URLS_AS_SET,       # 默认:False
-        'CLEAR_DEBUG_PC':           defaults.CLEAR_DEBUG_PC,          # 默认:False   # 任务结束时清理pc调试日志
-        'DEBUG_PC':                 defaults.DEBUG_PC,                # 默认:False   # 是否使用pc调试
-        'PCMAC':                    defaults.PCMAC,                   # 本机mac      # 方便分布式调试某台机器
+        'SCHEDULER':                    defaults.SCHEDULER,
+        'STATS_CLASS':                  defaults.STATS_CLASS,
+        'PIPELINE_KEY':                 defaults.PIPELINE_KEY,
+        'SCHEDULER_QUEUE_KEY':          defaults.SCHEDULER_QUEUE_KEY,
+        'SCHEDULER_DUPEFILTER_KEY':     defaults.SCHEDULER_DUPEFILTER_KEY,
+        'START_URLS_KEY':               defaults.START_URLS_KEY,
+        'DUPEFILTER_KEY':               defaults.DUPEFILTER_KEY,
+        'DEBUG_PC_FORMAT':              defaults.DEBUG_PC_FORMAT,
+        'TASK_ID_FORMAT':               defaults.TASK_ID_FORMAT,
+        'DEPTH_MAX_FORMAT':             defaults.DEPTH_MAX_FORMAT,
+        'REDIS_ITEMS_KEY':              defaults.REDIS_ITEMS_KEY,                    
+        'LOG_LEVEL':                    defaults.LOG_LEVEL,               # 默认:DEBUG   # 日志等级
+        'CLEAR_DUPEFILTER':             defaults.CLEAR_DUPEFILTER,        # 默认:True    # 任务结束是否删除过滤池
+        'START_URLS_AS_SET':            defaults.START_URLS_AS_SET,       # 默认:False
+        'CLEAR_DEBUG_PC':               defaults.CLEAR_DEBUG_PC,          # 默认:False   # 任务结束时清理pc调试日志
+        'DEBUG_PC':                     defaults.DEBUG_PC,                # 默认:False   # 是否使用pc调试
+        'PCMAC':                        defaults.PCMAC,                   # 本机mac      # 方便分布式调试某台机器
         'REDIS_PARAMS':{
             'host':     'localhost',    # redis 链接配置
             'port':     6379,           # redis 链接配置

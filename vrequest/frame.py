@@ -545,17 +545,24 @@ eg.:
 
     # 统一数据格式
     def format_content(content):
-        if type(content) is bytes:
+        def parse_content_type(content, types=['utf-8','gbk']):
+            for tp in types:
+                try:    return tp, content.decode(tp)
+                except: pass
+            etp = types[:]
             try:
-                content = content.decode('utf-8')
-                typ = 'utf-8'
-            except:
-                try:
-                    content = content.decode('gbk')
-                    typ = 'gbk'
-                except:
-                    content = content.decode('utf-8',errors='ignore')
-                    typ = 'utf-8 ignore'
+                import chardet
+                tp = chardet.detect(content)['encoding']
+                if tp not in etp: etp.append(tp); return tp, content.decode(tp)
+            except: pass
+            import re # 有些网站明明就是gbk或utf-8编码但就是解析失败，所以用errors=ignore模式下中文数量来兜底编码格式
+            utf8len = len(re.findall('[\\u4e00-\\u9fa5]', content.decode('utf-8', errors='ignore')[:4096]))
+            gbklen  = len(re.findall('[\\u4e00-\\u9fa5]', content.decode('gbk', errors='ignore')[:4096]))
+            gtp = 'gb18030' if gbklen > utf8len else 'utf-8'
+            tp = '{} {}'.format(gtp, 'ignore')
+            return tp, content.decode(gtp, errors='ignore')
+        if type(content) is bytes:
+            typ,content = parse_content_type(content)
             insert_txt(tx3, '解析格式：{}'.format(typ))
             return typ,content
         else:
@@ -766,6 +773,52 @@ __org_stderr__ = sys.stderr
 
 
 
+_w3lib_html_body_declared_encoding_code = """
+# 这里的解码代码 == from w3lib.encoding import html_body_declared_encoding，只是
+# 这里的代码可以不需要依赖 w3lib库了，更加自由一点。另外，这是 scrapy默认的对未知编码进行解码的方式
+import re, codecs, encodings
+def html_body_declared_encoding(html_body_str:bytes):
+    _TEMPLATE = r'''%s\\s*=\\s*["']?\\s*%s\\s*["']?'''
+    _SKIP_ATTRS = '''(?x)(?:\\\\s+
+        [^=<>/\\\\s"'\\x00-\\x1f\\x7f]+  # Attribute name
+        (?:\\\\s*=\\\\s*
+        (?:  # ' and " are entity encoded (&apos;, &quot;), so no need for \\', \\"
+            '[^']*'   # attr in '
+            |
+            "[^"]*"   # attr in "
+            |
+            [^'"\\\\s]+  # attr having no ' nor "
+        ))?
+    )*?'''
+    _HTTPEQUIV_RE = _TEMPLATE % ('http-equiv', 'Content-Type')
+    _CONTENT_RE = _TEMPLATE % ('content', r'(?P<mime>[^;]+);\\s*charset=(?P<charset>[\\w-]+)')
+    _CONTENT2_RE = _TEMPLATE % ('charset', r'(?P<charset2>[\\w-]+)')
+    _XML_ENCODING_RE = _TEMPLATE % ('encoding', r'(?P<xmlcharset>[\\w-]+)')
+    _BODY_ENCODING_PATTERN = r'<\\s*(?:meta%s(?:(?:\\s+%s|\\s+%s){2}|\\s+%s)|\\?xml\\s[^>]+%s|body)' % (
+        _SKIP_ATTRS, _HTTPEQUIV_RE, _CONTENT_RE, _CONTENT2_RE, _XML_ENCODING_RE)
+    _BODY_ENCODING_STR_RE = re.compile(_BODY_ENCODING_PATTERN, re.I)
+    _BODY_ENCODING_BYTES_RE = re.compile(_BODY_ENCODING_PATTERN.encode('ascii'), re.I)
+    DEFAULT_ENCODING_TRANSLATION = {
+        'ascii': 'cp1252', 'big5': 'big5hkscs', 'euc_kr': 'cp949', 'gb2312': 'gb18030', 'gb_2312_80': 'gb18030', 'gbk': 'gb18030', 
+        'iso8859_11': 'cp874', 'iso8859_9': 'cp1254', 'latin_1': 'cp1252', 'macintosh': 'mac_roman', 'shift_jis': 'cp932',
+        'tis_620': 'cp874', 'win_1251': 'cp1251', 'windows_31j': 'cp932', 'win_31j': 'cp932', 'windows_874': 'cp874', 'win_874': 'cp874',
+        'x_sjis': 'cp932', 'zh_cn': 'gb18030'
+    }
+    def _c18n_encoding(encoding):
+        normed = encodings.normalize_encoding(encoding).lower()
+        return encodings.aliases.aliases.get(normed, normed)
+    def resolve_encoding(encoding_alias):
+        c18n_encoding = _c18n_encoding(encoding_alias)
+        translated = DEFAULT_ENCODING_TRANSLATION.get(c18n_encoding, c18n_encoding)
+        try: return codecs.lookup(translated).name
+        except LookupError: return None
+    chunk = html_body_str[:4096]
+    match = _BODY_ENCODING_BYTES_RE.search(chunk) if isinstance(chunk, bytes) else _BODY_ENCODING_STR_RE.search(chunk)
+    if match:
+        encoding = match.group('charset') or match.group('charset2') or match.group('xmlcharset')
+        if encoding: return resolve_encoding(encoding)
+"""
+
 # 生成代码临时放在这里
 def code_window(setting=None):
     fr = Frame()
@@ -796,9 +849,21 @@ def code_window(setting=None):
         else:
             tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
 
+    def _add_w3lib_html_body_declared_encoding_code(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        scriptfile = os.path.join(os.path.split(__file__)[0],'py_my_scrapy_redis_server.py')
+        if "def html_body_declared_encoding(html_body_str):" not in script:
+            tx.delete(0.,tkinter.END)
+            topcode = _w3lib_html_body_declared_encoding_code.lstrip()
+            script = topcode + script
+            tx.insert(0.,script)
+            tx.update()
+
     tframe = Frame(fr)
     tframe.pack(side=tkinter.TOP)
 
+    btn0 = Button(tframe, text='增加w3lib编码解析函数', command=_add_w3lib_html_body_declared_encoding_code)
+    btn0.pack(side=tkinter.LEFT)
     btn1 = Button(tframe, text='保存脚本到桌面', command=save_script_in_desktop)
     btn1.pack(side=tkinter.LEFT)
     btn2 = Button(tframe, text='执行代码 [Alt+v]', command=_execute_code)
@@ -2048,22 +2113,27 @@ def scrapy_code_window(setting=None):
         tx.see(tkinter.END)
 
     def _get_single_script_scrapy_redis_server(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
         scriptfile = os.path.join(os.path.split(__file__)[0],'py_my_scrapy_redis_server.py')
-        with open(scriptfile, encoding='utf-8') as f:
-            script = f.read()
-        tx.delete(0.,tkinter.END)
-        tx.insert(0.,script)
-        tx.see(tkinter.END)
+        if "__callerr__ = _plusmeta.pop('__callerr__')" not in script:
+            tx.delete(0.,tkinter.END)
+            with open(scriptfile, encoding='utf-8') as f:
+                v = f.read()
+                lenv = len(v.splitlines())
+                script = v + '\n'*20 + script
+            tx.insert(0.,script)
+            tx.see('{}.{}'.format(lenv-20, 0))
+            tx.update()
 
     def _add_middleware_script_and_so_on(*a):
         from .tab import nb
         from .tab import SimpleDialog
-        q = [   '【推荐】新版单脚本添加中间件方式(支持原版排序)', 
-                '【不推荐】旧版单脚本添加中间件方式(不支持用原版排序)', 
-                '单脚本[单任务]分布式的处理(代码增加在头部,详细使用请看注释)', 
-                '单脚本[多任务]分布式脚本代码，可控性更高，一次部署所有scrapy通用。',
-                '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
+        q = [   '单脚本添加各种配置中间件方式(支持原版排序)', 
+                # '【不推荐】旧版单脚本添加中间件方式(不支持用原版排序)', 
+                '单脚本【单任务】分布式的处理(代码增加在头部,详细使用请看注释)', 
+                '单脚本【多任务】分布式脚本代码，可控性更高，一次部署所有scrapy通用。',
                 '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)',
+                '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
             ]
         d = SimpleDialog(nb,
             text="请选择一个增强功能",
@@ -2074,11 +2144,11 @@ def scrapy_code_window(setting=None):
         id = d.go()
         if id == -1: return
         if id == 0: _add_single_script_comment_new()
-        if id == 1: _add_single_script_comment()
-        if id == 2: _add_single_script_distributed_comment()
-        if id == 3: _get_single_script_scrapy_redis_server()
+        # if id == 1: _add_single_script_comment()
+        if id == 1: _add_single_script_distributed_comment()
+        if id == 2: _get_single_script_scrapy_redis_server()
+        if id == 3: _add_single_script_file_save()
         if id == 4: _add_sceeper_in_list_model()
-        if id == 5: _add_single_script_file_save()
 
     def _add_sceeper_in_list_model(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
