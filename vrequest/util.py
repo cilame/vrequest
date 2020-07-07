@@ -854,8 +854,9 @@ def mk_url_headers():
 
 def myget(url, headers):
     r = request.Request(url, method='GET')
-    for k, v in headers.items():
-        if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+    for k, v in list(headers.items()):
+        if k.lower() == 'accept-encoding': 
+            headers.pop(k); continue # urllib并不自动解压缩编码，所以忽略该headers字段
         r.add_header(k, v)
     proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
     opener = request.build_opener(request.ProxyHandler(proxies))
@@ -882,8 +883,9 @@ def mk_url_headers_body():
 
 def mypost(url, headers, body):
     r = request.Request(url, method='POST')
-    for k, v in headers.items():
-        if k.lower() == 'accept-encoding': continue # urllib并不自动解压缩编码，所以忽略该headers字段
+    for k, v in list(headers.items()):
+        if k.lower() == 'accept-encoding': 
+            headers.pop(k); continue # urllib并不自动解压缩编码，所以忽略该headers字段
         r.add_header(k, v)
     proxies = None # {'http':'http://127.0.0.1:8888', 'https':'http://127.0.0.1:8888'}
     opener = request.build_opener(request.ProxyHandler(proxies))
@@ -1345,7 +1347,7 @@ def auto_xpath(oxp,content,_type=None):
     def mk_code_struct(q,l,u):
         r = ['d = {}']
         fmt = '{:<'+str(l+5)+'} = {:<' + str(u) +'} # [cnt:{}] [len:{}] '
-        fmt2 = 'if {:<'+str(l+2)+'''} in d: d[{:<'''+str(l+2)+'''}] = re.sub(r'\s+',' ',d["{}"])'''
+        fmt2 = 'if {:<'+str(l+2)+'''} in d: d[{:<'''+str(l+2)+'''}] = re.sub(r'\s+',' ',d["{}"]).strip()'''
         limit = 30
         fmtstr = []
         for i,pr in q:
