@@ -851,19 +851,31 @@ def code_window(setting=None):
 
     def _add_w3lib_html_body_declared_encoding_code(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
-        scriptfile = os.path.join(os.path.split(__file__)[0],'py_my_scrapy_redis_server.py')
-        if "def html_body_declared_encoding(html_body_str):" not in script:
+        if "def html_body_declared_encoding" not in script:
             tx.delete(0.,tkinter.END)
             topcode = _w3lib_html_body_declared_encoding_code.lstrip()
             script = topcode + script
             tx.insert(0.,script)
             tx.update()
 
+    def _add_vthread_pool(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        scriptfile = os.path.join(os.path.split(__file__)[0],'py_vthread.py')
+        if "class KillThreadParams(Exception): pass" not in script:
+            with open(scriptfile, 'r', encoding='utf-8') as f:
+                topcode = f.read().strip()
+            tx.delete(0.,tkinter.END)
+            script = topcode + '\n'*10 + script
+            tx.insert(0.,script)
+            tx.update()
+
     tframe = Frame(fr)
     tframe.pack(side=tkinter.TOP)
 
-    btn0 = Button(tframe, text='增加w3lib编码解析函数', command=_add_w3lib_html_body_declared_encoding_code)
-    btn0.pack(side=tkinter.LEFT)
+    btn00 = Button(tframe, text='增加w3lib编码解析函数', command=_add_w3lib_html_body_declared_encoding_code)
+    btn00.pack(side=tkinter.LEFT)
+    btn01 = Button(tframe, text='增加vthread线程池装饰器代码', command=_add_vthread_pool)
+    btn01.pack(side=tkinter.LEFT)
     btn1 = Button(tframe, text='保存脚本到桌面', command=save_script_in_desktop)
     btn1.pack(side=tkinter.LEFT)
     btn2 = Button(tframe, text='执行代码 [Alt+v]', command=_execute_code)

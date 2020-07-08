@@ -95,13 +95,13 @@ class pool:
                 finally:
                     self._monitor_run_num[gqueue].get('V')
         for _ in range(num): pool.Thread(target=_pools_pull).start()
-
-
 if __name__ == '__main__':
+    # 简化代码版本的 vthread 库（分组线程池装饰器），一行代码即可实现线程池操作
+    # 以下为使用/测试 “装饰器线程池” 的代码，你可以在正式使用前熟悉一下使用方法
     import time, random
     # 被 pool 装饰器装饰的函数，正常执行会变成任务提交的功能，
     # 会将函数执行的任务提交给线程池进行执行，所以任务提交并不会卡住程序
-    # 所以函数如果有 return 就不能返回正常参数
+    # 所以需要多线程操作的函数不要写 return 语句，以及尽量使用主线程中的 list 或 queue 来收集执行结果
     @pool(10) # 开启线程池组，默认名字为 'v'，线程数量为10
     def func1(a,b):
         rd = random.random(); time.sleep(rd)
@@ -112,7 +112,8 @@ if __name__ == '__main__':
         print(a*b*c, 'hhhhhhh', '{:.3f}'.format(rd))
     for i in range(30): func1(i,i*i)   # 随便丢30个任务查看多任务多线程池执行效果
     for i in range(30): func2(i,i+i,3) # 随便丢30个任务查看多任务多线程池执行效果
+    print('start wait.')
     pool.wait()  # 等待函数 func1 任务在默认的 gqueue='v' 的“线程池组”里面全部执行完
     pool.wait(gqueue='h') # 等待函数 func2 在 gqueue='h' 的“线程池组”里面全部执行完
-    print('end')
+    print('end wait.')
     # 另外 print 函数自动变成输入带有线程名字前缀的、带有锁的函数
