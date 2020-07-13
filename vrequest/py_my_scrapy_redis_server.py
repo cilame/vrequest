@@ -21,6 +21,7 @@ def replace(self, *args, **kwargs):
     cls = kwargs.pop('cls', self.__class__)
     clz = cls(*args, **kwargs)
     clz._plusmeta = self._plusmeta
+    clz._plusmeta['replace'] = True
     return clz
 Request.replace = replace
 
@@ -187,7 +188,8 @@ def request_to_dict(request, spider=None):
     eb = request.errback
     if callable(eb):
         eb = _find_method(spider, eb)
-    request._plusmeta.update({'__callerr__':{'callback':cb,'errback':eb}})
+    if not request._plusmeta.pop('replace', None):
+        request._plusmeta.update({'__callerr__':{'callback':cb,'errback':eb}})
     d = {
         'url': to_unicode(request.url),  # urls should be safe (safe_string_url)
         'callback': 'parse',
@@ -866,6 +868,7 @@ def check_label(label):
 idna.core.check_label = check_label
 
 import json
+import types
 import traceback
 from scrapy import Request
 
@@ -894,7 +897,7 @@ class VSpider(RedisSpider):
         parsefunc = getattr(spider, __callerr__.get('callback'))
         parsedata = parsefunc(spider, response)
         if parsedata:
-            if getattr(parsedata, '__iter__') and type(parsedata) != str:
+            if getattr(parsedata, '__iter__') and isinstance(parsedata, (list, types.GeneratorType)):
                 for r in parsedata:
                     if isinstance(r, (Request,)):
                         r._plusmeta = response._plusmeta
