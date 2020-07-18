@@ -1901,14 +1901,28 @@ class VSeleniumMiddleware(object):
         # option.add_argument("--auto-open-devtools-for-tabs")          # 开启浏览器时候是否打开开发者工具(F12)
         # option.add_argument("--user-agent=Mozilla/5.0 VILAME")        # 修改 UA 信息
         # option.add_argument('--proxy-server=http://127.0.0.1:8888')   # 增加代理
-        self.webdriver = webdriver.Chrome(chrome_options=option)
+
+        # 处理 document.$cdc_asdjflasutopfhvcZLmcfl_ 参数的指纹的检测
+        def check_magic_word(driver_path, rollback=False):
+            import shutil
+            cpdriver = shutil.which(driver_path)
+            with open(cpdriver, 'rb') as f: filebit = f.read()
+            a, b = b'$cdc_asdjflasutopfhvcZLmcfl_', b'$pqp_nfqwsynfhgbcsuipMYzpsy_'
+            a, b = (b, a) if rollback else (a, b)
+            mgc_o, mgc_t = a, b
+            if mgc_o in filebit: 
+                with open(cpdriver, 'wb') as f: f.write(filebit.replace(mgc_o, mgc_t))
+        driver_path = 'chromedriver'
+        check_magic_word(driver_path, rollback=False)
+
+        # 启动 webdriver
+        self.webdriver = webdriver.Chrome(chrome_options=option, executable_path=driver_path)
         try:
             # 让每打开一个网页首先执行部分 js代码，下面 js代码可以绕过部分 webdriver 检测。
             self.webdriver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
               "source": """
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined
-                });
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, "plugins", { get: () => [1,2,3,4,5] });
               """
             })
             self.webdriver.execute_cdp_cmd("Network.enable", {})
@@ -2987,7 +3001,22 @@ def get_driver():
     # option.add_argument("--auto-open-devtools-for-tabs")          # F12
     # option.add_argument("--user-agent=Mozilla/5.0 VILAME")        # 修改 UA
     # option.add_argument('--proxy-server=http://127.0.0.1:8888')   # 代理
-    webdriver = webdriver.Chrome(chrome_options=option)
+
+    # 处理 document.$cdc_asdjflasutopfhvcZLmcfl_ 参数的指纹的检测
+    def check_magic_word(driver_path, rollback=False):
+        import shutil
+        cpdriver = shutil.which(driver_path)
+        with open(cpdriver, 'rb') as f: filebit = f.read()
+        a, b = b'$cdc_asdjflasutopfhvcZLmcfl_', b'$pqp_nfqwsynfhgbcsuipMYzpsy_'
+        a, b = (b, a) if rollback else (a, b)
+        mgc_o, mgc_t = a, b
+        if mgc_o in filebit: 
+            with open(cpdriver, 'wb') as f: f.write(filebit.replace(mgc_o, mgc_t))
+    driver_path = 'chromedriver'
+    check_magic_word(driver_path, rollback=False)
+
+    # 启动 webdriver
+    webdriver = webdriver.Chrome(chrome_options=option, executable_path=driver_path)
 
     # 指纹相关的处理，能处理部分检测。
     webdriver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
