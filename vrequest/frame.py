@@ -40,6 +40,7 @@ Text = scrolledtext.ScrolledText
 Label = ttk.Label
 Button = ttk.Button
 Combobox = ttk.Combobox
+Listbox = tkinter.Listbox
 Entry = ttk.Entry
 Checkbutton = tkinter.Checkbutton
 
@@ -2899,7 +2900,7 @@ def selenium_test_window(setting=None):
             tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
 
     def add_script(*a):
-        if '常见用法，某些窗口输入内容，并点击提交' not in txt1.get(0., tkinter.END):
+        if '常见用法，请求某个网页' not in txt1.get(0., tkinter.END):
             txt1.insert(tkinter.END, '''
 # 常见用法，请求某个网页，在某个输入框输入内容，点击提交按钮
 driver.get('http://baidu.com')
@@ -2943,16 +2944,86 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 #     subprocess.Popen = _Popen
 ''')
 
+    show_xpath_finder = False
+    def switch_window(*a):
+        nonlocal show_xpath_finder
+        if not show_xpath_finder:
+            temp_fr2.pack_forget()
+            temp_fr3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+        else:
+            temp_fr3.pack_forget()
+            temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+        show_xpath_finder = not show_xpath_finder
 
+    class driver_color_changer:
+        def __init__(self, driver):
+            self.attr = 'style'
+            self.driver = driver
+            self.default_color = "background:green"
+            self.default_func = "arguments[0].setAttribute('style',arguments[1]);"
+            self.origin = []
+        def highlight_list(self, xpath):
+            ls = driver.find_elements_by_xpath(xpath)
+            if ls:
+                for dr in ls:
+                    self.origin.append({'style':dr.get_attribute('style'), 'node':dr})
+                    self.driver.execute_script( self.default_func, dr, self.default_color, )
+        def clear(self):
+            while self.origin:
+                d = self.origin.pop()
+                try:
+                    self.driver.execute_script( self.default_func, d['node'], d['style'], )
+                except:
+                    pass
+                    # import traceback
+                    # print(traceback.format_exc())
+
+    dcc = None
+    dic = {}
+    def temp(*a):
+        nonlocal print, driver, show_xpath_finder, dcc, dic
+        from .util import get_xpath_by_str
+        if driver is None:
+            print('no chromedriver opened.')
+            return
+        if not show_xpath_finder: switch_window()
+        if dcc is None: dcc = driver_color_changer(driver)
+        dcc.driver = driver
+        q = []
+        for xp,strs in get_xpath_by_str("", driver.page_source):
+            q.append((xp, strs))
+        p = sorted(q, key=lambda i:len(i[0]))
+        lbx3.delete(0, tkinter.END)
+        if p:
+            for idx, (xp, strs) in enumerate(p):
+                lbx3.insert("end", xp)
+                dic[xp] = strs
+                for j,c in strs:
+                    lbx3.insert("end", '    [ content ]: {} {}'.format(j,c))
+        else:
+            print('no xpath list find.')
+
+    def show_log(*a):
+        nonlocal dic, dcc
+        try: xp = lbx3.get(lbx3.curselection())
+        except: pass
+        if xp.lstrip().startswith('[ content ]:'): return
+        dcc.clear()
+        dcc.highlight_list(xp)
+
+    btn2 = Button(temp_fr0, text='xpath高亮显示', command=temp)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='【切换：xpath选择器/driver启动代码】', command=switch_window)
+    btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
     btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='[启动浏览器driver] <Alt+c>', command=start_selenium)
+    btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='启动浏览器driver <Alt+c>', command=start_selenium)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='关闭浏览器driver', command=close_selenium)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='执行代码模板', command=add_script)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='添加执行代码模板', command=add_script)
     btn2.pack(side=tkinter.RIGHT)
 
     temp_fr0 = Frame(fr)
@@ -2969,10 +3040,20 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
     temp_fr2_1 = Frame(temp_fr2)
     temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
     temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    lab1 = Label(temp_fr2_1,text='启动 driver 的 python 代码')
-    lab1.pack(side=tkinter.TOP)
+    lab2 = Label(temp_fr2_1,text='启动 driver 的 python 代码')
+    lab2.pack(side=tkinter.TOP)
     txt2 = Text(temp_fr2,height=1,width=1,font=ft)
     txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+
+    temp_fr3 = Frame(temp_fr0)
+    temp_fr3_1 = Frame(temp_fr3)
+    temp_fr3_1.pack(fill=tkinter.X,side=tkinter.TOP)
+    # temp_fr3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+    lab3 = Label(temp_fr3_1,text='xpath 选择器窗口')
+    lab3.pack(side=tkinter.TOP)
+    lbx3 = Listbox(temp_fr3,height=1,width=1,font=ft)
+    lbx3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    lbx3.bind("<<ListboxSelect>>", show_log)
 
     txt1.insert(tkinter.END, '''
 print(driver)
@@ -3029,10 +3110,10 @@ def get_driver():
     return webdriver
 '''.strip())
 
-    temp_fr3 = Frame(fr)
-    lab3 = Label(temp_fr3, text='代码结果 [Esc 切换显示状态]')
+    temp_fr4 = Frame(fr)
+    lab3 = Label(temp_fr4, text='代码结果 [Esc 切换显示状态]')
     lab3.pack(side=tkinter.TOP)
-    cd = Text(temp_fr3,font=ft)
+    cd = Text(temp_fr4,font=ft)
     cd.pack(fill=tkinter.BOTH,expand=True)
 
 
@@ -3063,7 +3144,7 @@ def get_driver():
     frame_setting[fr]['type'] = 'selenium'
     frame_setting[fr]['execute_func'] = execute_selenium_code
     frame_setting[fr]['start_selenium'] = start_selenium
-    frame_setting[fr]['fr_temp2'] = temp_fr3 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
+    frame_setting[fr]['fr_temp2'] = temp_fr4 # 代码执行框，这里仍需挂钩esc按键显示/关闭该窗口
     return fr
 
 
