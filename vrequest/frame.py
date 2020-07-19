@@ -3004,17 +3004,20 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 
     dcc = None
     dic = {}
-    def temp(*a):
-        nonlocal print, driver, show_xpath_finder, dcc, dic
-        from .util import get_xpath_by_str
+    dis = {}
+    def xpath_list_highlight(*a):
+        nonlocal print, driver, show_xpath_finder, dcc, dic, dis
+        from .util import get_xpath_by_str, get_simple_path_tail
+        from lxml import etree
         if driver is None:
             print('no chromedriver opened.')
             return
+        content = driver.page_source
         if not show_xpath_finder: switch_window()
         if dcc is None: dcc = driver_color_changer(driver)
         dcc.driver = driver
         q = []
-        for xp,strs in get_xpath_by_str("", driver.page_source):
+        for xp,strs in get_xpath_by_str("", content):
             q.append((xp, strs))
         p = sorted(q, key=lambda i:len(i[0]))
         lbx3.delete(0, tkinter.END)
@@ -3027,15 +3030,81 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
         else:
             print('no xpath list find.')
 
+    def xpath_highlight(*a):
+        nonlocal print, driver, show_xpath_finder, dcc, dic, dis
+        from .util import get_xpath_by_str, get_simple_path_tail
+        from lxml import etree
+        if driver is None:
+            print('no chromedriver opened.')
+            return
+        content = driver.page_source
+        if not show_xpath_finder: switch_window()
+        if dcc is None: dcc = driver_color_changer(driver)
+        dcc.driver = driver
+        def normal_etree(e, tags=['script','style','select','noscript'], rootxpath='//html'):
+            q = []
+            for it in e.getiterator():
+                if it.tag in tags or type(it.tag) is not str:
+                    q.append(it)
+            for it in q:
+                p = it.getparent()
+                if p is not None:
+                    p.remove(it)
+            return e
+        e = etree.HTML(content)
+        e = normal_etree(e)
+        ls = []
+        for i in e.xpath('//*'):
+            xps = get_simple_path_tail(i) 
+            if not xps: continue
+            xp, sxp, key = xps
+            v = e.xpath('string({})'.format(sxp))
+            v = re.sub(r'\s+',' ',v).strip()
+            if v and (sxp, v) not in ls:
+                ls.append((sxp, v))
+        lbx3.delete(0, tkinter.END)
+        if ls:
+            mxl = 0
+            for sxp, v in ls: mxl = len(sxp) if len(sxp) > mxl else mxl
+            fmt = '{:<3}[len:{:>4}:{:>2}] {:<' + str(mxl + 3) + '}'
+            ls = sorted(ls, key=lambda i:len(i[1]))[::-1]
+            for idx, (sxp, v) in enumerate(ls, 1):
+                lbx3.insert("end", fmt.format(idx, len(v), mxl, sxp) + (v[:20]+'...'+v[-20:] if len(v) > 40 else v))
+        else:
+            print('no xpath find.')
+
     def show_log(*a):
         nonlocal dic, dcc
         try: xp = lbx3.get(lbx3.curselection())
-        except: pass
+        except: return
+        if xp.lstrip().startswith('[ content ]:'): return
+        mxl = re.findall(r'\[len: *\d+: *(\d+)\]', xp)
+        if mxl:
+            mxl = int(mxl[0])
+            xp = re.sub(r'\[len: *\d+: *(\d+)\]', '', xp[17:18+mxl].strip()).strip()
+        dcc.clear()
+        dcc.highlight_list(xp)
+
+    def double_click(*a):
+        nonlocal dic, dcc
+        try: xp = lbx3.get(lbx3.curselection())
+        except: return
         if xp.lstrip().startswith('[ content ]:'): return
         dcc.clear()
         dcc.highlight_list(xp)
 
-    btn2 = Button(temp_fr0, text='xpath高亮显示', command=temp)
+    show_code_window = True
+    def close_exec_code_window(*a):
+        nonlocal show_code_window
+        if show_code_window:
+            temp_fr1.pack_forget()
+        else:
+            temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+        show_code_window = not show_code_window
+
+    btn2 = Button(temp_fr0, text='xpath列表高亮显示', command=xpath_list_highlight)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='xpath高亮显示', command=xpath_highlight)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='【切换：xpath选择器/driver启动代码】', command=switch_window)
     btn2.pack(side=tkinter.RIGHT)
@@ -3044,6 +3113,8 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
     btn2 = Button(temp_fr0, text='[启动浏览器driver] <Alt+c>', command=start_selenium)
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[开启/关闭执行代码窗口]', command=close_exec_code_window)
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
     btn2.pack(side=tkinter.LEFT)
@@ -3073,11 +3144,12 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
     temp_fr3_1 = Frame(temp_fr3)
     temp_fr3_1.pack(fill=tkinter.X,side=tkinter.TOP)
     # temp_fr3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    lab3 = Label(temp_fr3_1,text='xpath 选择器窗口')
+    lab3 = Label(temp_fr3_1,text='xpath 选择器窗口(单击着色/双击添加代码)')
     lab3.pack(side=tkinter.TOP)
     lbx3 = Listbox(temp_fr3,height=1,width=1,font=ft)
     lbx3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
     lbx3.bind("<<ListboxSelect>>", show_log)
+    lbx3.bind('<Double-Button-1>', double_click)
 
     txt1.insert(tkinter.END, '''
 print(driver)
