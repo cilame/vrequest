@@ -1778,6 +1778,29 @@ class VMySQLPipeline(object):
         except Exception as e:
             traceback.print_exc()
 
+# 多类型文件同时存储中间件(当你需要同时存储多种格式的文件存储时可以考虑增加这里的处理)
+from scrapy.exporters import (
+    JsonLinesItemExporter, JsonItemExporter, XmlItemExporter, CsvItemExporter,
+    PickleItemExporter, MarshalItemExporter, PprintItemExporter,
+)
+class VMoreSavePipeline(object):
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+    def __init__(self, crawler=None):
+        # timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime()) 
+        # 这里使用的 timestamp 是全局的，是为了保证时间戳一致，上面一行代码只是在这里描述一下该参数的生成过程
+        self.fp = open('temp{}.csv'.format(timestamp), 'wb')
+        self.exporter = CsvItemExporter(self.fp,include_headers_line=True,join_multivalued=',')
+        # self.exporter = JsonLinesItemExporter(self.fp,ensure_ascii=False,encoding='utf-8')
+        # self.exporter = PprintItemExporter(self.fp) 
+        # 多数情况下只需要设置 XXXItemExporter(self.fp) 使用默认参数即可
+    def process_item(self, item, spider):
+        self.exporter.export_item(item)
+        return item
+    def close_spider(self, spider):
+        self.fp.close()
+
 # scrapy 默认项目中的 SPIDER_MIDDLEWARES，DOWNLOADER_MIDDLEWARES 中间件的模板，按需修改
 from scrapy import signals
 class VSpiderMiddleware(object):
@@ -1988,6 +2011,7 @@ _single_script_middleware_new2 = '''
             # VVideoPipeline:         104,        # 视频下载中间件，item 带有 src 字段则以此作为媒体地址下载到 MEDIAS_STORE 文件夹内
             # VMySQLPipeline:         105,        # MySql 插入中间件，具体请看类的描述
             # VOssPipeline:           106,        # 将本地数据上传到 OSS 空间的管道模板，注意修改模板内 process_item 函数来指定上传文件地址
+            # VMoreSavePipeline:      107,        # 如果需要同时存储多种格式的本地文件，可以使用这个模板(例如同时存储 jsonline 和 csv 文件)
         },
         'SPIDER_MIDDLEWARES': {
             # VSpiderMiddleware:      543,        # 原版模板的单脚本插入方式
