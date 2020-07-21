@@ -1202,6 +1202,7 @@ def find_xtree(item_list):
     for i in d:
         m = d[i]['minfo']
         x = i
+        c = None
         for j in range(1,len(m)+1):
             if j == len(m):
                 v = re.sub(r'\[\$\]\[[^\[\]]+\]',r'[$]',x)
@@ -1214,7 +1215,7 @@ def find_xtree(item_list):
                 x = re.sub(r'^([^\$]+)\[\$\]',r'\1',x)
             else:
                 x = re.sub(r'^([^\$]+)\[\$\]',r'\1[{}]'.format(m[j]),x)
-        d[i]['xtree'] = x + c
+        d[i]['xtree'] = x + (c or "")
     for i in d:
         yield d[i]['xtree'],[(i['path'],i['content']) for i in d[i]['info']]
 
