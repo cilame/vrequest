@@ -106,7 +106,7 @@ if __name__ == '__main__':
     def func1(a,b):
         rd = random.random(); time.sleep(rd)
         print(a+b, '{:.3f}'.format(rd))
-    @pool(3,gqueue='h') # 开启线程池组，指定名字为 'h'，线程数量为2
+    @pool(3,gqueue='h') # 开启线程池组，指定名字为 'h'，线程数量为3
     def func2(a,b,c):
         rd = random.random(); time.sleep(rd)
         print(a*b*c, 'hhhhhhh', '{:.3f}'.format(rd))
