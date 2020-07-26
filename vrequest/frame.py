@@ -607,6 +607,7 @@ eg.:
                 s = requests.get(rurl,headers=headers,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
             elif method == 'POST':
+                if isinstance(body, str): body = body.encode('utf-8')
                 s = requests.post(rurl,headers=headers,data=body,verify=False,proxies=proxies)
                 tp,content = format_content(s.content)
         else:
@@ -616,7 +617,7 @@ eg.:
                 s = urllib_myget(url, headers, proxies)
                 tp, content = format_content(s.read())
             elif method == 'POST':
-                body = urlencode(body).encode('utf-8') if isinstance(body, dict) else body
+                body = urlencode(body).encode('utf-8') if isinstance(body, dict) else body.encode('utf-8')
                 s = urllib_mypost(url, headers, body, proxies)
                 tp, content = format_content(s.read())
         return tp, content
