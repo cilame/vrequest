@@ -454,7 +454,7 @@ def get_html_pure_text(*a):
         except:
             content = traceback.format_exc()
         tx4.delete(0.,tkinter.END)
-        tx4.insert(0.,content)
+        tx4.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',content))
         if toggle:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<normal_content://html>')
@@ -645,7 +645,7 @@ def get_xpath_elements(*a):
             p.append('[ count ]: {}'.format(idx))
             content = '\n'.join(p)
         tx4.delete(0.,tkinter.END)
-        tx4.insert(0.,content)
+        tx4.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',content))
         if toggle == 0:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<xpath://html>')
@@ -690,7 +690,7 @@ def get_auto_xpath(*a):
         q.append('[ count ]: {}'.format(idx))
         content = '\n'.join(q)
         tx4.delete(0.,tkinter.END)
-        tx4.insert(0.,content)
+        tx4.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',content))
         if toggle:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<auto_list_xpath:>')
@@ -730,7 +730,7 @@ def get_auto_json(*a):
         except:
             content = traceback.format_exc()
         tx4.delete(0.,tkinter.END)
-        tx4.insert(0.,content)
+        tx4.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',content))
         if toggle:
             tx2.delete(0.,tkinter.END)
             tx2.insert(0.,'<auto_list_json:>')
@@ -766,7 +766,7 @@ def choice_auto_json(*a):
         k = re.findall(r'^\[cnt:\d+\] (jsondata[^\n]+)', v[id])[0]
         content = '\n'.join(vv[id]).strip()
         tx4.delete(0.,tkinter.END)
-        tx4.insert(0.,content)
+        tx4.insert(0.,re.sub('[\uD800-\uDBFF][\uDC00-\uDFFF]|[\U00010000-\U0010ffff]','',content))
         tx2.delete(0.,tkinter.END)
         tx2.insert(0.,'<auto_list_json:{}>'.format(k))
 
