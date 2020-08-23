@@ -12,6 +12,7 @@ from .root import (
 from .menu import bind_menu
 from .tab import (
     nb,
+    nb_names,
     bind_frame,
     delete_curr_tab,
     cancel_delete,
@@ -34,6 +35,7 @@ from .tab import (
     create_js_parse,
     create_selenium_parse,
     create_temp_idle,
+    create_cmd_idle,
     create_encoder,
     create_test_code_urllib,
 )
@@ -69,7 +71,7 @@ bind_menu(change_tab_name,        '改当前标签名 [Ctrl+e]')
 bind_menu(save_config,            '保存配置快照 [Ctrl+s]')
 bind_menu(create_js_parse,        '创建 js解析页 [Ctrl+j]')
 bind_menu(create_helper,          '帮助文档标签 [Ctrl+h]')
-bind_menu(create_selenium_parse,  '创建便捷浏览器执行窗')
+bind_menu(create_selenium_parse,  '浏览器执行窗 [Alt+w]*')
 bind_menu(create_encoder,         '创建便捷加密编码窗口')
 
 # 绑定 Ctrl + key 的组合键
@@ -82,6 +84,14 @@ bind_ctl_key(save_config,       's')
 bind_ctl_key(send_request,      'r')
 bind_ctl_key(create_helper,     'h')
 bind_ctl_key(create_js_parse,   'j')
+bind_ctl_key(create_cmd_idle,   '`')
+
+def _scrapy_or_selenium():
+    _select = nb.select()
+    cname = nb_names.get(_select)['name']
+    ctype = (nb_names.get(_select).get('setting') or {}).get('type')
+    # 如果当前窗口是 scrapy 代码窗口则代表直接项目执行 scrapy 代码，否则创建 selenium 窗口。
+    create_selenium_parse() if ctype != 'scrapy' else execute_scrapy_code()
 
 # 绑定 response 事件
 bind_alt_key(create_new_rsptab,         'r')
@@ -93,7 +103,7 @@ bind_alt_key(get_auto_json,             'z') # 分析json列表
 bind_alt_key(choice_auto_json,          'q') # 选则json列表
 bind_alt_key(execute_code,              'v') # 代码执行
 bind_alt_key(create_scrapy_code,        's') # 生成scrapy代码
-bind_alt_key(execute_scrapy_code,       'w') # 用自动生成的环境执行scrapy代码
+bind_alt_key(_scrapy_or_selenium,       'w') # 用自动生成的环境执行scrapy代码
 bind_alt_key(create_temp_idle,          '`') # 使用临时的idle文本
 bind_alt_key(create_test_code_urllib,   'u') # 生成 urllib(py3) 请求的代碼
 
@@ -108,6 +118,7 @@ def algo():
     fr.title('命令行输入 ee 则可快速打开便捷加密窗口(为防冲突，输入vv e也可以打开), 组合快捷键 Alt+` 快速打开IDLE')
     fr.bind('<Escape>',lambda *a:fr.master.quit())
     fr.bind('<Alt-`>',lambda *a:create_temp_idle())
+    fr.bind('<Control-`>',lambda *a:create_cmd_idle())
     fr.protocol("WM_DELETE_WINDOW",lambda *a:fr.master.quit())
     fr.master.withdraw()
     fr.mainloop()

@@ -270,7 +270,7 @@ def send_request():
     global config
     _select = nb.select()
     name    = nb_names[_select]['name']
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     foc_tog = True
     if setting.get('type') == 'request':
         method,url,headers,body,urlenc,qplus,proxy = set_request_config(name,setting)
@@ -305,7 +305,7 @@ def save_config():
 # 切换状态：显示/取消显示 response 窗口内的输出窗口
 def switch_response_log(*a):
     _select = nb.select()
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     if setting.get('type') in ['response','code','js','scrapy','selenium']:
         temp_fr2 = setting.get('fr_temp2')
         try:
@@ -324,7 +324,7 @@ def switch_response_log(*a):
 def create_test_code(*a):
     _select = nb.select()
     name    = nb_names[_select]['name']
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     code_string = None
     if setting.get('type') == 'request':
         method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
@@ -345,7 +345,7 @@ def create_test_code(*a):
 def create_test_code_urllib(*a):
     _select = nb.select()
     name    = nb_names[_select]['name']
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     if setting.get('type') == 'request':
         method,c_url,c_headers,c_body,urlenc,qplus = get_request_config(setting)
         code_string = format_request_urllib(method,c_url,c_headers,c_body,urlenc,qplus)
@@ -367,7 +367,7 @@ def create_scrapy_code(*a):
     '''
     _select = nb.select()
     name    = nb_names[_select]['name']
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     home = os.environ.get('HOME')
     home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
     model_path = os.path.join(os.path.split(__file__)[0],'template')
@@ -701,7 +701,7 @@ def get_auto_xpath(*a):
 # 通过分析json结构内的数据生成对应的列表信息
 def get_auto_json(*a):
     _select = nb.select()
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     if setting.get('type') == 'response':
         txt = setting.get('fr_html_content')
         tx2 = setting.get('fr_local_set')
@@ -739,7 +739,7 @@ def get_auto_json(*a):
 # 选则对应的列表信息的数据
 def choice_auto_json(*a):
     _select = nb.select()
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     if setting.get('type') == 'response':
         # txt = setting.get('fr_html_content')
         tx2 = setting.get('fr_local_set')
@@ -773,7 +773,7 @@ def choice_auto_json(*a):
 # 选则对应的列表信息的数据
 def response_jsonformat(*a):
     _select = nb.select()
-    setting = nb_names[_select]['setting']
+    setting = nb_names[_select].get('setting') or {}
     if setting.get('type') == 'response':
         txt = setting.get('fr_html_content')
         tx2 = setting.get('fr_local_set')

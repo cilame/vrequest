@@ -2411,7 +2411,7 @@ vrequest：
 用于快速发起请求，快速生成且能执行的基于 requests 和 lxml 的代码
 也可以生成且能执行 scrapy 代码，不过由于scrapy库依赖过重，该工具不会依赖下载
 若需要执行 scrapy 代码，需额外下载 scrapy。
-*安装完整功能库(scrapy js2py jsbeautifier cryptography pillow)
+*点击帮助页按钮“安装完整功能库”(scrapy js2py jsbeautifier cryptography pillow)
 
 通用快捷键 (该处多数功能右键窗口就能实现，只要记得右键窗口任意处即可)：
 (Ctrl + q) 创建新的请求标签
@@ -2420,6 +2420,7 @@ vrequest：
 (Ctrl + w) 关闭当前标签
 (Ctrl + h) 创建帮助标签
 (Ctrl + s) 保存当前全部请求配置(只能保存请求配置)
+(Alt  + w) *创建 selenium 窗口(需要当前非scrapy代码页面)
 (Ctrl + `) 直接打开IDLE
 (Alt  + `) 用IDLE固定打开一个文件,方便长脚本测试
 
@@ -2446,12 +2447,8 @@ vrequest：
 (Alt + u) 生成 urllib 请求代码，不包含过程(解析过程必依赖lxml,与无依赖理念冲突)
 (Esc)     开启/关闭 response 解析窗口
 
-代码窗口快捷键：
-(Alt + v) 代码执行 [在js代码窗同样适用]
-(Esc)     开启/关闭 代码执行结果窗口 [在js代码窗同样适用]
-
 scrapy 代码窗口快捷键：
-(Alt + w) scrapy 代码执行
+(Alt + w) *scrapy 项目代码执行(需要当前为scrapy代码页面)
 
 开源代码：
 https://github.com/cilame/vrequest
@@ -2868,6 +2865,19 @@ def selenium_test_window(setting=None):
                     subprocess.Popen = _Popen
                     driver = get_webdriver()
                     print('启动成功，可以在代码窗使用 driver 对象代码。')
+                    def hook_close():
+                        nonlocal driver
+                        while True:
+                            try:
+                                time.sleep(.1)
+                                for i in driver.get_log('driver'):
+                                    if 'Unable to evaluate script: disconnected: not connected to DevTools' in i.get('message'):
+                                        break
+                            except:
+                                break
+                        print('窗口关闭。')
+                        driver = None
+                    threading.Thread(target=hook_close).start()
                 except:
                     print(traceback.format_exc())
                 finally:
@@ -2877,25 +2887,27 @@ def selenium_test_window(setting=None):
         threading.Thread(target=_).start()
                 
     def close_selenium(*a):
-        nonlocal driver
-        def _():
-            nonlocal driver
-            if driver is not None and driver != 'None':
-                _driver = driver
-                try:
-                    try: print('正在关闭，请等待片刻。')
-                    except: pass
-                    driver = 'None'
-                    _driver.quit()
-                    driver = None
-                    print('关闭成功，代码窗口将不能使用 driver 对象。')
-                except:
-                    print(traceback.format_exc())
-            elif driver == 'None':
-                clear_selenium_driver()
-            else:
-                print('警告','不存在已启动的浏览器')
-        threading.Thread(target=_).start()
+        # nonlocal driver
+        # def _():
+        #     nonlocal driver
+        #     if driver is not None and driver != 'None':
+        #         _driver = driver
+        #         try:
+        #             try: print('正在关闭，请等待片刻。')
+        #             except: pass
+        #             driver = 'None'
+        #             _driver.quit()
+        #             driver = None
+        #             print('关闭成功，代码窗口将不能使用 driver 对象。')
+        #         except:
+        #             print(traceback.format_exc())
+        #     elif driver == 'None':
+        #         clear_selenium_driver()
+        #     else:
+        #         print('警告','不存在已启动的浏览器')
+        # threading.Thread(target=_).start()
+        clear_selenium_driver()
+        print('已关闭进程中所有的 chromedriver 进程。')
 
     def clear_selenium_driver(*a):
         nonlocal driver
@@ -2942,7 +2954,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 
 
 
-# 常用获取组件方式
+# (1) 常用获取组件方式
 #     1 find_element_* 直接获取组件对象，如果获取不到直接报错
 #       driver.find_element_by_id
 #       driver.find_element_by_name
@@ -2951,22 +2963,48 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 #       driver.find_elements_by_id
 #       driver.find_elements_by_name
 #       driver.find_elements_by_xpath
-# 获取 window 桌面绝对路径的代码，用于快速保存数据到可见位置
+# (2) 获取 window 桌面绝对路径的代码，用于快速保存数据到可见位置
 #     desktop = os.path.join(os.path.expanduser("~"),'Desktop')
-# 部分智能等待的代码，提高浏览器效率的处理，最好在生成的单独脚本中使用
+# (3) 部分智能等待的代码，提高浏览器效率的处理，最好在生成的单独脚本中使用
 #     from selenium.webdriver.common.by import By
 #     from selenium.webdriver.support import expected_conditions as EC
 #     from selenium.webdriver.support.wait import WebDriverWait as wbw
 #     locator = (By.XPATH, '//img[@class="focus-item-img"]')
 #     # wbw(self.webdriver,10).until(EC.presence_of_element_located(locator)) # 判断某个元素是否被加到了dom树里
 #     wbw(self.webdriver,10).until(EC.visibility_of_element_located(locator)) # 判断某个元素是否被添加到了dom里并且可见，即宽和高都大于0
-# 当你打包脚本时，在 get_driver 函数执行前执行以下代码，打包的后的工具就不会因为 selenium启动服务自动开启黑窗口了
+# (4) 当你打包脚本时，在 get_driver 函数执行前执行以下代码，打包的后的工具就不会因为 selenium启动服务自动开启黑窗口了
 #     import subprocess
 #     _bak_Popen = subprocess.Popen
 #     def _Popen(*a, **kw):
 #         kw['creationflags'] = 0x08000000
 #         return _bak_Popen(*a, **kw)
 #     subprocess.Popen = _Popen
+
+
+
+# mitmproxy调试功能增强
+#     功能：使用 mitmproxy 修改浏览器请求返回的数据，用于绕过浏览器返回的js中的某些反调试js代码。
+#         使用 fiddler 也能做到，不过那种修改起来比较麻烦
+#         使用 mitmproxy 可以使用 python 代码来修改返回信息，对我来说会更加方便一些
+#         这样可以更简单的实现更加复杂的替换操作
+#         需要安装 mitmproxy： pip install mitmproxy -i https://pypi.douban.com/simple
+#         使用该库的命令行工具 mitmdump 来创建一个代理端口
+#         mitmdump -q -s change_js.py -p 8888
+#             -q 静音模式(仅限制该代码内的打印输出) -s 指定mitm中间件代码(即当前代码脚本) -p 指定端口(默认8080)
+# # 以下为 change_js.py 代码脚本中的脚本内容
+# # 1将代码揭开注释写入文件，
+# # 2然后使用命令行工具 mitmdump 执行代码启动服务，
+# # 3最后再用配置好端口的浏览器直接访问正常网页就可以正常修改内容
+# import re
+# import json
+# from mitmproxy.http import flow
+# def response(flow: flow):
+#     target_url = 'https://www.baidu.com'
+#     if  target_url in flow.request.url:
+#         jscode = flow.response.get_text()
+#         jscode = jscode.replace('debugger', '')
+#         flow.response.set_text(jscode)
+#         print('changed.', flow.request.url)
 ''')
 
     show_xpath_finder = False
@@ -3119,7 +3157,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
     btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='添加执行代码模板', command=add_script)
+    btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
     btn2.pack(side=tkinter.RIGHT)
 
     temp_fr0 = Frame(fr)
@@ -3204,6 +3242,20 @@ def get_driver():
       """
     })
     webdriver.execute_cdp_cmd("Network.enable", {})
+
+    # 设置:当你直接关闭浏览器时自动关闭 chromedriver，防止进程残留
+    import time, threading
+    def hook_close_window():
+        chrome_close = False
+        while not chrome_close:
+            time.sleep(.3) # 每0.3秒检测一次，如果强制关闭浏览器，则自动关闭
+            try:    driver_logs = webdriver.get_log('driver')
+            except: driver_logs = []
+            for i in driver_logs:
+                if 'Unable to evaluate script: disconnected: not connected to DevTools' in i.get('message'):
+                    chrome_close = True
+                    webdriver.quit()
+    threading.Thread(target=hook_close_window).start()
     return webdriver
 '''.strip())
 
@@ -3235,7 +3287,8 @@ def get_driver():
 
     # 确保强制退出时能关闭 webdriver 进程，防止幽灵进程
     from .root import tails
-    tails.append(clear_selenium_driver)
+    # tails.append(clear_selenium_driver) 
+    # 后续发现这种方式有点问题，暂时不考虑使用，不过 tails 的功能保留。
 
     frame_setting[fr] = {}
     frame_setting[fr]['type'] = 'selenium'
