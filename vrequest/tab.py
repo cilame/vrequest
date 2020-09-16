@@ -411,7 +411,7 @@ def normal_content(content,
     else:
         raise TypeError('content type must in [bytes, str].')
     c = re.sub('>([^>]*[\u4e00-\u9fa5]{1,}[^<]*)<','>\g<1> <',c)
-    e = etree.HTML(c)
+    e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', c))
     q = []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
@@ -633,7 +633,7 @@ def get_xpath_elements(*a):
         tx4 = setting.get('fr_parse_info')
         if xp.startswith('//'):
             p = ['[ xpath ]: {}'.format(xp)]
-            tree = etree.HTML(txt.get(0.,tkinter.END))
+            tree = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', txt.get(0.,tkinter.END)))
             idx = 0
             for x in tree.xpath(xp):
                 xpth = get_simple_path_tail(x)
@@ -894,7 +894,7 @@ def create_xpath_finder(setting):
             if p is not None:
                 p.remove(it)
         return e
-    e = etree.HTML(content)
+    e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))
     e = normal_etree(e)
     ls = []
     for i in e.xpath('//*'):

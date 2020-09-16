@@ -3090,7 +3090,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
                 if p is not None:
                     p.remove(it)
             return e
-        e = etree.HTML(content)
+        e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))
         e = normal_etree(e)
         ls = []
         for i in e.xpath('//*'):

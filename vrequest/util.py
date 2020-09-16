@@ -379,7 +379,7 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
                     func = lambda i:i.replace('\n',' ').strip()
                     p = []
                     p.append("items = []")
-                    p.append("tree = etree.HTML(content)")
+                    p.append("tree = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))")
                     p.append("for x in tree.xpath('{}'):".format(xp))
                     p.extend([' '*indent+func(i) for i in ax])
                     p.append(' '*indent+'items.append(d)')
@@ -397,7 +397,7 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
                     import traceback
                     traceback.print_exc()
                     func_code =("print('------------------------------ split ------------------------------')\n"
-                                "tree = etree.HTML(content)\n"
+                                "tree = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))\n"
                                 "for x in tree.xpath('{}'):\n".format(xp) + 
                                 "    strs = re.sub('\s+',' ',x.xpath('string(.)'))\n"
                                 "    strs = strs[:40] + '...' if len(strs) > 40 else strs\n"
@@ -416,7 +416,7 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
                 try:
                     func_code = '''def normal_tree(content,
         tags=['script','style','select','noscript']):
-    e, q = etree.HTML(content), []
+    e, q = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content)), []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
             q.append(it)
@@ -498,6 +498,8 @@ class VSpider(scrapy.Spider):
     def parse(self, response):
         # If you need to parse another string in the parsing function.
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
+        # ps. if you use "etree.HTML(text)" and text startswith '<?xml version="1.0" encoding="utf-8"?>'
+        # pls use "etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', text))"
 
         $plus
 '''
@@ -539,6 +541,8 @@ class VSpider(scrapy.Spider):
     def parse(self, response):
         # If you need to parse another string in the parsing function.
         # use "etree.HTML(text)" or "Selector(text=text)" to parse it.
+        # ps. if you use "etree.HTML(text)" and text startswith '<?xml version="1.0" encoding="utf-8"?>'
+        # pls use "etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', text))"
 
         $plus
 '''
@@ -701,7 +705,7 @@ def normal_scrapy_content(content,
                    tags=['script','style','select','noscript'],
                    rootxpath='//html'):
     c = re.sub('>([^>]*[\u4e00-\u9fa5]{1,}[^<]*)<','>\g<1> <',content)
-    e, q = etree.HTML(c), []
+    e, q = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', c)), []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
             q.append(it)
@@ -788,7 +792,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
                 try:
                     func_code = '''def normal_tree(content,
         tags=['script','style','select','noscript']):
-    e, q = etree.HTML(content), []
+    e, q = etree.HTML((re.sub(r'^ *<\?xml[^<>]+\?>', '', content))), []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
             q.append(it)
@@ -1144,7 +1148,7 @@ def get_simple_path_head(p,lilimit=5):
                     yield j
 
 def get_xpath_by_str(strs, html_content):
-    e = etree.HTML(html_content)
+    e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', html_content))
     q = []
     p = []
     for i in e.xpath('//*'):
@@ -1248,7 +1252,7 @@ def auto_xpath(oxp,content,_type=None):
     def normal_tree(content,
                     rootxpath='//html',
                     tags=['script','style','select','noscript'],):
-        e = etree.HTML(content)
+        e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))
         q = []
         for it in e.getiterator():
             if it.tag in tags or type(it.tag) is not str:
