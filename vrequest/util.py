@@ -701,6 +701,23 @@ def del_scrapy_plus(string):
 def format_scrapy_request(method,c_url,c_headers,c_body,urlenc,qplus):
     return del_scrapy_plus(format_scrapy_req(method,c_url,c_headers,c_body,urlenc,qplus))
 
+def parse_content_type(content, types=['utf-8','gbk']):
+    for tp in types:
+        try:    return tp, content.decode(tp)
+        except: pass
+    etp = types[:]
+    try:
+        import chardet
+        tp = chardet.detect(content)['encoding']
+        if tp not in etp: etp.append(tp); return tp, content.decode(tp)
+    except: pass
+    import re # 有些网站明明就是gbk或utf-8编码但就是解析失败，所以用errors=ignore模式下中文数量来兜底编码格式
+    utf8len = len(re.findall('[\u4e00-\u9fa5]', content.decode('utf-8', errors='ignore')[:4096]))
+    gbklen  = len(re.findall('[\u4e00-\u9fa5]', content.decode('gbk', errors='ignore')[:4096]))
+    gtp = 'gb18030' if gbklen > utf8len else 'utf-8'
+    err = 'encoding not in :[{}]. Guess encoding is [{},errors:ignore]'.format(','.join(etp), gtp)
+    return err, content.decode(gtp, errors='ignore')
+
 def normal_scrapy_content(content,
                    tags=['script','style','select','noscript'],
                    rootxpath='//html'):
@@ -738,8 +755,13 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
             if i.startswith('<normal_content:'):
                 rt = re.findall('<normal_content:(.*)>', i)[0].strip()
                 rt = rt if rt else '//html'
-                func_code = inspect.getsource(normal_scrapy_content).strip()
-                func_code += '''\ncontent = response.body.decode("{}",errors="{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,err,rt)
+                func_code = inspect.getsource(parse_content_type).strip() + '\n\n'
+                func_code += inspect.getsource(normal_scrapy_content).strip() + '\n\n'
+                func_code += "_, html = parse_content_type(response.body)\n"
+                func_code += "content = normal_scrapy_content(html, rootxpath='//html')\n"
+                func_code += "print(content)"
+                # func_code = inspect.getsource(normal_scrapy_content).strip()
+                # func_code += '''\ncontent = response.body.decode("{}",errors="{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,err,rt)
             if i.startswith('<xpath:'):
                 xp = re.findall('<xpath:(.*)>', i)[0].strip()
                 xp = xp if xp else '//html'
