@@ -399,7 +399,7 @@ def create_scrapy_code(*a):
 
 # 获取HTML纯文本函数
 def normal_content(content,
-                   tags=['script','style','select','noscript'],
+                   tags=['script','style','select','noscript','textarea'],
                    rootxpath='//html'):
     if type(content) is bytes:
         try:
@@ -884,7 +884,7 @@ def create_xpath_finder(setting):
     Listbox = tkinter.Listbox
     top = tkinter.Toplevel(master)
     ft = Font(family='Consolas',size=10)
-    def normal_etree(e, tags=['script','style','select','noscript'], rootxpath='//html'):
+    def normal_etree(e, tags=['script','style','select','noscript','textarea'], rootxpath='//html'):
         q = []
         for it in e.getiterator():
             if it.tag in tags or type(it.tag) is not str:

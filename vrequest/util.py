@@ -415,7 +415,7 @@ def format_response(r_setting,c_set,c_content,urlenc,qplus,extra):
             if i.startswith('<just_info:'):
                 try:
                     func_code = '''def normal_tree(content,
-        tags=['script','style','select','noscript']):
+        tags=['script','style','select','noscript','textarea']):
     e, q = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content)), []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
@@ -719,7 +719,7 @@ def parse_content_type(content, types=['utf-8','gbk']):
     return err, content.decode(gtp, errors='ignore')
 
 def normal_scrapy_content(content,
-                   tags=['script','style','select','noscript'],
+                   tags=['script','style','select','noscript','textarea'],
                    rootxpath='//html'):
     c = re.sub('>([^>]*[\u4e00-\u9fa5]{1,}[^<]*)<','>\g<1> <',content)
     e, q = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', c)), []
@@ -758,7 +758,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
                 func_code = inspect.getsource(parse_content_type).strip() + '\n\n'
                 func_code += inspect.getsource(normal_scrapy_content).strip() + '\n\n'
                 func_code += "_, html = parse_content_type(response.body)\n"
-                func_code += "content = normal_scrapy_content(html, rootxpath='//html')\n"
+                func_code += "content = normal_scrapy_content(html, rootxpath='{}')\n".format(rt)
                 func_code += "print(content)"
                 # func_code = inspect.getsource(normal_scrapy_content).strip()
                 # func_code += '''\ncontent = response.body.decode("{}",errors="{}")\ncontent = normal_scrapy_content(content, rootxpath='{}')\nprint(content)'''.format(tps,err,rt)
@@ -813,7 +813,7 @@ def format_scrapy_response(r_setting,c_set,c_content,tps,urlenc,qplus,extra):
             if i.startswith('<just_info:'):
                 try:
                     func_code = '''def normal_tree(content,
-        tags=['script','style','select','noscript']):
+        tags=['script','style','select','noscript','textarea']):
     e, q = etree.HTML((re.sub(r'^ *<\?xml[^<>]+\?>', '', content))), []
     for it in e.getiterator():
         if it.tag in tags or type(it.tag) is not str:
@@ -1273,7 +1273,7 @@ def auto_xpath(oxp,content,_type=None):
         return r
     def normal_tree(content,
                     rootxpath='//html',
-                    tags=['script','style','select','noscript'],):
+                    tags=['script','style','select','noscript','textarea'],):
         e = etree.HTML(re.sub(r'^ *<\?xml[^<>]+\?>', '', content))
         q = []
         for it in e.getiterator():

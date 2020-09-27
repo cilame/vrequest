@@ -3080,7 +3080,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
         if not show_xpath_finder: switch_window()
         if dcc is None: dcc = driver_color_changer(driver)
         dcc.driver = driver
-        def normal_etree(e, tags=['script','style','select','noscript'], rootxpath='//html'):
+        def normal_etree(e, tags=['script','style','select','noscript','textarea'], rootxpath='//html'):
             q = []
             for it in e.getiterator():
                 if it.tag in tags or type(it.tag) is not str:
