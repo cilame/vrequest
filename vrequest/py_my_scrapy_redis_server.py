@@ -324,6 +324,7 @@ SpiderPriorityQueue = PriorityQueue
 
 # 日志处理
 
+import sys
 import redis
 import pprint
 import logging
@@ -381,7 +382,7 @@ class RedisStatsCollector:
         else:
             return default
     def get_taskid(self, spider, deep=2):
-        frame = sys._getframe()
+        frame = sys._getframe() # 这里的处理比 inspect.stack() 要更省资源
         while deep:
             frame = frame.f_back
             deep -= 1
