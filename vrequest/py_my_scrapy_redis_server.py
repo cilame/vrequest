@@ -29,7 +29,6 @@ Request.replace = replace
 
 import importlib
 import six
-import inspect
 from scrapy.utils.misc import load_object
 class Scheduler(object):
     def __init__(self, server,
@@ -331,7 +330,6 @@ import logging
 from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 from scrapy.statscollectors import StatsCollector
-import inspect
 
 class RedisStatsCollector:
     e = ( 'finish_reason', )
@@ -383,7 +381,11 @@ class RedisStatsCollector:
         else:
             return default
     def get_taskid(self, spider, deep=2):
-        v = inspect.stack()[deep][0].f_locals
+        frame = sys._getframe()
+        while deep:
+            frame = frame.f_back
+            deep -= 1
+        v = frame.f_locals
         if 'request' in v:
             taskid = v['request']._plusmeta.get('taskid') or 0
         elif 'request' in v and 'response' in v:
