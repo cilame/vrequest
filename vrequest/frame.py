@@ -3144,6 +3144,50 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
             temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
         show_code_window = not show_code_window
 
+    def start_mitm_in_desktop(*a):
+        filename = os.path.join(os.path.expanduser("~"),'Desktop', 'mitm_changejs.py')
+        with open(filename, 'w', encoding='utf-8') as f:
+            mitmcode = r'''
+import re
+import json
+from mitmproxy import ctx
+print('start mitmproxy in {}'.format(ctx.master.server.address[1]))
+print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
+def response(flow):
+    target_url = 'https://www.baidu.com'
+    if  target_url in flow.request.url:
+        jscode = flow.response.get_text()
+        jscode = jscode.replace('debugger', '')
+        flow.response.set_text(jscode)
+        print('changed.', flow.request.url)
+
+
+import os
+import time
+import shutil
+import threading
+def clear_cache():
+    # 删除缓存文件，看起来干净点
+    while True:
+        time.sleep(.3)
+        pt = os.path.join(os.path.split(__file__)[0], '__pycache__')
+        if os.path.isdir(pt):
+            shutil.rmtree(pt)
+            break
+threading.Thread(target=clear_cache).start()
+'''
+            f.write(mitmcode)
+        cwd = os.getcwd()
+        desktop = os.path.join(os.path.expanduser("~"),'Desktop')
+        os.chdir(desktop)
+        try:
+            cmd = 'start powershell -NoExit "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
+            os.system(cmd)
+        except:
+            cmd = 'start cmd /k "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
+            os.system(cmd)
+        os.chdir(cwd)
+
     btn2 = Button(temp_fr0, text='xpath列表高亮显示', command=xpath_list_highlight)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='xpath高亮显示', command=xpath_highlight)
@@ -3160,6 +3204,8 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
     btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='桌面覆盖/创建mitm脚本并执行', command=start_mitm_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
     btn2.pack(side=tkinter.RIGHT)
 
