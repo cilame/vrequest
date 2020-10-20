@@ -34,6 +34,32 @@ else:
         ctx = execjs.compile(jscode, cwd=hnode)
         return ctx
 
+import sys
+from subprocess import Popen, PIPE
+import execjs
+_bak_exec_with_pipe = execjs._external_runtime.ExternalRuntime.Context._exec_with_pipe
+def _exec_with_pipe(self, source):
+    cmd = self._runtime._binary()
+    p = None
+    try:
+        # 这里 Popen 里面的 encoding='utf-8' 在源码里面没有，所以用了偏 geek 的方式将这里钩住处理
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, cwd=self._cwd, 
+                    universal_newlines=True, encoding='utf-8') 
+        input = self._compile(source)
+        stdoutdata, stderrdata = p.communicate(input=input)
+        ret = p.wait()
+    finally:
+        del p
+    self._fail_on_non_zero_status(ret, stdoutdata, stderrdata)
+    return stdoutdata
+def hook_popen_encoding():
+    execjs._external_runtime.ExternalRuntime.Context._exec_with_pipe = _exec_with_pipe
+def back_popen_encoding():
+    execjs._external_runtime.ExternalRuntime.Context._exec_with_pipe = _bak_exec_with_pipe
+
+
+
+
 if __name__ == '__main__':
     code = r'''
 function s1(a,b){

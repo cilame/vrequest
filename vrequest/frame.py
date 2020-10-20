@@ -2550,17 +2550,20 @@ def exec_js_window(setting=None):
     def defusion_js_code():
         try:
             try:
-                from .pyjsdefusion import get_node_ctx
+                from .pyjsdefusion import get_node_ctx, hook_popen_encoding, back_popen_encoding
             except:
-                from pyjsdefusion import get_node_ctx
+                from pyjsdefusion import get_node_ctx, hook_popen_encoding, back_popen_encoding
             jscode = txt1.get(0.,tkinter.END)
             ctx = get_node_ctx()
             txt2.delete(0.,tkinter.END)
+            hook_popen_encoding()
             txt2.insert(0.,ctx.call('muti_process_defusion', jscode))
         except:
             e = traceback.format_exc()
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,e)
+        finally:
+            back_popen_encoding()
 
     def make_js_script():
         from .tab import show_code_log
