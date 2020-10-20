@@ -3151,7 +3151,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 import re
 import json
 from mitmproxy import ctx
-print('start mitmproxy in {}'.format(ctx.master.server.address[1]))
+print('start mitmdump in {}'.format(ctx.master.server.address[1]))
 print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
 def response(flow):
     target_url = 'https://www.baidu.com'
