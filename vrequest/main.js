@@ -6,6 +6,7 @@ var escodegen = require('escodegen')
 
 function muti_process_defusion(code){
     var tree = esprima.parseScript(code)
+    // 对于目前还没开发完善的内容而言，保留一个简单的还原 '\x' 格式的功能即可
     // combine_static_array(tree);
     // combine_object_array(tree);
     // combine_identy_function(tree); // 该参数在某些情况下使用起来不是很方便
