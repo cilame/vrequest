@@ -982,7 +982,7 @@ def pipinstall_all(*a):
     libs = 'scrapy js2py jsbeautifier cryptography pillow pyzbar'
     try:
         cmd = 'start powershell -NoExit "{}" install {}'.format(pip3_exe, libs)
-        os.system(cmd)
+        assert not os.system(cmd) # 返回0则正常执行
     except:
         cmd = 'start cmd /k "{}" install {}'.format(pip3_exe, libs)
         os.system(cmd)
