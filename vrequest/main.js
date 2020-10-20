@@ -6,11 +6,11 @@ var escodegen = require('escodegen')
 
 function muti_process_defusion(code){
     var tree = esprima.parseScript(code)
-    combine_static_array(tree);
-    combine_object_array(tree);
+    // combine_static_array(tree);
+    // combine_object_array(tree);
     // combine_identy_function(tree); // 该参数在某些情况下使用起来不是很方便
-    combine_binary_function(tree);
-    combine_binary(tree);
+    // combine_binary_function(tree);
+    // combine_binary(tree);
     return escodegen.generate(tree);
 }
 
