@@ -2084,7 +2084,7 @@ def scrapy_code_window(setting=None):
                 os.chdir(desktop)
                 try:
                     cmd = 'start powershell -NoExit "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
-                    os.system(cmd)
+                    assert not os.system(cmd) # 返回0则正常执行
                 except:
                     cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
                     os.system(cmd)
@@ -2307,7 +2307,7 @@ def scrapy_code_window(setting=None):
                 os.chdir(scriptpath)
                 try:
                     cmd = 'start powershell -NoExit "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
-                    os.system(cmd)
+                    assert not os.system(cmd) # 返回0则正常执行
                 except:
                     cmd = 'start cmd /k "{}" crawl v -L {} {}'.format(scrapyexe,cbx.get(),output)
                     os.system(cmd)
@@ -3182,7 +3182,7 @@ threading.Thread(target=clear_cache).start()
         os.chdir(desktop)
         try:
             cmd = 'start powershell -NoExit "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
-            os.system(cmd)
+            assert not os.system(cmd) # 返回0则正常执行
         except:
             cmd = 'start cmd /k "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
             os.system(cmd)
