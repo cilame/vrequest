@@ -3188,62 +3188,7 @@ threading.Thread(target=clear_cache).start()
             os.system(cmd)
         os.chdir(cwd)
 
-    btn2 = Button(temp_fr0, text='xpath列表高亮显示', command=xpath_list_highlight)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='xpath高亮显示', command=xpath_highlight)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='【切换：xpath选择器/driver启动代码】', command=switch_window)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='[启动浏览器driver] <Alt+c>', command=start_selenium)
-    btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
-    btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='[开启/关闭执行代码窗口]', command=close_exec_code_window)
-    btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
-    btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='桌面覆盖/创建mitm脚本并执行', command=start_mitm_in_desktop)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
-    btn2.pack(side=tkinter.RIGHT)
-
-    temp_fr0 = Frame(fr)
-    temp_fr0.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-    temp_fr1 = Frame(temp_fr0)
-    temp_fr1_1 = Frame(temp_fr1)
-    temp_fr1_1.pack(side=tkinter.TOP)
-    temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
-    txt1 = Text(temp_fr1,height=1,width=1,font=ft)
-    lab1 = Label(temp_fr1_1,text='可执行 python 代码')
-    lab1.pack(side=tkinter.TOP)
-    txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-    temp_fr2 = Frame(temp_fr0)
-    temp_fr2_1 = Frame(temp_fr2)
-    temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
-    temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    lab2 = Label(temp_fr2_1,text='启动 driver 的 python 代码')
-    lab2.pack(side=tkinter.TOP)
-    txt2 = Text(temp_fr2,height=1,width=1,font=ft)
-    txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-
-    temp_fr3 = Frame(temp_fr0)
-    temp_fr3_1 = Frame(temp_fr3)
-    temp_fr3_1.pack(fill=tkinter.X,side=tkinter.TOP)
-    # temp_fr3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
-    lab3 = Label(temp_fr3_1,text='xpath 选择器窗口(单击着色/双击添加代码)')
-    lab3.pack(side=tkinter.TOP)
-    lbx3 = Listbox(temp_fr3,height=1,width=1,font=ft)
-    lbx3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
-    lbx3.bind("<<ListboxSelect>>", show_log)
-    lbx3.bind('<Double-Button-1>', double_click)
-
-    txt1.insert(tkinter.END, '''
-print(driver)
-'''.strip())
-
-    txt2.insert(tkinter.END, '''
+    script_v1 = '''
 def get_driver():
     from selenium import webdriver
     option = webdriver.ChromeOptions()
@@ -3306,7 +3251,160 @@ def get_driver():
                     webdriver.quit()
     threading.Thread(target=hook_close_window).start()
     return webdriver
+'''.strip()
+
+    script_v2 = r"""
+def get_driver():
+    chrome = None # 如果有设置 chrome.exe       的环境变量，这里可以不用主动设置
+    driver = None # 如果有设置 chromedriver.exe 的环境变量，这里可以不用主动设置
+    chrome = r"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
+    # driver = r'D:/Python/Python36/Scripts/chromedriver.exe'
+    remote_port = 9223
+    proxy_port = None # 8888 # 使用代理调试则将这里设置成代理端口既可，方便 mitmdump 等工具使用
+
+    import os, shutil, subprocess
+    chrome_path = shutil.which('chrome')       if not chrome else chrome # 在环境变量里面找文件的绝对地址
+    driver_path = shutil.which('chromedriver') if not driver else driver # 在环境变量里面找文件的绝对地址
+    assert chrome_path, "pls set chrome.exe path in env or set chrome=$abs_path(chrome.exe)."
+    assert driver_path, "pls set chromedriver.exe path in env or set driver=$abs_path(chromedriver.exe)."
+
+    # 临时 chrome 配置文件存放地址，防止破环日常使用的 chrome 配置
+    # 另外，经过测试，如果删除掉旧的临时配置文件的地址，启动会块很多很多
+    home = os.environ.get('HOME')
+    home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+    home = os.path.join(home, 'auto_selenium', 'AutomationProfile')
+    cache_path = os.path.split(home)[0]
+    if os.path.isdir(cache_path):
+        # print('cache_path clear: {}'.format(cache_path))
+        shutil.rmtree(cache_path)
+    # 如果想要使用代理
+    if proxy_port: chrome_exe = '''"{}" --remote-debugging-port={} --user-data-dir="{}" --proxy-server=http://127.0.0.1:{}'''.format(chrome_path, remote_port, home, proxy_port)
+    else:          chrome_exe = '''"{}" --remote-debugging-port={} --user-data-dir="{}"'''.format(chrome_path, remote_port, home)
+    subprocess.Popen(chrome_exe)
+    # print('driver_path: {}'.format(driver_path))
+    # print('chrome_path: {}'.format(chrome_path))
+    # print('chrome_exe: {}'.format(chrome_exe))
+
+    import selenium
+    from selenium import webdriver
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:{}".format(remote_port))
+
+    # 处理 document.$cdc_asdjflasutopfhvcZLmcfl_ 参数的指纹的检测
+    def check_magic_word(driver_path, rollback=False):
+        with open(driver_path, 'rb') as f: filebit = f.read()
+        a, b = b'$cdc_asdjflasutopfhvcZLmcfl_', b'$pqp_nfqwsynfhgbcsuipMYzpsy_'
+        a, b = (b, a) if rollback else (a, b)
+        mgc_o, mgc_t = a, b
+        if mgc_o in filebit: 
+            with open(driver_path, 'wb') as f: f.write(filebit.replace(mgc_o, mgc_t))
+    check_magic_word(driver_path, rollback=False)
+
+    # 启动 webdriver
+    webdriver = webdriver.Chrome(chrome_options=chrome_options, executable_path=driver_path)
+    webdriver.set_page_load_timeout(5) # 让所有的 get 网页的加载都限制在 n秒钟内，防止无限加载的问题。
+    _bak_get = webdriver.get
+    def get(url):
+        try:
+            _bak_get(url)
+        except selenium.common.exceptions.TimeoutException:
+            print('selenium.common.exceptions.TimeoutException: {}'.format(url))
+            get(url)
+    webdriver.get = get
+
+    # 设置:当你直接关闭浏览器时自动关闭 chromedriver.exe，防止进程残留
+    import time, threading
+    def hook_close_window():
+        chrome_close = False
+        while not chrome_close:
+            time.sleep(.3) # 每0.3秒检测一次，如果强制关闭浏览器，则自动关闭 chromedriver.exe
+            try:    driver_logs = webdriver.get_log('driver')
+            except: driver_logs = []
+            for i in driver_logs:
+                if 'Unable to evaluate script: disconnected: not connected to DevTools' in i.get('message'):
+                    chrome_close = True
+                    webdriver.quit()
+    threading.Thread(target=hook_close_window).start()
+    return webdriver
+""".strip()
+
+    from itertools import cycle
+    scripts_get_driver = {}
+    scripts_get_driver['v1'] = script_v1
+    scripts_get_driver['v2'] = script_v2
+    scripts_get_driver_curr = 'v1'
+    scripts_get_driver_loop = cycle(list(scripts_get_driver))
+    next(scripts_get_driver_loop)
+
+    def switch_script_get_driver(*a):
+        nonlocal scripts_get_driver_curr
+        curr_s = scripts_get_driver_curr
+        next_s = next(scripts_get_driver_loop)
+        scripts_get_driver_curr = next_s
+        scripts_get_driver[curr_s] = txt2.get(0.,tkinter.END).strip()
+        txt2.delete(0., tkinter.END)
+        txt2.insert(tkinter.END, scripts_get_driver[next_s])
+
+    # 这几个功能感觉不太好用，基本上没有用到过，注释掉
+    # btn2 = Button(temp_fr0, text='xpath列表高亮显示', command=xpath_list_highlight)
+    # btn2.pack(side=tkinter.RIGHT)
+    # btn2 = Button(temp_fr0, text='xpath高亮显示', command=xpath_highlight)
+    # btn2.pack(side=tkinter.RIGHT)
+    # btn2 = Button(temp_fr0, text='【切换：xpath选择器/driver启动代码】', command=switch_window)
+    # btn2.pack(side=tkinter.RIGHT)
+
+    btn2 = Button(temp_fr0, text='切换remote启动器脚本', command=switch_script_get_driver)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='[启动浏览器driver] <Alt+c>', command=start_selenium)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=execute_selenium_code)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[开启/关闭执行代码窗口]', command=close_exec_code_window)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
+    btn2.pack(side=tkinter.LEFT)
+    btn2 = Button(temp_fr0, text='桌面覆盖/创建mitm脚本并执行', command=start_mitm_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
+    btn2.pack(side=tkinter.RIGHT)
+
+    temp_fr0 = Frame(fr)
+    temp_fr0.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    temp_fr1 = Frame(temp_fr0)
+    temp_fr1_1 = Frame(temp_fr1)
+    temp_fr1_1.pack(side=tkinter.TOP)
+    temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
+    txt1 = Text(temp_fr1,height=1,width=1,font=ft)
+    lab1 = Label(temp_fr1_1,text='可执行 python 代码')
+    lab1.pack(side=tkinter.TOP)
+    txt1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    temp_fr2 = Frame(temp_fr0)
+    temp_fr2_1 = Frame(temp_fr2)
+    temp_fr2_1.pack(fill=tkinter.X,side=tkinter.TOP)
+    temp_fr2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+    lab2 = Label(temp_fr2_1,text='启动 driver 的 python 代码')
+    lab2.pack(side=tkinter.TOP)
+    txt2 = Text(temp_fr2,height=1,width=1,font=ft)
+    txt2.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+
+    temp_fr3 = Frame(temp_fr0)
+    temp_fr3_1 = Frame(temp_fr3)
+    temp_fr3_1.pack(fill=tkinter.X,side=tkinter.TOP)
+    # temp_fr3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.RIGHT)
+    lab3 = Label(temp_fr3_1,text='xpath 选择器窗口(单击着色/双击添加代码)')
+    lab3.pack(side=tkinter.TOP)
+    lbx3 = Listbox(temp_fr3,height=1,width=1,font=ft)
+    lbx3.pack(fill=tkinter.BOTH,expand=True,side=tkinter.TOP)
+    lbx3.bind("<<ListboxSelect>>", show_log)
+    lbx3.bind('<Double-Button-1>', double_click)
+
+    txt1.insert(tkinter.END, '''
+print(driver)
 '''.strip())
+
+    txt2.insert(tkinter.END, scripts_get_driver[scripts_get_driver_curr])
 
     temp_fr4 = Frame(fr)
     lab3 = Label(temp_fr4, text='代码结果 [Esc 切换显示状态]')
