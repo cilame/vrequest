@@ -3168,7 +3168,7 @@ def request(flow):
         # 如果想要截断，直接加上 raise 即可截断请求流
         # 对请求流进行截断，可以处理某一些类似于瑞数的重放攻击，
         # 让浏览器加密运算好的请求信息不发送出去，传递给其他请求模块进行请求。
-        flow.request.headers['User-Agent'] = 'asdfasdf'
+        flow.request.headers['User-Agent'] = 'VILAME'
     buti_req_print(flow)
 
 
