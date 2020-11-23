@@ -3211,7 +3211,7 @@ def buti_req_print(flow):
     print(flow.request.content, end='\n\n\n')
 def buti_resp_print(flow):
     print('============\n| response |\n============')
-    print('status:', flow.response.status_code, '\nresponse length: {}'.format(len(flow.response.get_content())))
+    print('status: {}\nresponse length: {}\nurl: {}'.format(flow.response.status_code, len(flow.response.get_content()), flow.request.url))
     print('------------------- response headers --------------------')
     header_fprint(dict(flow.response.headers))
     print('------------------- response content[:1000] ----------------')
