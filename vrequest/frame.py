@@ -3154,14 +3154,25 @@ from mitmproxy import ctx
 print('start mitmdump in {}'.format(ctx.master.server.address[1]))
 print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
 def response(flow):
-    target_url = 'https://www.baidu.com'
-    if  target_url in flow.request.url:
+    if flow.request.url == 'https://www.baidu.com/':
+        # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改
+        # 使用下面的 get_text()/set_text(text) 进行获取和修改，
+        # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
         jscode = flow.response.get_text()
         jscode = jscode.replace('debugger', '')
         flow.response.set_text(jscode)
-        print('changed.', flow.request.url)
+    buti_resp_print(flow)
+
+def request(flow):
+    if flow.request.url == 'https://baidu.com/':
+        # 对某些请求进行截断，可以处理某一些类似于瑞数的重放攻击，收集请求不发送出去
+        # 后续再批量请求。如果想要截断，直接加上 raise 即可阶段请求流
+        flow.request.headers['User-Agent'] = 'asdfasdf'
+    buti_req_print(flow)
 
 
+
+# 后面的代码不用过多关注，固定不变即可。
 import os
 import time
 import shutil
@@ -3175,6 +3186,35 @@ def clear_cache():
             shutil.rmtree(pt)
             break
 threading.Thread(target=clear_cache).start()
+# 美化 headers 输出
+def header_fprint(headers_dict):
+    maxklen = len(repr(max(headers_dict,key=len)))
+    for keystring in sorted(headers_dict):
+        valuestring = headers_dict[keystring]
+        if 'cookie' in keystring.lower():
+            vlist = sorted(valuestring.split('; '))
+            for idx,value in enumerate(vlist):
+                endsp = ('; ' if idx != len(vlist)-1 else '')
+                lstring = ('{:<'+str(maxklen)+'}:({}').format(repr(keystring), repr(value+endsp)) if idx == 0 else \
+                          ('{:<'+str(maxklen)+'}  {}').format('', repr(value+endsp))
+                if idx == len(vlist)-1: lstring += '),'
+                print(lstring)
+        else:
+            print(('{:<'+str(maxklen)+'}: {},').format(repr(keystring), repr(valuestring)))
+def buti_req_print(flow):
+    print('===========\n| request |\n===========')
+    print('request method: {}\nrequest url: {}'.format(flow.request.method, flow.request.url))
+    print('------------------- request headers ---------------------')
+    header_fprint(dict(flow.request.headers))
+    print('------------------- request body ------------------------')
+    print(flow.request.content, end='\n\n\n')
+def buti_resp_print(flow):
+    print('============\n| response |\n============')
+    print('status:', flow.response.status_code, '\nresponse length: {}'.format(len(flow.response.get_content())))
+    print('------------------- response headers --------------------')
+    header_fprint(dict(flow.response.headers))
+    print('------------------- response content[:1000] ----------------')
+    print('response content[:1000]:\n {}'.format(flow.response.get_content()[:1000]), end='\n\n\n')
 '''
             f.write(mitmcode)
         cwd = os.getcwd()
