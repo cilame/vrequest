@@ -2592,6 +2592,14 @@ jscode = r'''
 $^^$jscode$^^$
 '''
 
+# 如果出现编码异常，可以尝试解开下面注释中的代码以处理 execjs 执行时期的编码问题。
+# import subprocess
+# _bak_Popen = subprocess.Popen
+# def _Popen(*a, **kw):
+#     kw['encoding'] = 'utf-8'
+#     return _bak_Popen(*a, **kw)
+# subprocess.Popen = _Popen
+
 import execjs
 ctx = execjs.compile(jscode)
 result = ctx.call('func',10,20) # 执行函数，需要传参函数将参从第二个开始依次排在方法名后面
