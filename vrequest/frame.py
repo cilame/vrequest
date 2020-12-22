@@ -3156,6 +3156,81 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
         filename = os.path.join(os.path.expanduser("~"),'Desktop', 'mitm_changejs.py')
         with open(filename, 'w', encoding='utf-8') as f:
             mitmcode = r'''
+hook_script = r"""
+<script type="text/javascript">
+// 挂钩内置函数 window.eval
+// 如果想挂钩别的，可以将 window.eval 直接替换成别的即可，例如 document.createElement
+(function(){
+  eval_string = window.eval.toString()
+  const handler = {
+    apply: function (target, thisArg, args){
+      // debugger;
+      console.log("eval:" + args);
+      return target.apply(thisArg, args)
+    }
+  }
+  const handler_tostring = {
+    apply: function (target, thisArg, args){
+      return eval_string;
+    }
+  }
+  window.eval = new Proxy(window.eval, handler);
+  window.eval.toString = new Proxy(window.eval.toString, handler_tostring);
+})();
+
+// 挂钩 cookie 生成的时机。
+(function() {
+  var cookie_cache = document.cookie;
+  Object.defineProperty(document, 'cookie', {
+    get: function() {
+      // debugger;
+      // console.log("cookie get:", cookie_cache);
+      return cookie_cache;
+    },
+    set: function(val) {
+      // debugger;
+      // if (cookie.indexOf('RM4hZBv0dDon443M') != -1){ debugger; }
+      console.log("cookie set:", cookie_cache);
+      var cookie = val.split(";")[0];
+      var ncookie = cookie.split("=");
+      var flag = false;
+      var cache = cookie_cache.split(";");
+      cache = cache.map(function(a){
+        if (a.split("=")[0] === ncookie[0]){
+          flag = true;
+          return cookie;
+        }
+        return a;
+      })
+      cookie_cache = cache.join(";");
+      if (!flag){
+        cookie_cache += cookie + ";";
+      }
+    },
+  });
+})();
+
+// 挂钩一些 constructor 形式的调用
+Function.prototype.__defineGetter__('constructor', function() {
+  return function(...args) {
+    console.log('code:', ...args);
+    return Function(...args);
+  };
+});
+</script>
+"""
+
+
+
+
+
+
+
+
+
+
+
+
 import re
 import json
 from mitmproxy import ctx
@@ -3167,9 +3242,17 @@ def response(flow):
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
         jscode = flow.response.get_text()
-        jscode = jscode.replace('debugger', '')
+        jscode = re.sub('<head[^>]*>', lambda e: e.group(0) + hook_script, jscode)
         flow.response.set_text(jscode)
     buti_resp_print(flow)
+
+def request(flow):
+    if flow.request.url == 'https://baidu.com/':
+        # 如果想要截断，直接加上 raise 即可截断请求流
+        # 对请求流进行截断，可以处理某一些类似于瑞数的重放攻击，
+        # 让浏览器加密运算好的请求信息不发送出去，传递给其他请求模块进行请求。
+        flow.request.headers['User-Agent'] = 'VILAME'
+    buti_req_print(flow)
 
 def request(flow):
     if flow.request.url == 'https://baidu.com/':
@@ -3230,7 +3313,6 @@ class WindowProxySetting:
         value, type = winreg.QueryValueEx(self.hKey, "ProxyEnable")
         return bool(value)
 wproxy = WindowProxySetting(proxy="127.0.0.1:{}".format(ctx.master.server.address[1]))
-wproxy.close()
 wproxy.open()
 import signal
 import sys
