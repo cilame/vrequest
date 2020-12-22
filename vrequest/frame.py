@@ -3236,6 +3236,8 @@ import json
 from mitmproxy import ctx
 print('start mitmdump in {}'.format(ctx.master.server.address[1]))
 print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
+print('如果直接关闭该命令行（非ctrl+c关闭），则可能会出现代理异常情况，')
+print('这时重新打开 vv 工具，代理则会自动恢复正常状态。')
 def response(flow):
     if flow.request.url == 'https://www.baidu.com/':
         # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改

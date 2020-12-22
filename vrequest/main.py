@@ -120,8 +120,8 @@ def reset_proxy_state():
         from .pywindowproxy import WindowProxySetting
         wproxy = WindowProxySetting()
         if wproxy.get_state():
-            import tkinter.messagebox
-            tkinter.messagebox.showwarning(title='Hi', message='关闭已经打开的代理！')
+            # import tkinter.messagebox
+            # tkinter.messagebox.showwarning(title='Hi', message='关闭已经打开的代理！')
             wproxy.close()
     except:
         print('reset_proxy_state error.')
