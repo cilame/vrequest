@@ -3239,7 +3239,7 @@ print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_chang
 print('如果直接关闭该命令行（非ctrl+c关闭），则可能会出现代理异常情况，')
 print('这时重新打开 vv 工具，代理则会自动恢复正常状态。')
 def response(flow):
-    if flow.request.url == 'https://www.baidu.com/':
+    if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url == :
         # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
@@ -3249,15 +3249,7 @@ def response(flow):
     buti_resp_print(flow)
 
 def request(flow):
-    if flow.request.url == 'https://baidu.com/':
-        # 如果想要截断，直接加上 raise 即可截断请求流
-        # 对请求流进行截断，可以处理某一些类似于瑞数的重放攻击，
-        # 让浏览器加密运算好的请求信息不发送出去，传递给其他请求模块进行请求。
-        flow.request.headers['User-Agent'] = 'VILAME'
-    buti_req_print(flow)
-
-def request(flow):
-    if flow.request.url == 'https://baidu.com/':
+    if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url:
         # 如果想要截断，直接加上 raise 即可截断请求流
         # 对请求流进行截断，可以处理某一些类似于瑞数的重放攻击，
         # 让浏览器加密运算好的请求信息不发送出去，传递给其他请求模块进行请求。
