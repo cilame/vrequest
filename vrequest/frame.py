@@ -3195,6 +3195,52 @@ def clear_cache():
             shutil.rmtree(pt)
             break
 threading.Thread(target=clear_cache).start()
+# 打开全局的代理，让代理自动切换
+import ctypes
+import winreg
+class WindowProxySetting:
+    def __init__(self, proxy="127.0.0.1:8888"):
+        proxy_path = r'Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'
+        self.proxy = proxy
+        self.root = winreg.HKEY_CURRENT_USER
+        self.hKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER, proxy_path)
+        self.set_proxy = [
+            [proxy_path, "ProxyEnable", winreg.REG_DWORD, 1],
+            [proxy_path, "ProxyServer", winreg.REG_SZ, self.proxy],
+        ]
+    def _flash(self):
+        try:
+            internet_set_option = ctypes.windll.Wininet.InternetSetOptionW    
+            internet_set_option(0, 39, 0, 0)
+            internet_set_option(0, 37, 0, 0)
+        except:pass
+    def open(self):
+        self.set_proxy[0][3] = 1
+        for keypath, value_name, value_type, value in self.set_proxy:
+            self.hKey = winreg.CreateKey(self.root, keypath)
+            winreg.SetValueEx(self.hKey, value_name, 0, value_type, value)
+        self._flash()
+    def close(self):
+        self.set_proxy[0][3] = 0
+        for keypath, value_name, value_type, value in self.set_proxy:
+            self.hKey = winreg.CreateKey(self.root, keypath)
+            winreg.SetValueEx(self.hKey, value_name, 0, value_type, value)
+        self._flash()
+    def get_state(self):
+        value, type = winreg.QueryValueEx(self.hKey, "ProxyEnable")
+        return bool(value)
+wproxy = WindowProxySetting(proxy="127.0.0.1:{}".format(ctx.master.server.address[1]))
+wproxy.close()
+wproxy.open()
+import signal
+import sys
+def Quit(signum, frame):
+    wproxy.close()
+    print('proxy close.')
+    print('command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
+    sys.exit(0)
+signal.signal(signal.SIGINT, Quit)
+signal.signal(signal.SIGTERM, Quit)
 # 美化 headers 输出
 def header_fprint(headers_dict):
     maxklen = len(repr(max(headers_dict,key=len)))
