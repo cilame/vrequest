@@ -3239,7 +3239,7 @@ print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_chang
 print('如果直接关闭该命令行（非ctrl+c关闭），则可能会出现代理异常情况，')
 print('这时重新打开 vv 工具，代理则会自动恢复正常状态。')
 def response(flow):
-    if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url == :
+    if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url:
         # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
