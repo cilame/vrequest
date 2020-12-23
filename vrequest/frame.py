@@ -3189,7 +3189,7 @@ hook_script = r"""
     },
     set: function(val) {
       // debugger;
-      // if (cookie.indexOf('RM4hZBv0dDon443M') != -1){ debugger; }
+      // if (val.indexOf('neCYtZEjo8GmT') != -1){ debugger; }
       console.log("cookie set:", cookie_cache);
       var cookie = val.split(";")[0];
       var ncookie = cookie.split("=");
