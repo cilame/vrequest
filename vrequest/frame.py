@@ -3154,8 +3154,21 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 
     def start_mitm_in_desktop(*a):
         filename = os.path.join(os.path.expanduser("~"),'Desktop', 'mitm_changejs.py')
-        with open(filename, 'w', encoding='utf-8') as f:
-            mitmcode = r'''
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '在桌面覆盖创建新的模板脚本 mitm_changejs.py 并启动',
+                '在桌面使用已存在的 mitm_changejs.py 脚本启动', ]
+        d = SimpleDialog(nb,
+            text="请选择启动方式",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="启动mitmdump")
+        id = d.go()
+        if id == -1: return
+        if id == 0:
+            with open(filename, 'w', encoding='utf-8') as f:
+                mitmcode = r'''
 hook_script = r"""
 <script type="text/javascript">
 // 挂钩内置函数 window.eval
@@ -3346,17 +3359,24 @@ def buti_resp_print(flow):
     header_fprint(dict(flow.response.headers))
     print('------------------- response content[:1000] ----------------')
     print('response content[:1000]:\n {}'.format(flow.response.get_content()[:1000]), end='\n\n\n')
-'''
-            f.write(mitmcode)
+    '''
+                f.write(mitmcode)
+        if id == 1:
+            pass
         cwd = os.getcwd()
         desktop = os.path.join(os.path.expanduser("~"),'Desktop')
         os.chdir(desktop)
+        import subprocess
+        # 挂钩cmd关闭，让强制关闭cmd能够自动关闭掉代理
+        close_proxy = '''python -c "x=0;import ctypes;import winreg;v=winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings');winreg.SetValueEx(v,'ProxyEnable',0,winreg.REG_DWORD,x);c=ctypes.windll.Wininet.InternetSetOptionW;c(0,39,0,0);c(0,37,0,0)"'''
+        # close_proxy = '''python -c "x=0;p='127.0.0.1:8888';import ctypes;import winreg;v=winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings');winreg.SetValueEx(v,'ProxyEnable',0,winreg.REG_DWORD,x);winreg.SetValueEx(v,'ProxyServer',0,winreg.REG_SZ,p);c=ctypes.windll.Wininet.InternetSetOptionW;c(0,39,0,0);c(0,37,0,0)"'''
         try:
-            cmd = 'start powershell -NoExit "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
-            assert not os.system(cmd) # 返回0则正常执行
+            assert shutil.which("powershell")
+            cmd = 'start /wait powershell -NoExit "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
+            subprocess.Popen(cmd+' && '+close_proxy, creationflags=0x8000000, shell=True)
         except:
-            cmd = 'start cmd /k "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
-            os.system(cmd)
+            cmd = 'start /wait cmd /k "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
+            subprocess.Popen(cmd+' && '+close_proxy, creationflags=0x8000000, shell=True)
         os.chdir(cwd)
 
     script_v1 = '''
@@ -3536,7 +3556,7 @@ def get_driver():
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
     btn2.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='桌面覆盖/创建mitm脚本并执行', command=start_mitm_in_desktop)
+    btn2 = Button(temp_fr0, text='启动mitmdump', command=start_mitm_in_desktop)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
     btn2.pack(side=tkinter.RIGHT)
