@@ -3251,7 +3251,7 @@ print('如果计算机异常关闭，代理可能还处于开启状态，')
 print('这时重新打开 vv 工具，代理则会自动恢复正常状态，')
 print('因为启动 vv 工具时会自动尝试将 windows 代理关闭。')
 def response(flow):
-    if 'http://match.yuanrenxue.com/match/16' in flow.request.url:
+    if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url:
         # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
