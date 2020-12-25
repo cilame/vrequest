@@ -3170,7 +3170,6 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
             with open(filename, 'w', encoding='utf-8') as f:
                 mitmcode = r'''
 hook_script = r"""
-<script type="text/javascript">
 // 挂钩内置函数 window.eval
 // 如果想挂钩别的，可以将 window.eval 直接替换成别的即可，例如 document.createElement
 (function(){
@@ -3230,7 +3229,6 @@ Function.prototype.__defineGetter__('constructor', function() {
     return Function(...args);
   };
 });
-</script>
 """
 
 
