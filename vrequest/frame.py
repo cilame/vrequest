@@ -3256,7 +3256,7 @@ def response(flow):
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
         jscode = flow.response.get_text()
-        jscode = re.sub('<script[^>]*>', lambda e: e.group(0) + hook_script, jscode)
+        jscode = re.sub('<script[^>]*>', lambda e: e.group(0) + hook_script, jscode, 1)
         flow.response.set_text(jscode)
     buti_resp_print(flow)
 
