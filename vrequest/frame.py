@@ -3203,7 +3203,7 @@ hook_script = r"""
     set: function(val) {
       // debugger;
       // if (val.indexOf('neCYtZEjo8GmT') != -1){ debugger; }
-      console.log("cookie set:", cookie_cache);
+      console.log("cookie set:", val);
       var cookie = val.split(";")[0];
       var ncookie = cookie.split("=");
       var flag = false;
@@ -3258,7 +3258,7 @@ def response(flow):
         # 使用下面的 get_text()/set_text(text) 进行获取和修改，
         # 如果是修改二进制数据就用 get_content/set_content 进行获取和修改
         jscode = flow.response.get_text()
-        jscode = re.sub('<head[^>]*>', lambda e: e.group(0) + hook_script, jscode)
+        jscode = re.sub('<script[^>]*>', lambda e: e.group(0) + hook_script, jscode)
         flow.response.set_text(jscode)
     buti_resp_print(flow)
 
