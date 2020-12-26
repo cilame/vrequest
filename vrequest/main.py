@@ -115,17 +115,6 @@ bind_alt_key(create_test_code_urllib,   'u') # 生成 urllib(py3) 请求的代�
 
 
 
-def reset_proxy_state():
-    try:
-        from .pywindowproxy import WindowProxySetting
-        wproxy = WindowProxySetting()
-        if wproxy.get_state():
-            # import tkinter.messagebox
-            # tkinter.messagebox.showwarning(title='Hi', message='关闭已经打开的代理！')
-            wproxy.close()
-    except:
-        print('reset_proxy_state error.')
-reset_proxy_state()
 
 def algo():
     from .frame import encode_window

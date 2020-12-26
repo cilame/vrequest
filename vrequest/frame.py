@@ -3181,13 +3181,35 @@ hook_script = r"""
       return target.apply(thisArg, args)
     }
   }
-  const handler_tostring = {
-    apply: function (target, thisArg, args){
-      return eval_string;
-    }
-  }
+  const handler_tostring = { apply: function (target, thisArg, args){ return eval_string; } }
   window.eval = new Proxy(window.eval, handler);
   window.eval.toString = new Proxy(window.eval.toString, handler_tostring);
+})();
+// 挂钩 ajax 请求时机。
+// 挂钩 ajax 设置请求头的时机。
+(function(){
+  XMLHttpRequest_prototype_open_str = XMLHttpRequest.prototype.open.toString()
+  const handler = {
+    apply: function (target, thisArg, args){
+      // debugger;
+      return target.apply(thisArg, args)
+    }
+  }
+  const handler_tostring = { apply: function (target, thisArg, args){ return XMLHttpRequest_prototype_open_str; } }
+  XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, handler);
+  XMLHttpRequest.prototype.open.toString = new Proxy(XMLHttpRequest.prototype.open.toString, handler_tostring);
+})();
+(function(){
+  XMLHttpRequest_prototype_setRequestHeader_str = XMLHttpRequest.prototype.setRequestHeader.toString()
+  const handler = {
+    apply: function (target, thisArg, args){
+      // debugger;
+      return target.apply(thisArg, args)
+    }
+  }
+  const handler_tostring = { apply: function (target, thisArg, args){ return XMLHttpRequest_prototype_setRequestHeader_str; } }
+  XMLHttpRequest.prototype.setRequestHeader = new Proxy(XMLHttpRequest.prototype.setRequestHeader, handler);
+  XMLHttpRequest.prototype.setRequestHeader.toString = new Proxy(XMLHttpRequest.prototype.setRequestHeader.toString, handler_tostring);
 })();
 
 // 挂钩 cookie 生成的时机。
@@ -3247,9 +3269,9 @@ import json
 from mitmproxy import ctx
 print('start mitmdump in {}'.format(ctx.master.server.address[1]))
 print('wanna change proxy? ctl+c and use new command: "mitmdump -q -s mitm_changejs.py -p $newproxy"')
+print('该代码将自动设置全局代理，停止 Ctrl+C 或关闭窗口均可自动关闭全局代理，')
 print('如果计算机异常关闭，代理可能还处于开启状态，')
-print('这时重新打开 vv 工具，代理则会自动恢复正常状态，')
-print('因为启动 vv 工具时会自动尝试将 windows 代理关闭。')
+print('这时你可以打开 vv 工具，然后右键选择浏览器窗口，点击关闭代理即可。')
 def response(flow):
     if 'xxxxxxxxxxxxxxxxxxxxx' in flow.request.url:
         # 针对某个请求返回的结果进行定制修改，在js抵达浏览器之前就被修改
@@ -3264,7 +3286,7 @@ def response(flow):
                 return e.group(0) + hook_script
             return e.group(0)
         jscode = flow.response.get_text()
-        jscode = re.sub('<script[^>]*>', rep, jscode)
+        jscode = re.sub('<script[^>]*>|<head>', rep, jscode)
         flow.response.set_text(jscode)
     buti_resp_print(flow)
 
@@ -3543,6 +3565,18 @@ def get_driver():
         txt2.delete(0., tkinter.END)
         txt2.insert(tkinter.END, scripts_get_driver[next_s])
 
+    def reset_proxy_state(*a):
+        try:
+            from .pywindowproxy import WindowProxySetting
+            wproxy = WindowProxySetting()
+            if wproxy.get_state():
+                tkinter.messagebox.showinfo(title='Hi', message='关闭已经打开的代理！\n{}'.format(wproxy.get_server()))
+                wproxy.close()
+            else:
+                tkinter.messagebox.showinfo(title='Hi', message='代理已关闭')
+        except:
+            print('reset_proxy_state error.')
+
     # 这几个功能感觉不太好用，基本上没有用到过，注释掉
     # btn2 = Button(temp_fr0, text='xpath列表高亮显示', command=xpath_list_highlight)
     # btn2.pack(side=tkinter.RIGHT)
@@ -3564,6 +3598,8 @@ def get_driver():
     btn2 = Button(temp_fr0, text='[关闭浏览器driver]', command=close_selenium)
     btn2.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='启动mitmdump', command=start_mitm_in_desktop)
+    btn2.pack(side=tkinter.RIGHT)
+    btn2 = Button(temp_fr0, text='关闭代理', command=reset_proxy_state)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='添加常用代码模板', command=add_script)
     btn2.pack(side=tkinter.RIGHT)
