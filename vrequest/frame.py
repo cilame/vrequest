@@ -3284,8 +3284,11 @@ def response(flow):
             if toggle and 'src=' not in ret:
                 toggle = False
                 return e.group(0) + hook_script
-            else:
+            elif toggle:
+                toggle = False
                 return """<script type="text/javascript">{}</script>""".format(hook_script) + e.group(0)
+            else:
+                return e.group(0)
         jscode = flow.response.get_text()
         jscode = re.sub('<script[^>]*>', rep, jscode)
         flow.response.set_text(jscode)
