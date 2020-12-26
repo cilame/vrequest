@@ -3170,6 +3170,7 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
             with open(filename, 'w', encoding='utf-8') as f:
                 mitmcode = r'''
 hook_script = r"""
+var print = console.log
 // 挂钩内置函数 window.eval
 // 如果想挂钩别的，可以将 window.eval 直接替换成别的即可，例如 document.createElement
 (function(){
@@ -3177,7 +3178,7 @@ hook_script = r"""
   const handler = {
     apply: function (target, thisArg, args){
       // debugger;
-      console.log("eval:" + args);
+      print("eval:" + args);
       return target.apply(thisArg, args)
     }
   }
@@ -3192,6 +3193,7 @@ hook_script = r"""
   const handler = {
     apply: function (target, thisArg, args){
       // debugger;
+      print("XMLHttpRequest_prototype_open:", args)
       return target.apply(thisArg, args)
     }
   }
@@ -3204,6 +3206,7 @@ hook_script = r"""
   const handler = {
     apply: function (target, thisArg, args){
       // debugger;
+      print("XMLHttpRequest_setRequestHeader:", args)
       return target.apply(thisArg, args)
     }
   }
@@ -3218,13 +3221,13 @@ hook_script = r"""
   Object.defineProperty(document, 'cookie', {
     get: function() {
       // debugger;
-      // console.log("cookie get:", cookie_cache);
+      // print("cookie get:", cookie_cache);
       return cookie_cache;
     },
     set: function(val) {
       // debugger;
       // if (val.indexOf('neCYtZEjo8GmT') != -1){ debugger; }
-      console.log("cookie set:", val);
+      print("cookie set:", val);
       var cookie = val.split(";")[0];
       var ncookie = cookie.split("=");
       var flag = false;
@@ -3247,7 +3250,7 @@ hook_script = r"""
 // 挂钩一些 constructor 形式的调用
 Function.prototype.__defineGetter__('constructor', function() {
   return function(...args) {
-    console.log('code:', ...args);
+    print('code:', ...args);
     return Function(...args);
   };
 });
