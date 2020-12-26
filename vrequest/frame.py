@@ -3284,10 +3284,10 @@ def response(flow):
             if toggle and 'src=' not in ret:
                 toggle = False
                 return e.group(0) + hook_script
-            return e.group(0)
+            else:
+                return """<script type="text/javascript">{}</script>""".format(hook_script) + e.group(0)
         jscode = flow.response.get_text()
         jscode = re.sub('<script[^>]*>', rep, jscode)
-        # jscode = re.sub('<head>', rep, """<script type="text/javascript">{}</script>""".format(jscode))
         flow.response.set_text(jscode)
     buti_resp_print(flow)
 
