@@ -3286,7 +3286,9 @@ def response(flow):
                 return e.group(0) + hook_script
             return e.group(0)
         jscode = flow.response.get_text()
-        jscode = re.sub('<script[^>]*>|<head>', rep, jscode)
+        jscode = re.sub('<script[^>]*>', rep, jscode)
+        jscode = re.sub('<head>', rep, """<script type="text/javascript">{}</script>""".format(jscode))
+        
         flow.response.set_text(jscode)
     buti_resp_print(flow)
 
