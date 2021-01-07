@@ -2718,8 +2718,48 @@ print(js.func)
         else:
             tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
 
+    def save_defusion_desktop():
+        try:
+            try:
+                from .pyjsdefusion import get_node_string
+            except:
+                from pyjsdefusion import get_node_string
+            jscode = get_node_string()
+            name = 'babel_defusion.js'
+            desktop_script = os.path.join(os.path.expanduser("~"), 'Desktop', name)
+            if not os.path.isfile(desktop_script):
+                with open(desktop_script, 'w', encoding='utf-8') as f:
+                    f.write(jscode)
+            else:
+                tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
+    def about_js(*a):
+        from .tab import nb
+        from .tab import SimpleDialog
+        qq = [   
+                # [make_js_script,      '用语法树生成代码'],
+                [make_js_tree,          '生成语法树'],
+                [translate_js_python,   '简单js代码翻译成[python]代码(可能有错误)'],
+                [defusion_js_code,      '使用node简单逆混肴代码'],
+                [save_defusion_desktop, '保存node逆混淆单脚本置桌面(用于单独开发)'],
+            ]
+        q = [i[1] for i in qq]
+        d = SimpleDialog(nb,
+            text="请选择启动方式",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="启动mitmdump")
+        id = d.go()
+        if id == -1: return
+        qq[id][0]()
+
     # 查看常用的js解析器的引入状态
-    support_modules = ['js2py', 'execjs']
+    support_modules = ['execjs', 'js2py']
     def get_js_import_stat(support_modules):
         s = []
         def _temp(module):
@@ -2751,18 +2791,22 @@ print(js.func)
     btn_create_python_code.pack(side=tkinter.LEFT)
     btn_translate_js = Button(temp_fr0,text='翻译成[js2py]代码',command=translate_js_js2py)
     btn_translate_js.pack(side=tkinter.LEFT)
-    btn_translate_js2python = Button(temp_fr0,text='简单js代码翻译成[python]代码(可能有错误)',command=translate_js_python)
-    btn_translate_js2python.pack(side=tkinter.LEFT)
-    btn2 = Button(temp_fr0, text='[执行代码] <Alt+v>', command=_exec_javascript)
+
+    btn2 = Button(temp_fr0, text='[执行py代码] <Alt+v>', command=_exec_javascript)
     btn2.pack(side=tkinter.RIGHT)
     btn2 = Button(temp_fr0, text='保存脚本到桌面', command=save_script_in_desktop)
     btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='用语法树生成代码', command=make_js_script)
+    btn2 = Button(temp_fr0, text='js语言相关', command=about_js)
     btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='生成语法树', command=make_js_tree)
-    btn2.pack(side=tkinter.RIGHT)
-    btn2 = Button(temp_fr0, text='使用node简单逆混肴代码', command=defusion_js_code)
-    btn2.pack(side=tkinter.RIGHT)
+
+    # btn2 = Button(temp_fr0, text='用语法树生成代码', command=make_js_script)
+    # btn2.pack(side=tkinter.RIGHT)
+    # btn2 = Button(temp_fr0, text='生成语法树', command=make_js_tree)
+    # btn2.pack(side=tkinter.RIGHT)
+    # btn2 = Button(temp_fr0, text='使用node简单逆混肴代码', command=defusion_js_code)
+    # btn2.pack(side=tkinter.RIGHT)
+    # btn2 = Button(temp_fr0,text='简单js代码翻译成[python]代码(可能有错误)',command=translate_js_python)
+    # btn2.pack(side=tkinter.RIGHT)
 
 
     temp_fr0 = Frame(fr)

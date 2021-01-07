@@ -1,243 +1,327 @@
-print = console.log
-
-var esprima = require('esprima');
-var estraverse = require('estraverse')
-var escodegen = require('escodegen')
-
-function muti_process_defusion(code){
-    var tree = esprima.parseScript(code)
-    // 对于目前还没开发完善的内容而言，保留一个简单的还原 '\x' 格式的功能即可
-    // combine_static_array(tree);
-    // combine_object_array(tree);
-    // combine_identy_function(tree); // 该参数在某些情况下使用起来不是很方便
-    // combine_binary_function(tree);
-    // combine_binary(tree);
-    return escodegen.generate(tree);
+function FormatMember(path) {
+    // _0x19882c['removeCookie']['toString']()
+    //  |
+    //  |
+    //  |
+    //  v
+    // _0x19882c.removeCookie.toString()
+    var curNode = path.node;
+    if(!t.isStringLiteral(curNode.property))
+        return;
+    if(curNode.computed === undefined || !curNode.computed === true)
+        return;
+    if (!/[a-zA-Z_$][0-9a-zA-Z_$]*/.test(curNode.property.value))
+        return;
+    curNode.property = t.identifier(curNode.property.value);
+    curNode.computed = false;
 }
 
-// 合并对象的静态列表(这里后续需要考虑考虑重名的处理)
-function combine_object_array(tree) {
-    var STATIC_OBJECT = {};
-    estraverse.replace(tree, {
-        leave(node, parent) {
-            // 初始化
-            if (node.type === 'VariableDeclarator' &&
-                node.init != null &&
-                node.init.type === 'ObjectExpression'){
-                STATIC_OBJECT[node.id.name] = {}
-                for(var key in node.init.properties){
-                    STATIC_OBJECT[node.id.name][node.init.properties[key].key.value] = node.init.properties[key].value
-                }
+function TransCondition(path) {
+    // a = m?11:22; 
+    //  |
+    //  |
+    //  |
+    //  v
+    // m ? a = 11 : a = 22;
+    let {test, consequent, alternate} = path.node;
+    const ParentPath = path.parentPath;
+    if (ParentPath.isAssignmentExpression()) {
+        let {operator, left} = ParentPath.node;
+        if (operator === "=") {
+            consequent = t.AssignmentExpression("=", left, consequent)
+            alternate = t.AssignmentExpression("=", left, alternate)
+            ParentPath.replaceWith(t.conditionalExpression(test, consequent, alternate))
+        }
+    }
+}
+function ConditionToIf(path) {
+    // m ? a = 11 : a = 22;
+    //  |
+    //  |
+    //  |
+    //  v
+    // if (m) {
+    //   a = 11;
+    // } else {
+    //   a = 22;
+    // }
+    let {expression} = path.node;
+    if(!t.isConditionalExpression(expression)) return;
+    let {test, consequent, alternate} = expression;
+    path.replaceWith(t.ifStatement(
+        test,
+        t.blockStatement([t.expressionStatement(consequent),]),
+        t.blockStatement([t.expressionStatement(alternate),])
+    ));
+}
+
+function ConditionVarToIf(path) {
+    // var m ? a = 11 : a = 22;
+    //  |
+    //  |
+    //  |
+    //  v
+    // if (m) {
+    //   var a = 11;
+    // } else {
+    //   var a = 22;
+    // }
+    let {id, init} = path.node;
+    if (!t.isConditionalExpression(init)) return;
+    const ParentPath = path.parentPath;
+    const ParentNode = path.parent;
+    if (!t.isVariableDeclaration(ParentNode)) return;
+    if (t.isForStatement(ParentPath.parentPath)) return;
+    let kind = ParentNode.kind;
+    let {test, consequent, alternate} = init;
+    ParentPath.replaceWith(t.ifStatement(
+        test,
+        t.blockStatement([t.variableDeclaration(kind, [t.variableDeclarator(id, consequent)]),]),
+        t.blockStatement([t.variableDeclaration(kind, [t.variableDeclarator(id, alternate)]),])
+    ));
+}
+
+function RemoveComma(path) {
+    // a = 1, b = ddd(), c = null;
+    //  |
+    //  |
+    //  |
+    //  v
+    // a = 1;
+    // b = ddd();
+    // c = null;
+    let {expression} = path.node
+    if (!t.isSequenceExpression(expression))
+        return;
+    let body = []
+    expression.expressions.forEach(
+        express => {
+            body.push(t.expressionStatement(express))
+        }
+    )
+    path.replaceInline(body)
+}
+
+function RemoveVarComma(path) {
+    // var a = 1, b = ddd(), c = null;
+    //   |
+    //   |
+    //   |
+    //   v
+    // var a = 1;
+    // var b = ddd();
+    // var c = null;
+    let {kind, declarations} = path.node;
+    if (declarations.length < 2) return;
+    if (t.isForStatement(path.parentPath)) return;
+    temp = [];
+    declarations.forEach(
+        VariableDeclarator => {
+            temp.push(t.variableDeclaration(kind, [VariableDeclarator]))
+        }
+    )
+    path.replaceInline(temp);
+}
+
+function MergeObj(path) {
+    // var _0xb28de8 = {};
+    // _0xb28de8["abcd"] = function(_0x22293f, _0x5a165e) {
+    //     return _0x22293f == _0x5a165e;
+    // };
+    // _0xb28de8.dbca = function(_0xfbac1e, _0x23462f, _0x556555) {
+    //     return _0xfbac1e(_0x23462f, _0x556555);
+    // };
+    // _0xb28de8.aaa = function(_0x57e640) {
+    //     return _0x57e640();
+    // };
+    // _0xb28de8["bbb"] = "eee";
+    // var _0x15e145 = _0xb28de8;
+    //  |
+    //  |
+    //  |
+    //  v
+    // var _0xb28de8 = {
+    //   "abcd": function (_0x22293f, _0x5a165e) {
+    //     return _0x22293f == _0x5a165e;
+    //   },
+    //   "dbca": function (_0xfbac1e, _0x23462f, _0x556555) {
+    //     return _0xfbac1e(_0x23462f, _0x556555);
+    //   },
+    //   "aaa": function (_0x57e640) {
+    //     return _0x57e640();
+    //   },
+    //   "bbb": "eee"
+    // };
+    const {id, init} = path.node;
+    if (!t.isObjectExpression(init)) // 判断是否是定义对象
+        return;
+    let name = id.name;
+    let properties = init.properties;
+    let scope = path.scope;
+    let binding = scope.getBinding(name);
+    if (!binding || binding.constantViolations.length > 0) { // 确认该对象没有被多次定义
+        return;
+    }
+    let paths = binding.referencePaths;
+    scope.traverse(scope.block, {
+        AssignmentExpression: function(_path) {
+            const left = _path.get("left");
+            const right = _path.get("right");
+            if (!left.isMemberExpression())
+                return;
+            const object = left.get("object");
+            const property = left.get("property");
+            if (object.isIdentifier({name: name}) && property.isStringLiteral() && _path.scope == scope) {
+                properties.push(t.ObjectProperty(t.valueToNode(property.node.value), right.node));
+                _path.remove();
             }
-            // 赋值
-            if (node.type === 'AssignmentExpression' &&
-                node.left.type === 'MemberExpression' &&
-                node.left.computed === true &&
-                node.left.object.type === 'Identifier' &&
-                node.left.object.name in STATIC_OBJECT &&
-                node.right.type === 'Literal' &&
-                typeof node.left.property.value !== 'number'){
-                STATIC_OBJECT[node.left.object.name][node.left.property.value] = node.right
-            }
-            // 替换
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'Identifier' &&
-                node.property.type === 'Literal' &&
-                node.object.name in STATIC_OBJECT){
-                return STATIC_OBJECT[node.object.name][node.property.value];
+            if (object.isIdentifier({name: name}) && property.isIdentifier() && _path.scope == scope) {
+                properties.push(t.ObjectProperty(t.valueToNode(property.node.name), right.node));
+                _path.remove();
             }
         }
+    })
+    paths.map(function(refer_path) {
+        let bindpath = refer_path.parentPath; 
+        if (!t.isVariableDeclarator(bindpath.node)) return;
+        let bindname = bindpath.node.id.name;
+        bindpath.scope.rename(bindname, name, bindpath.scope.block);
+        bindpath.remove();
     });
 }
 
-// 合并参数的静态列表(这里后续需要考虑考虑重名的处理)
-function combine_static_array(tree) {
-    var STATIC_ARRAY = {};
-    estraverse.replace(tree, {
-        leave(node, parent) {
-            // 初始化
-            if (node.type === 'VariableDeclarator' &&
-                node.init != null &&
-                node.init.type === 'ArrayExpression' &&
-                node.id.type === 'Identifier'){
-                STATIC_ARRAY[node.id.name] = node.init.elements
-            }
-            // 赋值
-            if (node.type === 'AssignmentExpression' &&
-                node.left.type === 'MemberExpression' &&
-                node.left.computed === true &&
-                node.left.object.type === 'Identifier' &&
-                node.left.object.name in STATIC_ARRAY &&
-                node.right.type === 'Literal' &&
-                typeof node.left.property.value === 'number'){
-                STATIC_ARRAY[node.left.object.name][node.left.property.value] = node.right
-            }
-            // 替换
-            if (node.type === 'MemberExpression' &&
-                node.object.type === 'Identifier' &&
-                node.property.type === 'Literal' &&
-                node.object.name in STATIC_ARRAY){
-                return STATIC_ARRAY[node.object.name][node.property.value];
-            }
-        }
-    });
-}
-
-// 函数执行的寻找，从该节点的父节点中寻找函数，并修改当前函数执行的节点
-function combine_identy_function(tree) {
-    var cache_name;
-    var cache_func;
-    var CACHE_FUNCS = {};
-    estraverse.replace(tree, {
-        enter(node, parent){
-            if (cache_name = _cache_func(node)){
-                CACHE_FUNCS[cache_name[0]] = cache_name[1];
-            }
-            if (cache_func = _cache_func_rep(node, CACHE_FUNCS)){
-                return cache_func;
-            }
-
-
-            if (node.type === 'ExpressionStatement' &&
-                node.expression.type === 'CallExpression' && 
-                node.expression.callee.type === 'Identifier' &&
-                parent.body
-                ) {
-                for(var key in parent.body){
-                    var _node;
-                    if (_node = _catch_func(parent.body[key], node.expression.callee.name)){
-                        node.expression.callee = _node
-                        return node
+function CallToStr(path) {
+    // var _0xb28de8 = {
+    //     "abcd": function(_0x22293f, _0x5a165e) {
+    //         return _0x22293f == _0x5a165e;
+    //     },
+    //     "dbca": function(_0xfbac1e, _0x23462f, _0x556555) {
+    //         return _0xfbac1e(_0x23462f, _0x556555);
+    //     },
+    //     "aaa": function(_0x57e640) {
+    //         return _0x57e640();
+    //     },
+    //     "bbb": "eee"
+    // };
+    // var aa = _0xb28de8["abcd"](123, 456);
+    // var bb = _0xb28de8["dbca"](bcd, 11, 22);
+    // var cc = _0xb28de8["aaa"](dcb);
+    // var dd = _0xb28de8["bbb"];
+    //   |
+    //   |
+    //   |
+    //   v
+    // var aa = 123 == 456;
+    // var bb = bcd(11, 22);
+    // var cc = dcb();
+    // var dd = "eee";
+    var node = path.node;
+    if (!t.isObjectExpression(node.init)) // 判断是否使用对象
+        return;
+    var objPropertiesList = node.init.properties;
+    if (objPropertiesList.length == 0)
+        return;
+    var objName = node.id.name;
+    // 是否可删除该对象：发生替换时可删除，否则不删除
+    var del_flag = false
+    objPropertiesList.forEach(prop => {
+        var key = prop.key.value;
+        if(t.isFunctionExpression(prop.value)) {
+            var retStmt = prop.value.body.body[0];
+            var fnPath = path.getFunctionParent() || path.scope.path;
+            fnPath.traverse({
+                CallExpression: function (_path) {
+                    var _node = _path.node.callee;
+                    if (!t.isMemberExpression(_path.node.callee))
+                        return;
+                    if (!t.isIdentifier(_node.object) || _node.object.name !== objName)
+                        return;
+                    if (!(t.isStringLiteral(_node.property) || t.isIdentifier(_node.property)))
+                        return;
+                    if (!(_node.property.value == key || _node.property.name == key))
+                        return;
+                    var args = _path.node.arguments;
+                    // 二元运算, 逻辑运算, 函数调用
+                    if (t.isBinaryExpression(retStmt.argument) && args.length===2) {
+                        _path.replaceWith(t.binaryExpression(retStmt.argument.operator, args[0], args[1]));
                     }
-                }
-            }
-            if (node.type === 'VariableDeclaration' && parent.body){
-                for(var jkey in node.declarations){
-                    if (node.declarations[jkey].type === 'VariableDeclarator' && 
-                        node.declarations[jkey].init != null &&
-                        node.declarations[jkey].init.type === 'CallExpression' &&
-                        node.declarations[jkey].init.callee.type === 'Identifier' &&
-                        parent.body){
-                        var _node = _catch_func_parent(parent, node.declarations[jkey].init.callee.name);
-                        if (_node){
-                            node.declarations[jkey].init.callee = _node
-                        }
+                    else if(t.isLogicalExpression(retStmt.argument) && args.length==2) {
+                        _path.replaceWith(t.logicalExpression(retStmt.argument.operator, args[0], args[1]));
                     }
+                    else if(t.isCallExpression(retStmt.argument) && t.isIdentifier(retStmt.argument.callee)) {
+                        _path.replaceWith(t.callExpression(args[0], args.slice(1)))
+                    }
+                    del_flag = true;
                 }
-            }
+            })
         }
-    });
-}
-function _catch_func(node, name) {
-    if(node.type === 'VariableDeclaration'){
-        for(var jkey in node.declarations){
-            if (node.declarations[jkey].type === 'VariableDeclarator' && 
-                node.declarations[jkey].init != null &&
-                node.declarations[jkey].init.type === 'FunctionExpression' &&
-                node.declarations[jkey].id.type === 'Identifier' && 
-                node.declarations[jkey].id.name === name){
-                return node.declarations[jkey].init
-            }
-        }
-    }
-    if (node.type === 'FunctionDeclaration'){
-        if (node.id.type === 'Identifier' &&
-            node.id.name === name){
-            return node
-        }
-    }
-}
-function _catch_func_parent(parent, name) {
-    for(var key in parent.body){
-        var _node;
-        if (_node = _catch_func(parent.body[key], name)){
-            return _node
-        }
-    }
-}
-function _cache_func(node, name) {
-    if(node.type === 'VariableDeclaration'){
-        for(var jkey in node.declarations){
-            if (node.declarations[jkey].type === 'VariableDeclarator' && 
-                node.declarations[jkey].init != null &&
-                node.declarations[jkey].init.type === 'FunctionExpression' &&
-                node.declarations[jkey].id.type === 'Identifier'){
-                return [node.declarations[jkey].id.name, node.declarations[jkey].init]
-            }
-        }
-    }
-    if (node.type === 'FunctionDeclaration'){
-        if (node.id.type === 'Identifier'){
-            return [node.id.name, node]
-        }
-    }
-}
-function _cache_func_rep(node, cachefunc) {
-    if (node.type === 'CallExpression' && 
-        node.callee.type === 'Identifier' &&
-        node.callee.name in cachefunc){
-        node.callee = cachefunc[node.callee.name];
-        return node;
-    }
-}
-
-// 合并简单的二元运算
-function combine_binary(tree) {
-    estraverse.replace(tree, {
-        enter(node, parent){
-            if (node.type === 'BinaryExpression' && node.left.type === 'Literal' && node.right.type === 'Literal') {
-                return {
-                    type: 'Literal',
-                    value: eval(JSON.stringify(node.left.value) + node.operator + JSON.stringify(node.right.value))
-                };
-            }
-        }
-    });
-};
-
-// 合并简单二元运算的函数
-function combine_binary_function(tree) {
-    estraverse.replace(tree, {
-        enter(node, parent){
-            if (node.type === 'CallExpression' && 
-                node.arguments.length === 2 && 
-                (node.callee.type === 'FunctionExpression' || node.callee.type === 'FunctionDeclaration') &&
-                node.callee.params.length === 2 &&
-                node.callee.body.type === 'BlockStatement' && 
-                node.callee.body.body.length === 1 &&
-                node.callee.body.body[0].type === 'ReturnStatement' && 
-                node.callee.body.body[0].argument.type === 'BinaryExpression' &&
-                node.callee.params[0].type === 'Identifier' &&
-                node.callee.params[1].type === 'Identifier' &&
-                node.callee.body.body[0].argument.left.name  === node.callee.params[0].name &&
-                node.callee.body.body[0].argument.right.name === node.callee.params[1].name) {
-                rnode = {
-                    type: 'BinaryExpression',
-                    operator: node.callee.body.body[0].argument.operator,
-                    left: node.arguments[0],
-                    right: node.arguments[1],
-                };
-                if (rnode.type === 'BinaryExpression' && rnode.left.type === 'Literal' && rnode.right.type === 'Literal') {
-                    return {
-                        type: 'Literal',
-                        value: eval(JSON.stringify(rnode.left.value) + rnode.operator + JSON.stringify(rnode.right.value))
-                    };
-                }else{
-                    return rnode
+        else if (t.isStringLiteral(prop.value)){
+            var retStmt = prop.value.value;
+            var fnPath = path.getFunctionParent() || path.scope.path;
+            fnPath.traverse({
+                MemberExpression:function (_path) {
+                    var _node = _path.node;
+                    if (!t.isIdentifier(_node.object) || _node.object.name !== objName)
+                        return;
+                    if (!(t.isStringLiteral(_node.property) || t.isIdentifier(_node.property)))
+                        return;
+                    if (!(_node.property.value == key || _node.property.name == key))
+                        return;
+                    _path.replaceWith(t.stringLiteral(retStmt))
+                    del_flag = true;
                 }
-            }
+            })
         }
     });
+    if (del_flag) {
+        // 如果发生替换，则删除该对象, 该处可能出问题，因为字典的内容未必会饱和使用
+        path.remove();
+    } 
 }
 
-// 遍历展示
-function show(tree) {
-    estraverse.traverse(tree, {
-        enter(node, parent) {
-            print(parent)
-            print('---------------')
-            print(node)
-            print('===============')
-        }
-    });
+function delExtra(path) {
+    // ['\x49\x63\x4b\x72\x77\x70\x2f\x44\x6c\x67\x3d\x3d',0x123];
+    //   |
+    //   |
+    //   |
+    //   v
+    // ["IcKrwp/Dlg==", 291];
+    delete path.node.extra; 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function muti_process_defusion(jscode){
+    var ast = parser.parse(jscode);
+    // traverse(ast, {VariableDeclarator: {exit: MergeObj},});     // 可能出问题
+    // traverse(ast, {VariableDeclarator: {exit: CallToStr},});    // 可能出问题
+    traverse(ast, {StringLiteral: delExtra,})                   // 清理二进制显示内容
+    traverse(ast, {NumericLiteral: delExtra,})                  // 清理二进制显示内容
+    traverse(ast, {ConditionalExpression: TransCondition,});    // 三元表达式
+    traverse(ast, {ExpressionStatement: ConditionToIf,});       // 三元表达式转换成if
+    traverse(ast, {VariableDeclarator: ConditionVarToIf,});     // 赋值语句的 三元表达式转换成if
+    traverse(ast, {ExpressionStatement: RemoveComma,});         // 逗号表达式转换
+    traverse(ast, {VariableDeclaration: RemoveVarComma,});      // 赋值语句的 逗号表达式转换
+    traverse(ast, {MemberExpression: FormatMember,});           // obj['func1']['func2']() --> obj.func1.func2()
+    var { code } = generator(ast, { jsescOption: { minimal: true, } });
+    return code;
+}
+// const fs = require('fs');
+// var jscode = fs.readFileSync("./source.js", {
+//     encoding: "utf-8"
+// });
+// code = muti_process_defusion(jscode);
+// console.log(code);
+// fs.writeFileSync('./code.js', code, {
+//     encoding: "utf-8"
+// })
