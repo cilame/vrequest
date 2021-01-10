@@ -38,6 +38,7 @@ from .tab import (
     create_cmd_idle,
     create_encoder,
     create_test_code_urllib,
+    pyset_pypi_gui,
 )
 from .combinekey import (
     bind_ctl_key,
@@ -73,6 +74,7 @@ bind_menu(create_js_parse,        '创建 js解析页 [Ctrl+j]')
 bind_menu(create_helper,          '帮助文档标签 [Ctrl+h]')
 bind_menu(create_selenium_parse,  '浏览器执行窗 [Alt+w]*')
 bind_menu(create_encoder,         '创建便捷加密编码窗口')
+bind_menu(pyset_pypi_gui,         '设置全局 pypi 下载源')
 
 # 绑定 Ctrl + key 的组合键
 bind_ctl_key(create_new_reqtab, 'q')

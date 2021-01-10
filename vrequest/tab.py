@@ -986,3 +986,27 @@ def pipinstall_all(*a):
     except:
         cmd = 'start cmd /k "{}" install {}'.format(pip3_exe, libs)
         os.system(cmd)
+
+def pyset_pypi_gui():
+    from .pyset_pypi_src import diclist, read_setting, write_setting
+    qlist = []
+    qdict = {}
+    for url, name in diclist:
+        qlist.append(name)
+        qdict[name] = url
+    qlist.append('使用默认源')
+    q = qlist
+    cname = read_setting()
+    if cname:
+        text = '当前使用“{}”源\n{}'.format(cname, qdict.get(cname))
+    else:
+        text = '当前使用的是默认pypi源'
+    d = SimpleDialog(nb,
+        text=text,
+        buttons=q,
+        default=0,
+        cancel=-1,
+        title="pypi源")
+    id = d.go()
+    if id == -1: return
+    write_setting(None if qlist[id] == '使用默认源' else qlist[id])
