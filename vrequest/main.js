@@ -301,10 +301,142 @@ function delExtra(path) {
 
 
 
+function get_ob_enc(ast) {
+    var first_idx = 0
+    for (var i = 0; i < ast.program.body.length; i++) {
+        if (ast.program.body[i].type != 'EmptyStatement'){
+            first_idx = i;
+            break
+        }
+    }
+    var decrypt_code = ast.program.body.slice(first_idx, first_idx+3)
+    var rest_code = ast.program.body.slice(first_idx+3)
+    ast.program.body = decrypt_code
+    var {code} = generator(ast, {
+        compact: true
+    })
+    global_code = code
+    decryptStr = decrypt_code[2].declarations[0].id.name
+    var flag = true
+    const visitor = {
+        "ExpressionStatement"(path) {
+            path.traverse({
+                "StringLiteral"(_path) {
+                    delete _path.node.extra
+                },
+                MemberExpression: FormatMember
+            })
+            var code = path.toString()
+            if (flag && code.indexOf("atob") != -1) {
+                atob_node = path.node
+                flag = false
+            }
+        }
+    }
+    traverse(ast, visitor)
+    ast.program.body = [atob_node]
+    var {code} = generator(ast, {
+        jsescOption: {
+            minimal: true,
+        }
+    })
+    const comment = "// atob函数，后面可能会判断其是否存在，勿删！"
+    atob_code = comment + "\n!" + code + "\n"
+    ast.program.body = rest_code
+    return ast
+}
+
+function pas_ob_enc(ast) {
+    eval(global_code)
+    traverse(ast, {
+        CallExpression: funToStr,
+        StringLiteral: delExtra,
+        NumericLiteral: delExtra,
+    })
+    return ast;
+    function funToStr(path) {
+        var node = path.node;
+        if (!t.isIdentifier(node.callee, {name: decryptStr})) 
+            return;
+        let value = eval(path.toString())
+        // console.log("还原前：" + path.toString(), "还原后：" + value);
+        path.replaceWith(t.valueToNode(value));
+    }
+    function delExtra(path) {
+        delete path.node.extra; 
+    }
+}
+
+function ReplaceWhile(path) {
+    var node = path.node;
+    if (!(t.isBooleanLiteral(node.test) || t.isUnaryExpression(node.test)))
+        return;
+    if (!(node.test.prefix || node.test.value))
+        return;
+    if (!t.isBlockStatement(node.body))
+        return;
+    var body = node.body.body;
+    if (!t.isSwitchStatement(body[0]) || !t.isMemberExpression(body[0].discriminant) || !t.isBreakStatement(body[1]))
+        return;
+    var swithStm = body[0];
+    var arrName = swithStm.discriminant.object.name;
+    var argName = swithStm.discriminant.property.argument.name
+    let arr = [];
+    let all_presibling = path.getAllPrevSiblings();
+    all_presibling.forEach(pre_path => {
+        const {declarations} = pre_path.node;
+        let {id, init} = declarations[0]
+        if (arrName == id.name) {
+            arr = init.callee.object.value.split('|');
+            pre_path.remove()
+        }
+        if (argName == id.name) {
+            pre_path.remove()
+        }
+    })
+    var caseList = swithStm.cases;
+    var resultBody = [];
+    arr.map(targetIdx => {
+        var targetBody = caseList[targetIdx].consequent;
+        if (t.isContinueStatement(targetBody[targetBody.length - 1]))
+            targetBody.pop();
+        resultBody = resultBody.concat(targetBody)
+    });
+    path.replaceInline(resultBody);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function muti_process_defusion(jscode){
     var ast = parser.parse(jscode);
-    // traverse(ast, {VariableDeclarator: {exit: MergeObj},});     // 可能出问题
-    // traverse(ast, {VariableDeclarator: {exit: CallToStr},});    // 可能出问题
+
+    // ob 解混淆处理部分
+    // ast = get_ob_enc(ast)
+    // ast = pas_ob_enc(ast)
+    // traverse(ast, {VariableDeclarator: {exit: MergeObj},});     // 可能出问题（不可通用）
+    // traverse(ast, {VariableDeclarator: {exit: CallToStr},});    // 可能出问题（不可通用）
+    // traverse(ast, {WhileStatement: {exit: [ReplaceWhile]},});   // 反控制流平坦化
+
+    // 通用解混淆部分
     traverse(ast, {StringLiteral: delExtra,})                   // 清理二进制显示内容
     traverse(ast, {NumericLiteral: delExtra,})                  // 清理二进制显示内容
     traverse(ast, {ConditionalExpression: TransCondition,});    // 三元表达式
