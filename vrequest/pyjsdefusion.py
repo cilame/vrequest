@@ -1015,9 +1015,6 @@ else:
     # unzip_single(astjs, hnode)
     # 加载代码到空间
     def get_node_ctx():
-        global ctx
-        if ctx:
-            return ctx
         with open(mainjs, encoding='utf-8') as f:
             jscode = f.read()
         jscode = babel_parser_traverse_types_generator_str + ';' + jscode
@@ -1030,6 +1027,15 @@ else:
         jscode = re.sub('\n// ', '\n', jscode, flags=re.S)
         jscode = babel_parser_traverse_types_generator_str + '\n'*20 + jscode
         return jscode
+    def get_ob_node_ctx():
+        with open(mainjs, encoding='utf-8') as f:
+            jscode = f.read()
+        import re
+        jscode = re.sub(r'\n    // ast = ', '\n    ast = ', jscode, flags=re.S)
+        jscode = re.sub(r'\n    // traverse\(ast,', '\n    traverse(ast,', jscode, flags=re.S)
+        jscode = babel_parser_traverse_types_generator_str + ';' + jscode
+        ctx = execjs.compile(jscode, cwd=hnode)
+        return ctx
 
 import sys
 from subprocess import Popen, PIPE

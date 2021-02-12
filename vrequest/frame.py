@@ -2565,6 +2565,37 @@ def exec_js_window(setting=None):
         finally:
             back_popen_encoding()
 
+    def defusion_ob_js_code():
+        try:
+            try:
+                from .pyjsdefusion import get_ob_node_ctx, hook_popen_encoding, back_popen_encoding
+            except:
+                from pyjsdefusion import get_ob_node_ctx, hook_popen_encoding, back_popen_encoding
+            jscode = txt1.get(0.,tkinter.END)
+            ctx = get_ob_node_ctx()
+            txt2.delete(0.,tkinter.END)
+            hook_popen_encoding()
+            txt2.insert(0.,ctx.call('muti_process_defusion', jscode))
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+        finally:
+            back_popen_encoding()
+
+    def js_mod_pack():
+        try:
+            try:
+                from .pyjspack import comment
+            except:
+                from pyjspack import comment
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,comment)
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+
     def make_js_script():
         from .tab import show_code_log
         show_code_log()
@@ -2745,7 +2776,9 @@ print(js.func)
                 [make_js_tree,          '生成语法树'],
                 [translate_js_python,   '简单js代码翻译成[python]代码(可能有错误)'],
                 [defusion_js_code,      '使用node简单逆混肴代码'],
+                [defusion_ob_js_code,   '使用node解密ob混淆'],
                 [save_defusion_desktop, '保存node逆混淆单脚本置桌面(用于单独开发)'],
+                [js_mod_pack,           '用于打包js代码的一些方式'],
             ]
         q = [i[1] for i in qq]
         d = SimpleDialog(nb,
