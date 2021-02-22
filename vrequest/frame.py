@@ -2786,7 +2786,7 @@ print(js.func)
             buttons=q,
             default=0,
             cancel=-1,
-            title="启动mitmdump")
+            title="js功能")
         id = d.go()
         if id == -1: return
         qq[id][0]()
@@ -3249,24 +3249,18 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
 hook_script = r"""
 // eval Function Function.constructor 三种执行字符串脚本的挂钩
 (function(){
-  eval_string = window.eval.toString()
   const handler = { apply: function (target, thisArg, args){
       // debugger;
       console.log("----- eval(*) -----\n" + args);
       return target.apply(thisArg, args) } }
-  const handler_tostring = { apply: function (target, thisArg, args){ return eval_string; } }
   window.eval = new Proxy(window.eval, handler);
-  window.eval.toString = new Proxy(window.eval.toString, handler_tostring);
 })();
 (function(){
-  Function_string = window.Function.toString()
   const handler = { apply: function (target, thisArg, args){
       // debugger;
       console.log("----- Function(*) -----\n" + args);
       return target.apply(thisArg, args) } }
-  const handler_tostring = { apply: function (target, thisArg, args){ return Function_string; } }
   window.Function = new Proxy(window.Function, handler);
-  window.Function.toString = new Proxy(window.Function.toString, handler_tostring);
 })();
 Function.prototype.__defineGetter__('constructor', function() { return function(...args) {
     // debugger;
@@ -3277,24 +3271,18 @@ Function.prototype.__defineGetter__('constructor', function() { return function(
 
 // 挂钩 XMLHttpRequest. 设置请求头和发起请求的时机
 (function(){
-  XMLHttpRequest_prototype_open_str = XMLHttpRequest.prototype.open.toString()
   const handler = { apply: function (target, thisArg, args){
       // debugger;
       console.log("----- XMLHttpRequest_open -----\n", args)
       return target.apply(thisArg, args) } }
-  const handler_tostring = { apply: function (target, thisArg, args){ return XMLHttpRequest_prototype_open_str; } }
   XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, handler);
-  XMLHttpRequest.prototype.open.toString = new Proxy(XMLHttpRequest.prototype.open.toString, handler_tostring);
 })();
 (function(){
-  XMLHttpRequest_prototype_setRequestHeader_str = XMLHttpRequest.prototype.setRequestHeader.toString()
   const handler = { apply: function (target, thisArg, args){
       // debugger;
       console.log("----- XMLHttpRequest_setRequestHeader -----\n", args)
       return target.apply(thisArg, args) } }
-  const handler_tostring = { apply: function (target, thisArg, args){ return XMLHttpRequest_prototype_setRequestHeader_str; } }
   XMLHttpRequest.prototype.setRequestHeader = new Proxy(XMLHttpRequest.prototype.setRequestHeader, handler);
-  XMLHttpRequest.prototype.setRequestHeader.toString = new Proxy(XMLHttpRequest.prototype.setRequestHeader.toString, handler_tostring);
 })();
 
 
@@ -3332,14 +3320,11 @@ var hook_set = (function(pname, pobject){
     win_param = c;
     if (win_param instanceof Array){
       (function(){
-        pobject_push_str = win_param.push.toString()
         const handler = { apply: function (target, thisArg, args){
           // debugger;
           console.log("----- " + pname + " Array.push -----\n", args)
           return target.apply(thisArg, args) } }
-        const handler_tostring = { apply: function (target, thisArg, args){ return pobject_push_str; } }
         win_param.push = new Proxy(win_param.push, handler);
-        win_param.push.toString = new Proxy(win_param.push.toString, handler_tostring);
       })();
     }
     return win_param;
