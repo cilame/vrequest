@@ -29,6 +29,7 @@ setup(
             'ico.ico',
             'astjs.zip',
             'main.js',
+            'ast_hook_inject.js',
         ]
     },
     python_requires=">=3.0",
