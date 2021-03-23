@@ -2794,6 +2794,46 @@ print(js.func)
             txt2.delete(0.,tkinter.END)
             txt2.insert(0.,e)
 
+    def _ast_hook_create(*a):
+        try:
+            cwd = os.getcwd()
+            home = os.environ.get('HOME')
+            home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+            hnode = os.path.join(home, '.vrequest_node')
+            if not os.path.isdir(hnode): os.mkdir(hnode)
+            os.chdir(hnode)
+            cmd = 'start cmd /k "{}"'.format('cnpm install @babel/core @babel/types @babel/generator -S')
+            import subprocess
+            if not shutil.which("cnpm"):
+                cmd = 'start cmd /k "{}"'.format('npm install cnpm -g && cnpm install @babel/core @babel/types @babel/generator -S')
+            subprocess.Popen(cmd, creationflags=0x8000000, shell=True)
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+            os.chdir(cwd)
+
+    def _ast_hook_makejs(*a):
+        try:
+            cwd = os.getcwd()
+            home = os.environ.get('HOME')
+            home = home if home else os.environ.get('HOMEDRIVE') + os.environ.get('HOMEPATH')
+            hnode = os.path.join(home, '.vrequest_node')
+            if not os.path.isdir(hnode): os.mkdir(hnode)
+            os.chdir(hnode)
+            filename = os.path.join(os.path.split(__file__)[0], 'ast_hook_inject.js')
+            import execjs
+            with open(filename, encoding='utf-8') as f:
+                ctx = execjs.compile(f.read(), cwd=hnode)
+                jscode = ctx.call('make_inject_hook', txt1.get(0.,tkinter.END))
+                txt2.delete(0.,tkinter.END)
+                txt2.insert(0.,jscode)
+        except:
+            e = traceback.format_exc()
+            txt2.delete(0.,tkinter.END)
+            txt2.insert(0.,e)
+            os.chdir(cwd)
+
     def about_js(*a):
         from .tab import nb
         from .tab import SimpleDialog
@@ -2805,6 +2845,8 @@ print(js.func)
                 [defusion_ob_js_code,   '使用node解密ob混淆'],
                 [save_defusion_desktop, '保存node逆混淆单脚本置桌面(用于单独开发)'],
                 [js_mod_pack,           '用于打包js代码的一些方式'],
+                [_ast_hook_create,      '创建内存漫游项目空间（只用执行一次）'],
+                [_ast_hook_makejs,      '生成内存漫游 js 脚本'],
             ]
         q = [i[1] for i in qq]
         d = SimpleDialog(nb,
@@ -3255,23 +3297,10 @@ driver.find_element_by_xpath('//*[@id="su"]').click()
             temp_fr1.pack(fill=tkinter.BOTH,expand=True,side=tkinter.LEFT)
         show_code_window = not show_code_window
 
-    def start_mitm_in_desktop(*a):
-        filename = os.path.join(os.path.expanduser("~"),'Desktop', 'mitm_changejs.py')
-        from .tab import nb
-        from .tab import SimpleDialog
-        q = [   '在桌面覆盖创建新的模板脚本 mitm_changejs.py 并启动',
-                '在桌面使用已存在的 mitm_changejs.py 脚本启动', ]
-        d = SimpleDialog(nb,
-            text="请选择启动方式",
-            buttons=q,
-            default=0,
-            cancel=-1,
-            title="启动mitmdump")
-        id = d.go()
-        if id == -1: return
-        if id == 0:
-            with open(filename, 'w', encoding='utf-8') as f:
-                mitmcode = r'''
+
+    def _mitm_changejs_create(filename):
+        with open(filename, 'w', encoding='utf-8') as f:
+            mitmcode = r'''
 hook_script = r"""
 // eval Function Function.constructor 三种执行字符串脚本的挂钩
 (function(){
@@ -3513,9 +3542,9 @@ def buti_resp_print(flow):
     print('------------------- response content[:1000] ----------------')
     print('response content[:1000]:\n {}'.format(flow.response.get_content()[:1000]), end='\n\n\n')
     '''
-                f.write(mitmcode)
-        if id == 1:
-            pass
+            f.write(mitmcode)
+
+    def _mitm_changejs_use(filename):
         cwd = os.getcwd()
         desktop = os.path.join(os.path.expanduser("~"),'Desktop')
         os.chdir(desktop)
@@ -3531,6 +3560,26 @@ def buti_resp_print(flow):
             cmd = 'start /wait cmd /k "{}"'.format('mitmdump -q -s "{}" -p 8888'.format(filename))
             subprocess.Popen(cmd+' && '+close_proxy, creationflags=0x8000000, shell=True)
         os.chdir(cwd)
+
+    def start_mitm_in_desktop(*a):
+        filename = os.path.join(os.path.expanduser("~"),'Desktop', 'mitm_changejs.py')
+        from .tab import nb
+        from .tab import SimpleDialog
+        q = [   '在桌面覆盖创建新的模板脚本 mitm_changejs.py 并启动',
+                '在桌面使用已存在的 mitm_changejs.py 脚本启动', 
+            ]
+        d = SimpleDialog(nb,
+            text="请选择启动方式",
+            buttons=q,
+            default=0,
+            cancel=-1,
+            title="启动mitmdump")
+        id = d.go()
+        if id == -1: return
+        if id == 0: _mitm_changejs_create(filename), _mitm_changejs_use(filename)
+        if id == 1: _mitm_changejs_use(filename)
+        if id == 2:
+            pass
 
     script_v1 = '''
 def get_driver():
