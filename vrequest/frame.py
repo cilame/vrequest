@@ -2197,7 +2197,7 @@ def scrapy_code_window(setting=None):
             with open(desktop_client, 'w', encoding='utf-8') as f:
                 f.write('import re'+client.split('import re', 1)[1] + '\n'*20 + script)
             with open(desktop_runbat, 'w', encoding='utf-8') as f:
-                f.write(sys.executable+' '+desktop_script+' && pause')
+                f.write(sys.executable.replace('pythonw', 'python')+' '+desktop_script+' && pause')
         else:
             tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
 
