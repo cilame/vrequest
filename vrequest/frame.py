@@ -2177,6 +2177,30 @@ def scrapy_code_window(setting=None):
             tx.see('{}.{}'.format(lenv-20, 0))
             tx.update()
 
+    def _add_single_script_scrapy_redis_server_in_desktop(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        scriptfile = os.path.join(os.path.split(__file__)[0],'py_my_scrapy_redis_server.py')
+        with open(scriptfile, encoding='utf-8') as f:
+            scriptfile = f.read()
+        gap = '    p.start()'
+        server, client = scriptfile.split(gap)
+        server = server + gap
+        name = 'v_server.py'
+        runname = 'v_server_run.bat'
+        clientname = 'v_client.py'
+        desktop_script = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(name))
+        desktop_runbat = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(runname))
+        desktop_client = os.path.join(os.path.expanduser("~"),'Desktop\\{}'.format(clientname))
+        if not os.path.isfile(desktop_script):
+            with open(desktop_script, 'w', encoding='utf-8') as f:
+                f.write(server)
+            with open(desktop_client, 'w', encoding='utf-8') as f:
+                f.write('import re'+client.split('import re', 1)[1] + '\n'*20 + script)
+            with open(desktop_runbat, 'w', encoding='utf-8') as f:
+                f.write(sys.executable+' '+desktop_script+' && pause')
+        else:
+            tkinter.messagebox.showwarning('脚本已存在','脚本已存在')
+
     def _add_middleware_script_and_so_on(*a):
         from .tab import nb
         from .tab import SimpleDialog
@@ -2186,6 +2210,7 @@ def scrapy_code_window(setting=None):
                 '单脚本【多任务】分布式脚本代码，可控性更高，一次部署所有scrapy通用。',
                 '增加绝对地址保存文件方式(win 系统 filename 使用绝对地址需加前缀)',
                 '增加列表请求(尚在开发，不好解释用途，不会影响原始代码)',
+                '*快速添加 “单脚本【多任务】分布式脚本代码” 脚本到桌面',
             ]
         d = SimpleDialog(nb,
             text="请选择一个增强功能",
@@ -2201,6 +2226,7 @@ def scrapy_code_window(setting=None):
         if id == 2: _get_single_script_scrapy_redis_server()
         if id == 3: _add_single_script_file_save()
         if id == 4: _add_sceeper_in_list_model()
+        if id == 5: _add_single_script_scrapy_redis_server_in_desktop()
 
     def _add_sceeper_in_list_model(*a):
         script = tx.get(0.,tkinter.END).rstrip('\n')
@@ -2246,10 +2272,10 @@ def scrapy_code_window(setting=None):
     et.insert(0,dtopfile)
     bt2 = Button(temp_fr0,text='保存单脚本到桌面',command=save_script_in_desktop)
     bt2.pack(side=tkinter.LEFT)
-    bt3 = Button(temp_fr0,text='保存项目文件到桌面',command=save_project_in_desktop)
-    bt3.pack(side=tkinter.LEFT)
-    btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
-    btn1.pack(side=tkinter.LEFT)
+    # bt3 = Button(temp_fr0,text='保存项目文件到桌面',command=save_project_in_desktop)
+    # bt3.pack(side=tkinter.LEFT)
+    # btn1 = Button(temp_fr0, text='执行项目代码 [Alt+w]', command=_execute_scrapy_code)
+    # btn1.pack(side=tkinter.LEFT)
     btn1_1 = Button(temp_fr0, text='窗口执行代码 [Alt+v]', command=_execute_code)
     btn1_1.pack(side=tkinter.LEFT)
     btn2 = Button(temp_fr0, text='【单脚本中间件/管道】', command=_add_middleware_script_and_so_on)
