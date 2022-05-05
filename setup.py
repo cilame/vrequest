@@ -1,3 +1,5 @@
+# python setup.py bdist_wheel upload
+
 from setuptools import setup
 import vrequest
  

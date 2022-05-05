@@ -871,6 +871,17 @@ def code_window(setting=None):
             tx.insert(0.,script)
             tx.update()
 
+    def _add_mini_requests(*a):
+        script = tx.get(0.,tkinter.END).rstrip('\n')
+        scriptfile = os.path.join(os.path.split(__file__)[0],'py_mini_requests.py')
+        if "mini_requests" not in script:
+            with open(scriptfile, 'r', encoding='utf-8') as f:
+                topcode = f.read().strip()
+            tx.delete(0.,tkinter.END)
+            script = topcode + '\n'*10 + script
+            tx.insert(0.,script)
+            tx.update()
+
     tframe = Frame(fr)
     tframe.pack(side=tkinter.TOP)
 
@@ -878,6 +889,8 @@ def code_window(setting=None):
     btn00.pack(side=tkinter.LEFT)
     btn01 = Button(tframe, text='增加vthread线程池装饰器代码', command=_add_vthread_pool)
     btn01.pack(side=tkinter.LEFT)
+    btn02 = Button(tframe, text='增加mini_requests脚本', command=_add_mini_requests)
+    btn02.pack(side=tkinter.LEFT)
     btn1 = Button(tframe, text='保存脚本到桌面', command=save_script_in_desktop)
     btn1.pack(side=tkinter.LEFT)
     btn2 = Button(tframe, text='执行代码 [Alt+v]', command=_execute_code)
